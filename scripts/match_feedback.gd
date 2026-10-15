@@ -23,6 +23,8 @@ func observe(m: MatchState, camera: Camera3D, hud: Control, silent: bool, dt: fl
 		if int(event.id)<=last_event:continue
 		last_event=int(event.id)
 		var kind=str(event.type)
+		if kind=='pick' and event.get('object_kind','')=='M' and int(event.rid)>=0:
+			hud.get_node('ObjectiveEffects').celebrate('mustika_pick',int(event.rid)/2)
 		if kind in ['mandate','mustika'] and int(event.rid)>=0:
 			hud.get_node('ObjectiveEffects').celebrate(kind,int(event.rid)/2)
 		if CALLOUTS.has(kind) and int(event.rid)>=0:

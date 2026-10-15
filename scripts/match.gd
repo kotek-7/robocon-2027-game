@@ -296,7 +296,7 @@ func complete(rid: int):
 			r.carry.erase(oid);o.where='pillar';o.owner=team;o.p=j.p;o.holder=-1
 	if j.has('spot'):tower_locks[j.spot]=-1
 	o.lock=-1;r.job={};r.left=0
-	emit_event('drop' if j.type=='return' else j.type,rid)
+	emit_event('drop' if j.type=='return' else j.type,rid,{'object_kind':o.kind})
 	update_score(rid)
 
 func retry(rid: int):
@@ -312,6 +312,13 @@ func retry(rid: int):
 	r.carry.clear();r.job={};r.v=Vector3.ZERO;r.left=0
 	r.p=Vector3(-4.8 if rid<2 else 4.8,0,4.9)
 	r.upper=false
+
+func mustika_acquired(team: int) -> bool:
+	for object in objects:
+		if object.kind!='M':continue
+		if object.where=='held' and int(object.holder)/2==team:return true
+		if object.where=='buffer' and int(object.holder)==team:return true
+	return mustika_offered(team)
 
 func mustika_offered(team: int) -> bool:
 	for object in objects:

@@ -31,6 +31,7 @@ func _draw():
 		var objective=layout.get_node('RedObjective' if team==0 else 'BlueObjective')
 		var center=objective.get_node('Mustika').get_global_rect().get_center()-global_position
 		var tint: Color=hud.red_color if team==0 else hud.blue_color
+		if hud.match_state.mustika_acquired(team):tint=Color('#ffda16')
 		if hud.match_state.mandate[team] and not hud.match_state.mustika_offered(team):
 			# A slow breathing ring marks the unlocked, still unoffered Mustika.
 			var breath=(sin(phase*TAU/1.8)+1)*0.5
@@ -38,12 +39,13 @@ func _draw():
 			draw_arc(center,21,phase,phase+PI*0.65,24,Color(tint,0.65),2,true)
 	for burst in bursts:
 		var objective=layout.get_node('RedObjective' if burst.team==0 else 'BlueObjective')
-		var offered=burst.kind=='mustika'
-		var target=objective.get_node('Mustika') if offered else objective
+		var mustika_effect=burst.kind in ['mustika','mustika_pick']
+		var target=objective.get_node('Mustika') if mustika_effect else objective
 		var center=target.get_global_rect().get_center()-global_position
-		var tint=Color('#ffda16') if offered else (hud.red_color if burst.team==0 else hud.blue_color)
+		var tint=Color('#ffda16') if mustika_effect else (hud.red_color if burst.team==0 else hud.blue_color)
 		var p=float(burst.age)/1.2
 		var radius=lerpf(12,22,p) if hud.touch_mode else lerpf(18,40,p)
+		if burst.kind=='mustika_pick':radius=lerpf(26 if hud.touch_mode else 40,12,p)
 		var fade=1-p
 		draw_arc(center,radius,0,TAU,64,Color(tint,fade),3*fade+1,true)
 		for i in range(12):

@@ -62,7 +62,7 @@ func update_view():
 			var icon=objective.get_node('Tower%d'%(i+1))
 			icon.texture=completed_tower_icon if progress[i] else tower_icon
 			icon.self_modulate=(red_color if t==0 else blue_color) if progress[i] else Color(1,1,1,0.4)
-		objective.get_node('Mustika').modulate=Color.WHITE if m.mustika_offered(t) else inactive_color
+		objective.get_node('Mustika').modulate=Color.WHITE if m.mustika_acquired(t) else inactive_color
 	var legend='LS  MOVE    A  ACT    %sLT  FIELD' if using_pad else 'WASD  MOVE    E  ACT    %sTAB  FIELD'
 	layout.get_node('Legend').text=legend%(('Y  SWITCH    ' if using_pad else 'Q  SWITCH    ') if can_switch else '')
 	layout.get_node('Connection').visible=disconnected
