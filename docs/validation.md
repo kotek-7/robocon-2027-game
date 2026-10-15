@@ -27,3 +27,11 @@ Screenshots under `build/qa` record the title, driving view, overview, results, 
 Performance results are sampled engine FPS, not frame-time percentiles. Software-rendered Chromium and Firefox runs were much slower and do not establish the 60fps target. Human playtesting for enjoyment, physical gamepad hardware and subjective sound balance remain untested. CAD collision sampling and robot operation are simplified as described in `rules.md`.
 
 Raw reports and captures are generated locally under `build/qa`; they are excluded from the Web export.
+
+## Automatic matchmaking and vivid palette update
+
+The room-code UI was replaced with a compatible FIFO queue. The protocol rejects obsolete clients and preserves cancellation revisions. Local protocol checks passed for cancellation, duplicate enqueue, assignment, movement, stale-input stopping, reconnect and forfeit. Two Chromium clients matched through ONLINE and shared authoritative state without browser errors.
+
+The new palette was inspected at 1280 × 720 and 960 × 600, with title, driving and overview captures in `build/qa/vivid-*.png`. Yellow platforms, cyan surroundings and saturated team colors replace the pastel palette; actionable targets use a white ring with a dark edge.
+
+GitHub Actions run 38677647486 passed the rule suite, matchmaking suite, Web export and Docker server check. Its deployment step stopped because the repository's Cloudflare API token was not yet configured. Public deployment and Internet matchmaking are not validated yet. A local Workers runtime served the gzip WebAssembly successfully; decompression reproduced the original binary byte for byte.
