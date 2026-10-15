@@ -75,8 +75,6 @@ func command(team: int, cmd: Dictionary, dt: float):
 func command_robot(rid: int, cmd: Dictionary, dt: float):
 	if finished or rid<0 or rid>=robots.size():return
 	var r=robots[rid]
-	if cmd.has('select') and int(cmd.select)!=0:
-		r.selected+=clampi(int(cmd.select),-1,1);emit_event('select',rid)
 	if cmd.get('retry',false): retry(rid)
 	if not r.job.is_empty():r.v=Vector3.ZERO;return
 	var dir=Vector3(float(cmd.get('x',0)),0,float(cmd.get('z',0))).limit_length(1.0)

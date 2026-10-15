@@ -57,9 +57,8 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 				if distance<best: best=distance;target=o.p;wanted=i
 	else:
 		if not buildable.is_empty():
-			if m.selected(rid) not in buildable:
-				stuck=0;cmd.select=1;return cmd
-			var oid=m.selected(rid);var o=m.objects[oid]
+			var oid=m.selected(rid) if m.selected(rid) in buildable else buildable[0]
+			var o=m.objects[oid]
 			if o.kind=='M': target=Vector3(0,.9,0)
 			else:
 				var best=INF

@@ -17,7 +17,7 @@
 | `hover` | 名前入力 | `confirm` | 決定 |
 | `back` | 戻る | `pause` | メニューを開く |
 | `resume` | 再開 | `start` | 試合開始 |
-| `switch` | ロボット切替 | `select` | 積載物選択 |
+| `switch` | ロボット切替 | | |
 | `deny` | 操作不可 | `work` | 作業開始 |
 | `pick` | 拾う | `drop` | 降ろす |
 | `give` | 受け渡す | `place` | 積む |
@@ -65,7 +65,7 @@ HUDには `Desktop` と `Mobile` の2種類の配置があります。タッチ�
 - `scenes/objects/`: 競技物の形状と素材。ルートに補間と取得・設置時の拡縮設定。
 - `scenes/world/stadium.tscn`: 会場の配置、風船の揺れ、観客の上下動。
 - `scenes/world/confetti.tscn`: 標準のCPUParticles3Dで紙吹雪の寿命、速度、重力、形状を編集。発生位置・色・個数は試合イベントから渡されます。
-- Project Settings → **Input Map**: 移動、視点操作、決定、切替、積載物選択、全体表示、ポーズのキー／ゲームパッド割り当て。
+- Project Settings → **Input Map**: 移動、視点操作、決定、ロボット切替、全体表示、ポーズのキー／ゲームパッド割り当て。
 
 得点判定、AI、通信、保存、試合中の位置と状態の更新は引き続きGDScriptが担当します。競技物とロボットの初期配置・リトライ位置は試合モデル、歩行可能領域はCADデータを使用します。3Dの見た目を移動・拡縮しても、それだけではルールや通行判定は変わりません。
 

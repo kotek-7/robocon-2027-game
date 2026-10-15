@@ -30,6 +30,11 @@ func run():
 		if ai.command(m,0,1.0/60,1).get('retry',false):retries+=1
 	check(retries==0,'full BR with no compatible tower waits even when buffer has items')
 	m.reset('free');hold(m,1,[40,0]);m.robots[1].p=f.spot_pos(0)+Vector3(.5,0,0)
+	m.command_robot(1,{'select':1},0)
+	check(m.robots[1].selected==0,'legacy cargo selection input is ignored')
+	ai=ArenaCPU.new()
+	var auto_cmd=ai.command(m,0,1.0/60,1)
+	check(auto_cmd.get('act',false) and not auto_cmd.has('select'),'CPU uses compatible cargo without cycling selection')
 	var ctx=m.context(1)
 	check(ctx.get('object')==0 and ctx.get('type')=='place','Earth is automatically chosen for an empty tower')
 	check(m.robots[1].selected==0,'target preview does not mutate authoritative selection')

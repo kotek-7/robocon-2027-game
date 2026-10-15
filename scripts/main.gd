@@ -96,8 +96,6 @@ func _ready():
 		match key:
 			'act':pending.act=true
 			'switch':pending.switch=true
-			'previous':pending.select=-1
-			'next':pending.select=1
 			'menu':pause_menu()
 			'fullscreen':toggle_fullscreen()
 	)
@@ -288,8 +286,6 @@ func _unhandled_input(event):
 		if ui_open or game.finished:return
 		if event.is_action_pressed("interact"):pending.act=true
 		if event.is_action_pressed("switch_robot"):pending.switch=true
-		if event.is_action_pressed("previous_cargo"):pending.select=-1
-		if event.is_action_pressed("next_cargo"):pending.select=1
 	if event is InputEventMouseMotion and not ui_open and not touch_mode and (Input.mouse_mode==Input.MOUSE_MODE_CAPTURED or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
 		hud.using_pad=false
 		audio.look();yaw-=event.relative.x*mouse_look.x;pitch=clampf(pitch+event.relative.y*mouse_look.y,.22,1.15)

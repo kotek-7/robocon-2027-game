@@ -122,7 +122,7 @@ func _physics_process(dt):
 			if room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
 			else:m.command(t,cmd,dt)
 			if inputs.has(id):
-				for key in ['act','switch','retry','select']: inputs[id].erase(key)
+				for key in ['act','switch','retry']: inputs[id].erase(key)
 		m.step(dt)
 		if broadcast:
 			var packet={'type':'state','state':m.snapshot(),'reason':room.reason}
@@ -187,14 +187,12 @@ func handle(id: int, d: Dictionary):
 			if seq<=latest_seq.get(id,-1): return
 			latest_seq[id]=seq
 			var c=d.cmd
-			if not c.get('select',0) is float and not c.get('select',0) is int:return
 			if not c.get('x',0) is float and not c.get('x',0) is int: return
 			if not c.get('z',0) is float and not c.get('z',0) is int: return
 			if not is_finite(float(c.get('x',0))) or not is_finite(float(c.get('z',0))): return
 			var prior=inputs.get(id,{})
 			inputs[id]={'x':clampf(c.get('x',0),-1,1),'z':clampf(c.get('z',0),-1,1),'at':Time.get_ticks_msec()/1000.0}
 			for key in ['act','switch','retry']: inputs[id][key]=c.get(key,false)==true or prior.get(key,false)==true
-			inputs[id].select=clampi(int(c.get('select',prior.get('select',0))),-1,1)
 		'leave':
 			p.ws.close()
 
