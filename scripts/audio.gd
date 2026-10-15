@@ -42,7 +42,7 @@ func _ready():
 	var roll=load('res://assets/audio/maou_se_sound23.ogg').duplicate();roll.loop=true
 	for i in range(4):
 		var player=AudioStreamPlayer3D.new();player.stream=roll;player.bus='SFX';player.unit_size=2;player.max_distance=16;player.volume_db=-24;add_child(player);motors.append(player)
-	music=AudioStreamPlayer.new();music.bus='Music';music.stream=load('res://assets/audio/maou_loop_bgm_neorock44.mp3').duplicate();music.stream.loop=true;music.volume_db=-10;add_child(music)
+	music=AudioStreamPlayer.new();music.bus='Music';music.stream=load('res://assets/audio/maou_loop_bgm_neorock82.mp3').duplicate();music.stream.loop=true;music.volume_db=-10;add_child(music)
 
 func levels(bgm: float, sfx: float):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index('Music'),linear_to_db(maxf(.0001,bgm)))
