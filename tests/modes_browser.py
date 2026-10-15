@@ -1,4 +1,4 @@
-"""CPU handoff and four actual browser clients using the 2v2 UI."""
+"""CPU handoff and two actual browser clients using the 1v1 UI."""
 import asyncio,json,pathlib
 from playwright.async_api import async_playwright
 OUT=pathlib.Path(__file__).resolve().parents[1]/'build/qa'
@@ -12,7 +12,7 @@ async def main():
  async with async_playwright() as pw:
   browser=await pw.chromium.launch(headless=False,executable_path='/home/kotek/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome',args=['--no-sandbox','--use-gl=angle','--use-angle=gl','--ignore-gpu-blocklist','--disable-background-timer-throttling','--disable-renderer-backgrounding'])
   pages=[];errors=[]
-  for _ in range(4):
+  for _ in range(2):
    p=await browser.new_page(viewport={'width':1280,'height':720});pages.append(p)
    p.on('pageerror',lambda e:errors.append(str(e)))
    p.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
@@ -27,21 +27,20 @@ async def main():
   await a.keyboard.press('Escape');await click(a,'EXIT')
   for p in pages:
    await click(p,'ONLINE');await p.screenshot(path=str(OUT/'online-formats.png'))
-   await click(p,'2 vs 2')
+   await click(p,'1 vs 1')
   for p in pages:await p.wait_for_function("window.__arenaQA?.mode==='online'",timeout=15000)
   states=[await state(p) for p in pages]
-  assert [s['robot_id'] for s in states]==[0,2,1,3],states
+  assert [s['robot_id'] for s in states]==[-1,-1],states
   assert len({s['room'] for s in states})==1
-  for p in [pages[2],pages[3]]:
-   await click(p,'RESUME');rid=(await state(p))['robot_id']
-   before=(await state(p))['state']['robots'][rid]['p']
-   await p.keyboard.press('q');await p.keyboard.down('w');await p.wait_for_timeout(1400);await p.keyboard.up('w');await p.wait_for_timeout(700)
-   s=await state(p);assert s['state']['active'][s['team']]==rid
-   assert s['state']['robots'][rid]['p'][2]<before[2]-.3
-  await pages[3].screenshot(path=str(OUT/'2v2-br.png'))
-  await pages[0].bring_to_front();await pages[0].wait_for_timeout(1000)
-  s=await state(pages[0]);assert s['state']['robots'][1]['p'][2]<4 and s['state']['robots'][3]['p'][2]<4
-  report={'cpu_partner':True,'switch_handoff':True,'four_browser_match':True,'fixed_br_control':True,'state_sync':True,'errors':errors}
+  for p in pages:
+   await click(p,'RESUME')
+   await p.keyboard.press('q');await p.wait_for_timeout(1400)
+   s=await state(p);assert s['state']['active'][s['team']]==s['team']*2+1
+   assert s['names'].count('CPU')==2,s['names']
+   await p.keyboard.press('Escape');await p.wait_for_timeout(700)
+   assert not (await state(p))['nameplates_visible']
+  await pages[1].screenshot(path=str(OUT/'1v1-menu.png'))
+  report={'cpu_partner':True,'switch_handoff':True,'two_browser_match':True,'online_cpu_handoff':True,'menu_hides_names':True,'errors':errors}
   (OUT/'modes-browser.json').write_text(json.dumps(report,indent=2));print(report);assert not errors
   await browser.close()
 asyncio.run(main())

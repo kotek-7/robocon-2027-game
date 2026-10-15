@@ -23,7 +23,7 @@ var client_seq=0
 var latest_seq={}
 var server_id=1
 const PROTOCOL = 'robocon2027-v4'
-const RULESET = 'abu2027-v1.1-fixed-r4'
+const RULESET = 'abu2027-v1.1-fixed-r5'
 var queue: Array=[]
 var ticket=''
 var connect_clock=0.0
@@ -121,6 +121,12 @@ func _physics_process(dt):
 			if now-cmd.get('at',0)>0.25: cmd={}
 			if room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
 			else:m.command(t,cmd,dt)
+			if room.format=='1v1':
+				var human=int(m.active[t])
+				var partner=t*2+(1-human%2)
+				if room.previous_human[t]!=human:
+					room.drivers[partner]=ArenaCPU.new();room.previous_human[t]=human
+				m.command_robot(partner,room.drivers[partner].command(m,t,dt,partner),dt)
 			if inputs.has(id):
 				for key in ['act','switch','retry']: inputs[id].erase(key)
 		m.step(dt)
@@ -177,6 +183,7 @@ func handle(id: int, d: Dictionary):
 			room.again[p.seat]=true
 			if room.again.all(func(value):return value):
 				room.match.reset('online');room.reason='';room.again.fill(false)
+				room.drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];room.previous_human=[-1,-1]
 				for pid in room.ids:
 					inputs.erase(pid)
 					emit_to(pid,{'type':'ready','ready':room.ready,'started':true})
@@ -217,7 +224,7 @@ func match_waiting():
 				var rid=(seat%2)*2+int(seat/2)
 				names[rid]=peers[ids[seat]].nickname
 				if format=='1v1':names[rid+1]=names[rid]
-			rooms[code]={'match':m,'names':names,'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
+			rooms[code]={'drivers':[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()],'previous_human':[-1,-1],'match':m,'names':names,'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
 			for seat in range(count):join(ids[seat],code,seat)
 
 func find_match(format: String = '1v1'):

@@ -57,6 +57,7 @@ jobs:
           python3 tests/matchmaking.py
           python3 tests/network.py
           python3 tests/teams_network.py
+          python3 tests/partners_network.py
       - name: Export Web game
         run: |
           mkdir -p build/web

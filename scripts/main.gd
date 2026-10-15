@@ -236,7 +236,7 @@ func start(which: String):
 	if which!='online':team=0
 	elif net.robot_id>=0:game.active[team]=net.robot_id
 	hud.can_switch=which!='online' or net.robot_id<0;touch.can_switch=hud.can_switch
-	hud.partner_cpu=which=='cpu'
+	hud.partner_cpu=which=='cpu' or (which=='online' and online_format=='1v1')
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
 	camera.follow_target=game.robots[game.active[team]].p+Vector3(0,.4,0)
@@ -411,7 +411,9 @@ func _process(dt):
 			if camera.is_position_behind(point):continue
 			var name=profile.nickname
 			if mode=='cpu' and rid!=game.active[team]:name='CPU'
-			elif mode=='online':name=net.robot_names[rid]
+			elif mode=='online':
+				name=net.robot_names[rid]
+				if online_format=='1v1' and rid!=game.active[int(rid/2)]:name='CPU'
 			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.unproject_position(point)})
 	hud.update_view()
 	hud.get_node('Feedback').observe(game,camera,hud,mode=='title' or ui_open or landscape_required or hud.disconnected,dt)

@@ -5,7 +5,7 @@ async def receive(ws,kind):
         if packet['type']==kind:return packet
 async def enqueue(ws,ticket=None,revision=1,format='1v1',nickname='Pilot'):
     ticket=ticket or uuid.uuid4().hex
-    await ws.send(json.dumps({'type':'queue','ticket':ticket,'revision':revision,'protocol':'robocon2027-v4','ruleset':'abu2027-v1.1-fixed-r4','format':format,'nickname':nickname}))
+    await ws.send(json.dumps({'type':'queue','ticket':ticket,'revision':revision,'protocol':'robocon2027-v4','ruleset':'abu2027-v1.1-fixed-r5','format':format,'nickname':nickname}))
     return ticket
 async def match_pair(a,b):
     ticket=await enqueue(a)
