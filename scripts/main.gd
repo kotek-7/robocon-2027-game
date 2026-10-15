@@ -448,7 +448,7 @@ func _process(dt):
 		node.update_pose(pos,art.sky_rotation(o),o.kind=='S',changed,dt)
 	camera.update_view(dt,game.robots[game.active[team]].p,field,mode=='title',overview,yaw,pitch)
 	var ctx=game.context(game.active[team]) if mode!='title' and not ui_open else {}
-	touch.get_node('Buttons/act').text='戻す' if ctx.get('type')=='return' else 'ACT'
+	touch.get_node('Buttons/act').text='RETURN' if ctx.get('type')=='return' else 'ACT'
 	hud.action=ctx
 	if not ctx.is_empty():
 		var p: Vector3=ctx.p+Vector3(0,.75,0)

@@ -74,7 +74,7 @@ func update_view():
 		prompt.get_node('Climb').visible=action.type=='climb'
 		prompt.get_node('Pick').visible=action.type=='pick' and not touch_mode
 		prompt.get_node('Seconds').visible=action.type in ['climb','return']
-		if action.type=='return':prompt.get_node('Seconds').text='戻す'
+		if action.type=='return':prompt.get_node('Seconds').text='RETURN'
 		if action.type=='climb':prompt.get_node('Seconds').text='%ds'%int(action.seconds)
 	var progress=layout.get_node('JobProgress')
 	progress.visible=not robot.job.is_empty()
