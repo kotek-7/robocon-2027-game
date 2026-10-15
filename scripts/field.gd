@@ -63,12 +63,11 @@ func _init():
 				var j = k+offset
 				if j>=N*N or (offset==1 and k/N != j/N): continue
 				if g.has_point(j) and abs(heights[k]-heights[j])<=0.17: g.connect_points(k,j)
-		if rid%2==1:
-			for i in range(stairs.size()):
-				var stair=stairs[i]
-				if stair.team!=int(rid/2):continue
-				var a=cell(stair.a);var b=cell(stair.b)
-				if g.has_point(a) and g.has_point(b):g.connect_points(a,b,i>=2)
+		for i in range(stairs.size()):
+			var stair=stairs[i]
+			if stair.team!=int(rid/2) or (rid%2==0 and i>=2):continue
+			var a=cell(stair.a);var b=cell(stair.b)
+			if g.has_point(a) and g.has_point(b):g.connect_points(a,b,i>=2 or rid%2==0)
 		graphs.append(g)
 
 static func vec(p: Array, i: int) -> Vector3:
@@ -92,9 +91,7 @@ func valid(p: Vector3, rid: int) -> bool:
 	var own = p.x<0 if team==0 else p.x>0
 	var shared = (abs(p.x)<0.5 and (p.z>4.05 or (p.z<-3.4 and p.z>-4.35))) if y<0.1 else (y>0.85 or abs(p.z)>2.52)
 	if not own and not shared: return false
-	if rid%2==0 and y>0.55 and abs(p.x)<3.23: return false
-	# BR climbs the stairs, not the TR ramp. Ground travel is needed from the start zone.
-	if rid%2==1 and abs(p.x)>3.0 and abs(p.x)<4.0 and p.z<0.8 and y>0.01: return false
+	if rid%2==0 and y>0.55 and (abs(p.x)<3.0 or abs(p.x)>4.0 or p.z>1.8): return false
 	if abs(p.x)<0.25 and not shared: return false
 	return true
 

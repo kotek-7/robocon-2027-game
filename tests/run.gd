@@ -71,7 +71,7 @@ func _initialize():
 	m.reset('free');m.active[0]=1;m.robots[1].p=f.stairs[0].a
 	check(not f.can_move(Vector3(-3.4,0,3),Vector3(-3.4,0,2.8),1),'driving cannot enter stair footprint')
 	m.robots[0].p=f.stairs[0].a
-	check(m.stair_context(0).is_empty(),'TR cannot use stair operation')
+	check(m.stair_context(0).get('type','')=='climb','TR can use GND to transfer stairs')
 	m.robots[0].p=Vector3(-4.8,0,4.9)
 	var climb=m.context(1)
 	check(climb.get('type','')=='climb' and climb.seconds==3.0,'GND to L1 has explicit three-second operation')
@@ -105,6 +105,31 @@ func _initialize():
 		if abs(normal.y)<.001:hard_side=true
 	check(hard_top and hard_side,'CAD mesh retains flat top and vertical face normals')
 	view.free()
+	m.reset('free')
+	var stock_ok=true;var columns={}
+	for i in range(40):
+		var o=m.objects[i];var x=abs(o.p.x)
+		stock_ok=stock_ok and x-.175>=3.5 and x+.175<=5.45 and o.p.z-.175>=-5.45 and o.p.z+.175<=-4.5
+		stock_ok=stock_ok and (is_equal_approx(o.p.y,.175) or is_equal_approx(o.p.y,.525))
+		var key=Vector2(o.p.x,o.p.z);columns[key]=columns.get(key,0)+1
+	check(stock_ok and columns.size()==20 and columns.values().all(func(n):return n==2),'Earth stock has ten two-high columns per team inside CAD storage')
+	check(m.objects[40].sky_axis=='N' and m.objects[42].sky_axis=='S' and m.objects[43].sky_axis=='E','Sky orientation follows Figure 4')
+	var sky_ok=true
+	for i in range(40,52):
+		var o=m.objects[i];var x=roundi(o.p.x/.24)+2;var z=roundi((o.p.z-4.6073)/.24)+2
+		sky_ok=sky_ok and (x+z)%2==0 and not (x==2 and z==2)
+		var normal=Basis.from_euler(ArenaVisuals.new().sky_rotation(o))*Vector3.UP
+		sky_ok=sky_ok and abs(normal.y)<.001
+	check(sky_ok,'Sky blocks occupy even checkerboard cells, leave center empty and start sideways')
+	m.active[0]=0;m.robots[0].p=f.stairs[0].a;m.begin(0,m.stair_context(0));m.step(3.01)
+	check(m.robots[0].p==f.stairs[0].b,'TR completes stairs into transfer area')
+	m.begin(0,m.stair_context(0));m.step(3.01)
+	check(m.robots[0].p==f.stairs[0].a,'TR returns to ground by stairs')
+	m.robots[0].p=f.stairs[2].a
+	check(m.stair_context(0).is_empty(),'TR still cannot use L2 stairs')
+	check(f.valid(Vector3(-3.5,.3,-1),1) and f.can_move(Vector3(-3.4,.3,-1),Vector3(-3.4,.3,-.9),1),'BR ramp passage is open')
+	m.robots[0].carry=[40];m.objects[40].face=1;m.retry(0)
+	check(m.objects[40].face==-1 and m.objects[40].sky_axis=='N','retry restores Sky initial sideways orientation')
 	var ai=ArenaCPU.new();m.reset('cpu')
 	for i in range(10801):
 		m.command(1,ai.command(m,1,1.0/60),1.0/60);m.step(1.0/60)

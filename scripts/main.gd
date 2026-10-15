@@ -18,6 +18,7 @@ var yaw=0.0
 var pitch=.55
 var overview=false
 var capture_grace=0.0
+var capture_confirmed=false
 var pending={}
 var ui_open=true
 var net_clock=0.0
@@ -88,11 +89,21 @@ func _ready():
 	fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60
 	fullscreen_button.add_theme_constant_override('icon_max_width',24);fullscreen_button.z_index=90
 	var fullscreen_style=StyleBoxFlat.new();fullscreen_style.bg_color=Color('#fffaf0');fullscreen_style.set_corner_radius_all(12);fullscreen_style.border_color=Color('#20243e');fullscreen_style.set_border_width_all(2)
-	fullscreen_button.add_theme_stylebox_override('normal',fullscreen_style)
+	for state in ['normal','hover','pressed','disabled','focus']:
+		var style=fullscreen_style.duplicate()
+		if state=='hover':style.bg_color=Color('#ffda16')
+		if state=='pressed':style.bg_color=Color('#12bfe7')
+		if state=='disabled':style.bg_color=Color('#c6cee8')
+		if state=='focus':style.bg_color=Color.TRANSPARENT;style.border_color=Color('#0078dd')
+		fullscreen_button.add_theme_stylebox_override(state,style)
+	fullscreen_button.expand_icon=true;fullscreen_button.icon_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	for state in ['normal','hover','pressed','focus','disabled']:
+		fullscreen_button.add_theme_color_override('icon_'+state+'_color',Color.WHITE)
+	fullscreen_button.custom_minimum_size=Vector2(44,44)
 	if OS.has_feature('web'):
 		fullscreen_button.disabled=not bool(JavaScriptBridge.eval('!!document.fullscreenEnabled && !!document.documentElement.requestFullscreen'))
 		touch.fullscreen_supported=not fullscreen_button.disabled
-	ui.add_child(fullscreen_button);fullscreen_button.pressed.connect(toggle_fullscreen)
+	ui.add_child(fullscreen_button);fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60;fullscreen_button.pressed.connect(toggle_fullscreen)
 	sound=AudioStreamPlayer.new();sound.max_polyphony=4;add_child(sound)
 	net.message.connect(network_message)
 	show_title()
@@ -120,6 +131,7 @@ func panel():
 	if is_instance_valid(touch):touch.reset();touch.visible=false
 	if is_instance_valid(overlay): overlay.queue_free()
 	overlay=Control.new();overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(overlay)
+	ui.move_child(fullscreen_button,ui.get_child_count()-1)
 	var shade=ColorRect.new();shade.color=Color(.14,.1,.24,.18);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;overlay.add_child(shade)
 	var center=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);overlay.add_child(center)
 	menu=VBoxContainer.new();menu.add_theme_constant_override('separation',8 if touch_mode else 14);menu.custom_minimum_size=Vector2(320,0);center.add_child(menu)
@@ -139,7 +151,7 @@ func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
 
 func show_title():
 	mode='title';net.leave();game.reset('cpu');panel();hud.title=true;result_shown=false
-	label('ROBOCON',62);label('2027',32)
+	var logo=ArenaTitle.new();logo.compact=touch_mode;logo.custom_minimum_size=Vector2(320,110 if touch_mode else 210);menu.add_child(logo)
 	button('VS CPU',func(): start('cpu'),Color('#ffda16')).grab_focus()
 	button('ONLINE',show_online)
 	button('FREE',func(): start('free'))
@@ -191,7 +203,7 @@ func close_menu():
 	if OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
 		pause_menu();return
 	if is_instance_valid(overlay):overlay.queue_free()
-	ui_open=false;pending.clear();capture_grace=.5
+	ui_open=false;pending.clear();capture_grace=.5;capture_confirmed=false
 	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if touch_mode else Input.MOUSE_MODE_CAPTURED
 	touch.reset();touch.visible=touch_mode
 
@@ -222,10 +234,11 @@ func _unhandled_input(event):
 		if ui_open:return
 		if event.keycode==KEY_E: pending.act=true
 		if event.keycode==KEY_Q: pending.switch=true
-	if event is InputEventMouseMotion and not ui_open and not touch_mode:
+	if event is InputEventMouseMotion and not ui_open and not touch_mode and (Input.mouse_mode==Input.MOUSE_MODE_CAPTURED or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
 		hud.using_pad=false
 		yaw-=event.relative.x*.003;pitch=clampf(pitch+event.relative.y*.002,.22,1.15)
 	if event is InputEventMouseButton and event.pressed and not ui_open:
+		if event.button_index==MOUSE_BUTTON_LEFT and not touch_mode:Input.mouse_mode=Input.MOUSE_MODE_CAPTURED;capture_confirmed=false;capture_grace=.5
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:pending.select=1
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:pending.select=-1
 
@@ -284,7 +297,10 @@ func _process(dt):
 	fullscreen_button.offset_bottom=fullscreen_button.offset_top+44
 	title_clock+=dt
 	capture_grace=maxf(0,capture_grace-dt)
-	if not touch_mode and mode!='title' and not ui_open and not game.finished and capture_grace<=0 and Input.mouse_mode!=Input.MOUSE_MODE_CAPTURED:
+	var locked=Input.mouse_mode==Input.MOUSE_MODE_CAPTURED
+	if OS.has_feature('web') and not touch_mode:locked=bool(JavaScriptBridge.eval('!!document.pointerLockElement'))
+	if not ui_open and locked:capture_confirmed=true
+	if not touch_mode and mode!='title' and not ui_open and not game.finished and capture_grace<=0 and capture_confirmed and not locked:
 		pause_menu()
 	for i in range(robots.size()):
 		var r=game.robots[i];var node: Node3D=robots[i]
@@ -309,7 +325,7 @@ func _process(dt):
 			var rid=int(o.holder);var index=game.robots[rid].carry.find(i)
 			pos=robots[rid].position+Vector3((index%2)*.2-.1,.75+int(index/2)*.28,.18).rotated(Vector3.UP,robots[rid].rotation.y)
 		node.position=node.position.lerp(pos,1-exp(-20*dt))
-		if o.kind=='S':node.rotation.z=lerp_angle(node.rotation.z,PI if o.face==1 else 0.0,1-exp(-12*dt))
+		if o.kind=='S':node.quaternion=node.quaternion.slerp(Quaternion.from_euler(art.sky_rotation(o)),1-exp(-12*dt))
 		if last_states[i]!=o.where:
 			if mode!='title' and last_states[i]!='':
 				tone(650 if o.where=='tower' else 430,.065)

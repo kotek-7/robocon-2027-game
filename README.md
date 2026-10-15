@@ -1,4 +1,4 @@
-# Robocon 2027 Game
+# Robocon 2027 The Pursuit of Mustika Nusantara
 
 A three-minute robot match for desktop and landscape mobile browsers. Drive TR and BR, carry blocks, build towers and contest Mustika.
 
@@ -16,7 +16,7 @@ Alternatively, open `project.godot` in Godot and run the main scene. Use `godot 
 
 ## Controls
 
-WASD moves relative to the camera. Mouse orbits. E interacts, Q switches robots, mouse wheel selects cargo, Tab shows the field, Esc opens the menu. Gamepad: left stick moves, right stick orbits, lower face button interacts, upper face button switches, bumpers select cargo, left trigger shows the field, Start opens the menu.
+WASD moves relative to the camera. Mouse orbits; when pointer lock is unavailable, hold the left button and drag. E interacts, Q switches robots, mouse wheel selects cargo, Tab shows the field, Esc opens the menu. Gamepad: left stick moves, right stick orbits, lower face button interacts, upper face button switches, bumpers select cargo, left trigger shows the field, Start opens the menu.
 
 Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, TR/BR switches robots, < and > select cargo. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
 
@@ -47,6 +47,7 @@ python tests/network_rematch.py
 python tests/gamepad_browser.py
 python tests/firefox_browser.py
 python tests/touch_browser.py
+python tests/fixes_browser.py
 ```
 
 The browser harness uses `?qa=1` for read-only state and UI bounds. It sends keyboard/mouse inputs; it cannot alter match state through that interface. Browser evidence is written under `build/qa`. Run browser checks sequentially because changing the foreground window pauses local play. The harness currently uses the local Playwright Chromium path; adjust it for another machine. The gamepad check injects Gamepad API inputs, not match state.

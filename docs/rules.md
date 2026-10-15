@@ -13,7 +13,7 @@ Terminology follows `gakusei-robocon/web/src/editors/common/labels.ts`: TR, BR, 
 - Mustika: 250 when placed on the central pillar. Eligibility requires two simultaneously owned completed towers, at least one shared; eligibility then remains unlocked. This follows the neighboring project's default simultaneous interpretation and rule 3.6.2's retained eligibility.
 - Sky flipping is supported. Sky relocation and removal of an enshrined Mustika are disabled, matching the conservative neighboring defaults.
 - Retry returns held objects to their initial positions, following 5.1.1. This intentionally differs from the neighboring exploration default `retry_payload=retain`; that project exposes the ambiguity with 5.3.2 as a hypothesis. Transfer history is retained.
-- BR uses an explicit stair action: GND→L1 takes 3 seconds; L1↔L2 takes 2 seconds. These are game timings, not official durations. Movement cannot enter the stair footprint. Steering is locked during a climb; robot switching lets it finish, and retry cancels it. An occupied landing prevents entry. After reaching L1, BR returns to Ground only through retry. TR uses its ramp.
+- BR uses an explicit stair action: GND→L1 takes 3 seconds; L1↔L2 takes 2 seconds. These are game timings, not official durations. Movement cannot enter the stair footprint. Steering is locked during a climb; robot switching lets it finish, and retry cancels it. An occupied landing prevents entry. BR cannot descend the GND stairs. TR can also use the GND↔Transfer stairs. Both robots can use the ramp; TR remains excluded from the rest of L1 and all of L2. Ramp access by BR is an explicit game interpretation; rule 4.3.2 specifically mentions ground contact during retries and approach to the L1 stairs.
 - Ties use score, Mustika, Sky count, L2 blocks, L1 blocks; remaining ties are draws in this game.
 
 ## Physical model
@@ -23,3 +23,7 @@ The supplied CAD drives rendering and sampled surface heights. The collision mod
 BR is manually controlled in the game. Pickup and placement use proximity assistance, carried blocks attach to the robot, and placed blocks snap to the designated spot. Manipulator trajectories, gripping force, accidental dropping and referee judgment of intent are not simulated. There is no pushing or combat mechanic. Illegal actions are unavailable rather than narrated as penalties.
 
 Human and AI use the same command/context validation. AI may switch while a previously started action finishes, like a human. The authoritative room server runs at 60 Hz and publishes state at 20 Hz. Reconnection requires a random session token and must occur within 30 seconds; the clock continues.
+
+## Initial block layout
+
+Earth stock uses ten columns per team, each two blocks high, inside the CAD storage bounds: |X| 3.5–5.45 m, Z −5.45 to −4.5 m. Rule 4.1.3 permits a team-selected layout within that area, with at most two blocks per column. This game fixes a 5 × 2 column layout. Sky stock follows Figure 4 (rulebook page 15): even checkerboard cells of the 5 × 5 grid, center empty, with each two-color cube initially lying sideways. Its red half points N/S/E/W according to the diagram; a tower placement turns the scoring color upward.

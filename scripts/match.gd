@@ -33,10 +33,13 @@ func reset(new_mode: String):
 		robots.append({'p':Vector3(x,0,4.9),'v':Vector3.ZERO,'yaw':0.0,'carry':[],'selected':0,'job':{},'left':0.0,'upper':false})
 	for t in range(2):
 		for n in range(20):
-			add_object('E',t,Vector3((-4.5 if t==0 else 4.5)+(n%2)*.39-.195,0.175+(n/10)*.35,-4.8+(int(n/2)%5)*.38))
+			add_object('E',t,Vector3((-5.2+(n%5)*.37)*(1 if t==0 else -1),.175+int(n/10)*.35,-5.2+(int(n/5)%2)*.4))
+	var sky_axes=[['N','','N','','S'],['','E','','W',''],['S','','','','N'],['','W','','E',''],['N','','S','','S']]
 	for z in range(5):
 		for x in range(5):
-			if (x+z)%2==1: add_object('S',-1,Vector3((x-2)*.22,.1,4.6073+(z-2)*.22))
+			if sky_axes[z][x]!='':
+				add_object('S',-1,Vector3((x-2)*.24,.1,4.6073+(z-2)*.24))
+				objects.back()['sky_axis']=sky_axes[z][x]
 	add_object('M',-1,Vector3(0,.605,-3.88559))
 	for i in range(field.spots.size()): towers.append([]);tower_locks.append(-1)
 
@@ -142,13 +145,13 @@ func context(rid: int) -> Dictionary:
 	return best if not best.is_empty() else stair_context(rid)
 
 func stair_context(rid: int) -> Dictionary:
-	if rid%2==0 or finished or not robots[rid].job.is_empty():return {}
+	if finished or not robots[rid].job.is_empty():return {}
 	var r=robots[rid]
 	for i in range(field.stairs.size()):
 		var stair=field.stairs[i]
-		if stair.team!=int(rid/2):continue
+		if stair.team!=int(rid/2) or (rid%2==0 and i>=2):continue
 		for reverse in [false,true]:
-			if reverse and i<2:continue
+			if reverse and i<2 and rid%2==1:continue
 			var entry: Vector3=stair.b if reverse else stair.a
 			var landing: Vector3=stair.a if reverse else stair.b
 			if r.p.distance_to(entry)>.48:continue
@@ -249,6 +252,7 @@ func retry(rid: int):
 		if o.lock==rid: o.lock=-1
 	for oid in r.carry:
 		var o=objects[oid];o.where='ground';o.p=o.home;o.holder=-1;o.spot=-1
+		if o.kind=='S':o.face=-1
 	r.carry.clear();r.job={};r.v=Vector3.ZERO;r.left=0
 	r.p=Vector3(-4.8 if rid<2 else 4.8,0,4.9)
 	r.upper=false

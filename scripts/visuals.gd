@@ -53,9 +53,17 @@ func object(kind: String, owner: int) -> Node3D:
 	elif kind=='S':
 		box(root,Vector3(.2,.1,.2),RED,Vector3(0,.05,0))
 		box(root,Vector3(.2,.1,.2),BLUE,Vector3(0,-.05,0))
-		box(root,Vector3(.12,.004,.025),Color('#fffaf0'),Vector3(0,.102,0))
 	else:
 		var color=RED if owner==0 else BLUE
 		box(root,Vector3(.35,.35,.35),color,Vector3.ZERO)
 		box(root,Vector3(.352,.045,.352),Color('#fffaf0'),Vector3(0,0,0))
 	return root
+
+func sky_rotation(o: Dictionary) -> Vector3:
+	if o.face>=0:return Vector3(0,0,PI if o.face==1 else 0)
+	match o.get('sky_axis','N'):
+		'N':return Vector3(-PI/2,0,0)
+		'S':return Vector3(PI/2,0,0)
+		'E':return Vector3(0,0,-PI/2)
+		'W':return Vector3(0,0,PI/2)
+	return Vector3.ZERO

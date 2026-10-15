@@ -57,3 +57,13 @@ Firefox 157 smoke checks passed with the new scenery: movement, robot switching,
 The full 45 competition checks passed unchanged. Android hardware, iPhone/Safari hardware, device-specific orientation-lock behavior and mobile GPU performance have not been tested. Fullscreen availability is detected at runtime; orientation lock is requested after fullscreen succeeds. Browsers that reject orientation lock still require landscape through the portrait gate. Captures and touch report are under `build/qa/touch-*`.
 
 The same touch sequence passed at device pixel ratio 2, including fullscreen toggling, with zero browser errors. CD run [38681305651](https://github.com/kotek-7/robocon-2027-game/actions/runs/38681305651) deployed commit `e6e5b6f` successfully. The public PCK was read back and contains the touch controller and fullscreen asset. Desktop two-browser matchmaking and movement/state synchronization also passed without browser errors.
+
+## Stock layout, traversal and browser controls
+
+The competition suite passes 53/53 checks with ruleset r3. Added cases cover Earth storage bounds and two-block stacks, the twelve sideways Sky cubes from Figure 4, TR stair ascent/descent and L2 exclusion, BR ramp access, and Sky orientation after retry. The standard CPU completes the 180-second simulation, enshrines Mustika and scores 665 with this layout. Earlier scores above describe earlier layouts.
+
+The title uses outlined Fredoka lettering, a gold Mustika and cyan/gold subtitle lines. Fullscreen controls have a fixed 44-pixel target, consistent hover/focus styles and input priority over the menu overlay. Pointer-lock rejection no longer triggers a second pause after retry; losing an established lock still pauses. Local matchmaking and network checks passed, including token reconnect and the 30-second disconnect grace period.
+
+`tests/fixes_browser.py` passed in headed Chromium at 1280 × 720 with zero browser errors. It clicks the actual fullscreen button twice, checks the complete page title, simulates browser pointer-lock rejection during retry and then drives the robot, drives TR to its GND stair entry and completes the timed ascent, and drives BR up the ramp. Captures: `mustika-title.png`, `fullscreen-focus.png`, `tr-stair-transfer.png`, `br-ramp.png` under `build/qa`.
+
+The touch regression passed again at 844 × 390 and 390 × 844, including simultaneous move/look, pickup, switching, portrait blocking and fullscreen, with zero browser errors. The compact title and menu fit the landscape viewport. Mobile checks use Chromium emulation; physical phones remain untested.
