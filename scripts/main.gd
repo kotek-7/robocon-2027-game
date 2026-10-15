@@ -183,7 +183,7 @@ func show_profile():
 	nickname_edit.grab_focus();nickname_edit.select_all();editing_profile=true
 	if OS.has_feature('web'):
 		nickname_edit.modulate.a=0
-		JavaScriptBridge.eval("""(()=>{const input=document.createElement('input');input.id='arena-name';input.type='text';input.maxLength=16;input.autocomplete='nickname';input.setAttribute('aria-label','Nickname');input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:600 22px sans-serif;';input.addEventListener('input',()=>window.arenaNameChanged=true);input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;input.blur();}});document.body.append(input);input.value="""+JSON.stringify(profile.nickname)+";input.focus();input.select();})()")
+		JavaScriptBridge.eval("""(()=>{const input=document.createElement('input');input.id='arena-name';input.type='text';input.maxLength=16;input.autocomplete='nickname';input.setAttribute('aria-label','Nickname');input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:22px ArenaJapanese,sans-serif;';input.addEventListener('input',()=>window.arenaNameChanged=true);input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;input.blur();}});document.body.append(input);input.value="""+JSON.stringify(profile.nickname)+";input.focus();input.select();})()")
 
 
 func save_profile():

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="1_w3v0r"]
 [ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="2_ivwlv"]
 [ext_resource type="Texture2D" path="res://assets/fullscreen.svg" id="3_erumi"]
-[ext_resource type="FontFile" path="res://assets/Fredoka-Semibold.ttf" id="4_7q06a"]
+[ext_resource type="FontVariation" path="res://resources/ui/font.tres" id="4_7q06a"]
 [ext_resource type="Texture2D" path="res://assets/edit.svg" id="5_gt0ke"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uypp3"]

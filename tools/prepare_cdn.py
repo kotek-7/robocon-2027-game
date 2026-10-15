@@ -3,6 +3,7 @@ from pathlib import Path
 import gzip, shutil
 
 shutil.copyfile('web/field-backdrop.jpg','build/web/field-backdrop.jpg')
+shutil.copyfile('assets/DelaGothicOne-Regular.ttf','build/web/DelaGothicOne-Regular.ttf')
 source=Path('build/web');target=Path('build/cdn');target.mkdir(parents=True,exist_ok=True)
 for p in source.iterdir():
     if not p.is_file() or p.suffix=='.import':continue
