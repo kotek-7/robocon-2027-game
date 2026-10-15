@@ -76,13 +76,19 @@ func command(m: MatchState, team: int, dt: float) -> Dictionary:
 					target=m.field.spot_pos(s);break
 	if target.x==999: return cmd
 	var ctx=m.context(rid)
-	if not ctx.is_empty() and (ctx.type!='pick' or wanted<0 or m.objects[ctx.object].kind==m.objects[wanted].kind):
+	if not ctx.is_empty() and ctx.type!='climb' and (ctx.type!='pick' or wanted<0 or m.objects[ctx.object].kind==m.objects[wanted].kind):
 		if ctx.type=='flip':next_flip=m.elapsed+6
 		cmd.act=true;return cmd
 	if target.distance_to(goal)>.25 or last_rid!=rid or path.is_empty():
 		path=m.field.route(r.p,target,rid);goal=target;last_rid=rid
 	while path.size()>1 and Vector2(path[0].x-r.p.x,path[0].z-r.p.z).length()<.18 and abs(path[0].y-r.p.y)<.08: path.remove_at(0)
 	if not path.is_empty():
+		var stair=m.stair_context(rid)
+		if not stair.is_empty():
+			for waypoint in path:
+				if waypoint.distance_to(stair.to)<.15:
+					cmd.act=true;path.clear();return cmd
+				if waypoint.distance_to(r.p)>2:break
 		var d: Vector3=(path[0]-r.p);d.y=0
 		if d.length()>.06: d=d.normalized();cmd.x=d.x;cmd.z=d.z
 	if r.p.distance_to(previous)<.002: stuck+=dt

@@ -13,12 +13,12 @@ Terminology follows `gakusei-robocon/web/src/editors/common/labels.ts`: TR, BR, 
 - Mustika: 250 when placed on the central pillar. Eligibility requires two simultaneously owned completed towers, at least one shared; eligibility then remains unlocked. This follows the neighboring project's default simultaneous interpretation and rule 3.6.2's retained eligibility.
 - Sky flipping is supported. Sky relocation and removal of an enshrined Mustika are disabled, matching the conservative neighboring defaults.
 - Retry returns held objects to their initial positions, following 5.1.1. This intentionally differs from the neighboring exploration default `retry_payload=retain`; that project exposes the ambiguity with 5.3.2 as a hypothesis. Transfer history is retained.
-- BR uses the stairs rather than the TR ramp. After reaching L1 it cannot drive back down to the Ground Area except via retry.
+- BR uses an explicit stair action: GND→L1 takes 3 seconds; L1↔L2 takes 2 seconds. These are game timings, not official durations. Movement cannot enter the stair footprint. Steering is locked during a climb; robot switching lets it finish, and retry cancels it. An occupied landing prevents entry. After reaching L1, BR returns to Ground only through retry. TR uses its ramp.
 - Ties use score, Mustika, Sky count, L2 blocks, L1 blocks; remaining ties are draws in this game.
 
 ## Physical model
 
-The supplied CAD drives rendering and sampled surface heights. The collision model uses a 0.2 m floor grid and a robot footprint with a 0.21 m clearance probe. This approximates stair and ramp motion; it is not a machinery feasibility simulation. Both teams share the same collision model. Role and territory restrictions prevent illegal entry.
+The supplied CAD drives rendering and sampled surface heights. The collision model uses a 0.2 m floor grid and a robot footprint with a 0.21 m clearance probe. This approximates ramp motion; stairs use fixed CAD entry and landing points. It is not a machinery feasibility simulation. Both teams share the same collision model. Role and territory restrictions prevent illegal entry.
 
 BR is manually controlled in the game. Pickup and placement use proximity assistance, carried blocks attach to the robot, and placed blocks snap to the designated spot. Manipulator trajectories, gripping force, accidental dropping and referee judgment of intent are not simulated. There is no pushing or combat mechanic. Illegal actions are unavailable rather than narrated as penalties.
 

@@ -39,3 +39,11 @@ GitHub Actions run [38678208335](https://github.com/kotek-7/robocon-2027-game/ac
 A fresh Chromium client reached the title without JavaScript or Godot errors. Its first WebAssembly download transferred 10,055,058 bytes including response overhead in 133.6 seconds on this desktop connection. The initial 60-second test timeout was too short. This is a cold-load measurement, separate from gameplay FPS.
 
 Two fresh Chromium clients then passed the full ONLINE UI check against the public URL: automatic pairing, direct robot movement, synchronized positions and scores, and zero browser errors. Captures and the report are `build/qa/online-production.png` and `build/qa/network-browser-production.json`. Public cold-load waits were extended to 240 seconds for this check.
+
+## Stair actions and stadium presentation
+
+The CAD mesh now uses flat face normals with darker risers, white tread nosings and a stronger directional shadow. Its height coordinates and competitive footprint are unchanged. Spectator seating, 160 animated crowd figures, balloons and two inflatable arches sit outside the field. Placement and landing emit a bounded pool of at most 80 confetti pieces; decorative meshes have no collision.
+
+`tests/run.gd`: 45/45 passed, including timed ascent/descent, blocked landings, forbidden TR stair use, movement lock, inactive robot completion, carrying, retry, snapshot roundtrip and buzzer ordering. The CPU still completed the 180-second simulation with Mustika and 905 points.
+
+`tests/stairs_browser.py` drove a BR from its start through both stair entries with keyboard input, switched robots during the first ascent, and confirmed both landings. Chromium recorded no browser errors and six 60fps samples at 1280 × 720 with the new scenery. These samples are not a sustained frame-time benchmark or a human enjoyment evaluation. Captures: `build/qa/stadium-title.png`, `stairs-entry.png`, `stairs-climbing.png`, `stadium-overview.png`, `stadium-play.png`.

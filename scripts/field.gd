@@ -8,6 +8,17 @@ var spots: Array
 var heights = PackedFloat32Array()
 var solid = PackedByteArray()
 var graphs: Array = []
+# Entry/landing centers are on the CAD floor, outside the stair footprint.
+var stairs: Array = [
+	{'a':Vector3(-3.4,0,3.0),'b':Vector3(-3.4,.6,1.4),'seconds':3.0,'team':0},
+	{'a':Vector3(3.4,0,3.0),'b':Vector3(3.4,.6,1.4),'seconds':3.0,'team':1},
+	{'a':Vector3(-2.2,.6,0),'b':Vector3(-1.2,.9,0),'seconds':2.0,'team':0},
+	{'a':Vector3(2.2,.6,0),'b':Vector3(1.2,.9,0),'seconds':2.0,'team':1},
+]
+
+func on_stairs(p: Vector3) -> bool:
+	return (abs(p.x)>2.78 and abs(p.x)<4.22 and p.z>1.62 and p.z<2.92) or (abs(p.x)>1.38 and abs(p.x)<2.02 and abs(p.z)<.72)
+
 
 func _init():
 	raw = JSON.parse_string(FileAccess.get_file_as_string('res://assets/field.json'))
@@ -52,6 +63,12 @@ func _init():
 				var j = k+offset
 				if j>=N*N or (offset==1 and k/N != j/N): continue
 				if g.has_point(j) and abs(heights[k]-heights[j])<=0.17: g.connect_points(k,j)
+		if rid%2==1:
+			for i in range(stairs.size()):
+				var stair=stairs[i]
+				if stair.team!=int(rid/2):continue
+				var a=cell(stair.a);var b=cell(stair.b)
+				if g.has_point(a) and g.has_point(b):g.connect_points(a,b,i>=2)
 		graphs.append(g)
 
 static func vec(p: Array, i: int) -> Vector3:
@@ -82,7 +99,7 @@ func valid(p: Vector3, rid: int) -> bool:
 	return true
 
 func can_move(a: Vector3, b: Vector3, rid: int) -> bool:
-	if not valid(b,rid) or abs(height(b)-height(a))>0.17: return false
+	if on_stairs(b) or not valid(b,rid) or abs(height(b)-height(a))>0.17: return false
 	for v in [Vector3(.21,0,0),Vector3(-.21,0,0),Vector3(0,0,.21),Vector3(0,0,-.21)]:
 		if not valid(b+v,rid) or height(b+v)-height(b)>0.17: return false
 	return true
@@ -102,6 +119,7 @@ func build(parent: Node3D):
 	var m = raw.meshes[0]
 	var surface = SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	surface.set_smooth_group(-1)
 	for face in m.faces:
 		var rgb = face.color
 		var color = Color(rgb[0],rgb[1],rgb[2])
@@ -112,8 +130,12 @@ func build(parent: Node3D):
 		elif rgb[0]<0.2 and rgb[1]<0.1: color=Color('#4b20a5')
 		else: color=Color('#ff9d19') if rgb[0]>.5 else Color('#6030c9')
 		for t in range(int(face.first),int(face.last)+1):
+			var a=vec(m.positions,m.indices[t*3]);var b=vec(m.positions,m.indices[t*3+1]);var c=vec(m.positions,m.indices[t*3+2])
+			var normal=(b-a).cross(c-a).normalized()
+			# CAD faces have hard edges: keep risers and walls visually distinct.
+			var shade=color if normal.y>.8 else color.darkened(.28)
 			for j in [2,1,0]:
-				surface.set_color(color)
+				surface.set_color(shade)
 				surface.add_vertex(vec(m.positions,m.indices[t*3+j]))
 	surface.generate_normals()
 	var instance = MeshInstance3D.new()

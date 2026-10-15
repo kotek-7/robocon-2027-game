@@ -68,6 +68,43 @@ func _initialize():
 	check(m.context(0).is_empty(),'full TR cannot pick a fourth object')
 	m.reset('cpu');m.scores=[20,10];m.decide_winner()
 	check(m.winner==0,'higher score wins')
+	m.reset('free');m.active[0]=1;m.robots[1].p=f.stairs[0].a
+	check(not f.can_move(Vector3(-3.4,0,3),Vector3(-3.4,0,2.8),1),'driving cannot enter stair footprint')
+	m.robots[0].p=f.stairs[0].a
+	check(m.stair_context(0).is_empty(),'TR cannot use stair operation')
+	m.robots[0].p=Vector3(-4.8,0,4.9)
+	var climb=m.context(1)
+	check(climb.get('type','')=='climb' and climb.seconds==3.0,'GND to L1 has explicit three-second operation')
+	m.command(0,{'act':true},1.0/60)
+	m.step(1.0)
+	var during=m.robots[1].p
+	m.command(0,{'x':1,'z':1},.5)
+	check(m.robots[1].p==during,'steering cannot cancel or move a climbing robot')
+	var climbing_wire=JSON.parse_string(JSON.stringify(m.snapshot()));var restored=MatchState.new(f);restored.restore(climbing_wire)
+	check(restored.robots[1].job.to==f.stairs[0].b and restored.robots[1].left==2.0,'active stair operation survives network snapshot')
+	m.switch_robot(0);m.step(1.9)
+	check(not m.robots[1].job.is_empty(),'climb does not finish early after robot switch')
+	m.step(.11)
+	check(m.robots[1].p==f.stairs[0].b and m.robots[1].job.is_empty(),'inactive robot finishes at L1 landing')
+	check(m.stair_context(1).is_empty(),'L1 to GND descent remains forbidden')
+	m.active[0]=1;m.robots[1].p=f.stairs[2].a;m.robots[1].carry=[0,1]
+	climb=m.stair_context(1);m.begin(1,climb);m.step(2.01)
+	check(m.robots[1].p==f.stairs[2].b and m.robots[1].carry==[0,1],'two-second L2 ascent preserves full cargo')
+	m.begin(1,m.stair_context(1));m.step(2.01)
+	check(m.robots[1].p==f.stairs[2].a,'L2 to L1 uses timed descent')
+	m.begin(1,m.stair_context(1));m.step(.3);m.retry(1)
+	check(m.robots[1].job.is_empty() and m.robots[1].p.y==0,'retry releases a stair operation')
+	m.robots[1].p=f.stairs[0].a;m.robots[0].p=f.stairs[0].b
+	check(m.stair_context(1).is_empty(),'occupied landing prevents stair operation')
+	m.reset('cpu');m.robots[1].p=f.stairs[0].a;m.begin(1,m.stair_context(1));m.elapsed=179.9;m.step(.2)
+	check(m.finished and not m.robots[1].job.is_empty(),'buzzer stops an unfinished climb')
+	var view=Node3D.new();f.build(view)
+	var arrays=view.get_child(0).mesh.surface_get_arrays(0);var hard_top=false;var hard_side=false
+	for normal in arrays[Mesh.ARRAY_NORMAL]:
+		if normal.y>.999:hard_top=true
+		if abs(normal.y)<.001:hard_side=true
+	check(hard_top and hard_side,'CAD mesh retains flat top and vertical face normals')
+	view.free()
 	var ai=ArenaCPU.new();m.reset('cpu')
 	for i in range(10801):
 		m.command(1,ai.command(m,1,1.0/60),1.0/60);m.step(1.0/60)

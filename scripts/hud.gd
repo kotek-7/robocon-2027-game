@@ -57,11 +57,14 @@ func _draw():
 		var p=action_screen
 		tile(Rect2(p-Vector2(29,29),Vector2(58,58)),Color('#fffaf0'),29)
 		text(p+Vector2(-10,10),'A' if using_pad else 'E',26)
+		if action.type=='climb':
+			draw_polyline(PackedVector2Array([p+Vector2(-18,-42),p+Vector2(-6,-42),p+Vector2(-6,-51),p+Vector2(6,-51),p+Vector2(6,-60),p+Vector2(18,-60)]),Color('#20243e'),4,true)
+			text(p+Vector2(34,7),'%ds'%int(action.seconds),18,Color('#20243e'))
 		if action.type=='pick':
 			draw_line(p+Vector2(0,-43),p+Vector2(0,-60),Color('#fffaf0'),4,true)
 			draw_polyline(PackedVector2Array([p+Vector2(-6,-54),p+Vector2(0,-60),p+Vector2(6,-54)]),Color('#fffaf0'),3,true)
 	if not r.job.is_empty():
-		var fraction=1-r.left/(.65 if r.job.type in ['pick','drop','give'] else 1.1)
+		var fraction=1-r.left/(r.job.seconds if r.job.type=='climb' else .65 if r.job.type in ['pick','drop','give'] else 1.1)
 		draw_arc(Vector2(w/2,h/2+60),24,-PI/2,-PI/2+TAU*fraction,32,Color('#fffaf0'),5,true)
 	if disconnected: text(Vector2(w/2-80,120),'RECONNECTING',18,Color('#20243e'))
 

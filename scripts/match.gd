@@ -61,8 +61,8 @@ func command(team: int, cmd: Dictionary, dt: float):
 	var rid=int(active[team]); var r=robots[rid]
 	if cmd.has('select'): r.selected+=clampi(int(cmd.select),-1,1)
 	if cmd.get('retry',false): retry(rid)
+	if not r.job.is_empty():r.v=Vector3.ZERO;return
 	var dir=Vector3(float(cmd.get('x',0)),0,float(cmd.get('z',0))).limit_length(1.0)
-	if not r.job.is_empty(): dir=Vector3.ZERO
 	r.v=r.v.move_toward(dir*SPEED,ACCEL*dt)
 	if dir.length()>0.1: r.yaw=lerp_angle(r.yaw,atan2(-dir.x,-dir.z),min(1.0,dt*15))
 	var p: Vector3=r.p
@@ -121,7 +121,7 @@ func context(rid: int) -> Dictionary:
 			if objects[oid].face==team or objects[oid].lock>=0 or r.carry.size()>=capacity(rid): continue
 			if accessible(rid,field.spot_pos(s)) and (field.spots[s][3]!=2 or r.p.y>.85):
 				return {'type':'flip','object':oid,'spot':s,'p':field.spot_pos(s)}
-	if r.carry.size()>=capacity(rid): return {}
+	if r.carry.size()>=capacity(rid): return stair_context(rid)
 	var best={}; var distance=INF
 	for i in range(objects.size()):
 		var o=objects[i]
@@ -139,10 +139,35 @@ func context(rid: int) -> Dictionary:
 		if covered: continue
 		var d=r.p.distance_to(o.p)
 		if d<distance: distance=d;best={'type':'pick','object':i,'p':o.p}
-	return best
+	return best if not best.is_empty() else stair_context(rid)
+
+func stair_context(rid: int) -> Dictionary:
+	if rid%2==0 or finished or not robots[rid].job.is_empty():return {}
+	var r=robots[rid]
+	for i in range(field.stairs.size()):
+		var stair=field.stairs[i]
+		if stair.team!=int(rid/2):continue
+		for reverse in [false,true]:
+			if reverse and i<2:continue
+			var entry: Vector3=stair.b if reverse else stair.a
+			var landing: Vector3=stair.a if reverse else stair.b
+			if r.p.distance_to(entry)>.48:continue
+			var blocked=false
+			for j in range(robots.size()):
+				if j==rid or (mode=='free' and j>=2):continue
+				if robots[j].p.distance_to(landing)<.55 or robots[j].job.get('stair',-1)==i:blocked=true
+			if not blocked:return {'type':'climb','stair':i,'p':entry,'from':r.p,'to':landing,'seconds':stair.seconds}
+	return {}
 
 func begin(rid: int, job: Dictionary):
 	if job.is_empty() or not robots[rid].job.is_empty() or finished: return
+	if job.type=='climb':
+		var legal=stair_context(rid)
+		if legal.is_empty() or legal.stair!=job.stair or legal.to!=job.to:return
+		robots[rid].job=legal;robots[rid].left=legal.seconds;robots[rid].v=Vector3.ZERO
+		var direction: Vector3=legal.to-legal.from
+		robots[rid].yaw=atan2(-direction.x,-direction.z)
+		return
 	var oid=int(job.object)
 	if objects[oid].lock>=0: return
 	if job.has('spot'):
@@ -165,13 +190,25 @@ func step(dt: float):
 	for rid in range(robots.size()):
 		var r=robots[rid]
 		if r.job.is_empty(): continue
-		r.left-=dt
+		r.left=maxf(0,r.left-dt)
+		if r.job.type=='climb':
+			var progress=clampf(1-r.left/r.job.seconds,0,1)
+			var next: Vector3=r.job.from.lerp(r.job.to,progress)
+			next.y=field.height(next)
+			var blocked=false
+			for j in range(robots.size()):
+				if j!=rid and not (mode=='free' and j>=2) and robots[j].p.distance_to(next)<.49:blocked=true
+			if blocked:r.left+=dt;continue
+			r.p=next
 		if r.left<=0: complete(rid)
 	update_score()
 
 func complete(rid: int):
 	var r=robots[rid]; var j=r.job; var team=int(rid/2)
 	if j.is_empty(): return
+	if j.type=='climb':
+		r.p=j.to;r.upper=true;r.job={};r.left=0
+		return
 	var oid=int(j.object); var o=objects[oid]
 	match j.type:
 		'pick':
@@ -251,7 +288,8 @@ func snapshot() -> Dictionary:
 	var rs=[];var os=[]
 	for r in robots:
 		var d=r.duplicate(true);d.p=[r.p.x,r.p.y,r.p.z];d.v=[r.v.x,r.v.y,r.v.z]
-		if d.job.has('p'): d.job.p=[d.job.p.x,d.job.p.y,d.job.p.z]
+		for key in ['p','from','to']:
+			if d.job.has(key): d.job[key]=[d.job[key].x,d.job[key].y,d.job[key].z]
 		rs.append(d)
 	for o in objects:
 		var d=o.duplicate(true);d.p=[o.p.x,o.p.y,o.p.z];d.home=[o.home.x,o.home.y,o.home.z];os.append(d)
@@ -264,6 +302,7 @@ func restore(s: Dictionary):
 	for r in robots:
 		r.carry=r.carry.map(func(v): return int(v))
 		r.p=Vector3(r.p[0],r.p[1],r.p[2]);r.v=Vector3(r.v[0],r.v[1],r.v[2]);r.selected=int(r.selected)
-		if r.job.has('p'): r.job.p=Vector3(r.job.p[0],r.job.p[1],r.job.p[2])
+		for key in ['p','from','to']:
+			if r.job.has(key): r.job[key]=Vector3(r.job[key][0],r.job[key][1],r.job[key][2])
 	for o in objects:
 		o.p=Vector3(o.p[0],o.p[1],o.p[2]);o.home=Vector3(o.home[0],o.home[1],o.home[2]);o.holder=int(o.holder);o.lock=int(o.lock);o.spot=int(o.spot);o.owner=int(o.owner);o.face=int(o.face);o.slot=int(o.slot)

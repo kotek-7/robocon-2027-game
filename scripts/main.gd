@@ -32,6 +32,9 @@ var qa_clock=0.0
 var qa_enabled=false
 var camera_target=Vector3.ZERO
 var result_shown=false
+var stadium: ArenaStadium
+var shadows: Array=[]
+var last_jobs=[false,false,false,false]
 
 func _ready():
 	field=ArenaField.new();game=MatchState.new(field);game.reset('cpu')
@@ -42,12 +45,17 @@ func _ready():
 	if OS.has_feature('web'):
 		net.endpoint=str(JavaScriptBridge.eval("location.hostname==='localhost'||location.hostname==='127.0.0.1'?'ws://127.0.0.1:9080':`wss://${location.host}/ws`"))
 	field.build(self)
+	stadium=ArenaStadium.new();add_child(stadium)
 	art.box(self,Vector3(11.35,.35,11.35),Color('#6028c7'),Vector3(0,-.22,0))
-	var env=WorldEnvironment.new();var e=Environment.new();e.background_mode=Environment.BG_COLOR;e.background_color=Color('#12bfe7');e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color.WHITE;e.ambient_light_energy=.3;env.environment=e;add_child(env)
-	var light=DirectionalLight3D.new();light.rotation_degrees=Vector3(-55,-30,0);light.light_energy=.72;light.shadow_opacity=.45;light.shadow_enabled=true;light.directional_shadow_max_distance=28;add_child(light)
+	var env=WorldEnvironment.new();var e=Environment.new();e.background_mode=Environment.BG_COLOR;e.background_color=Color('#12bfe7');e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color.WHITE;e.ambient_light_energy=.38;env.environment=e;add_child(env)
+	var light=DirectionalLight3D.new();light.rotation_degrees=Vector3(-38,-38,0);light.light_energy=.85;light.shadow_opacity=.65;light.shadow_enabled=true;light.directional_shadow_max_distance=28;add_child(light)
 	camera=Camera3D.new();camera.fov=62;camera.near=.08;camera.far=80;add_child(camera)
 	for i in range(4):
 		var r=art.robot(i);add_child(r);robots.append(r)
+		var disc=CylinderMesh.new();disc.top_radius=.3;disc.bottom_radius=.3;disc.height=.002;disc.radial_segments=24
+		var shadow=art.mesh(self,disc,Color(0.1,.07,.2,.22),Vector3.ZERO)
+		var shadow_material=shadow.material_override.duplicate();shadow_material.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;shadow_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+		shadow.material_override=shadow_material;shadow.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;shadows.append(shadow)
 	for o in game.objects:
 		var n=art.object(o.kind,o.owner);add_child(n);items.append(n);last_states.append('')
 	var torus=TorusMesh.new();torus.inner_radius=.24;torus.outer_radius=.27;torus.rings=28;torus.ring_segments=8
@@ -227,6 +235,14 @@ func _process(dt):
 		var body=node.get_child(0)
 		body.rotation.x=lerpf(body.rotation.x,-r.v.length()*.035,1-exp(-12*dt))
 		body.position.y=sin(title_clock*12)*.012*r.v.length()
+		var climbing=r.job.get('type','')=='climb'
+		if climbing:
+			body.rotation.x=-.13 if r.job.to.y>r.job.from.y else .10
+			body.position.y=abs(sin(title_clock*10))*.035
+		if last_jobs[i] and not climbing and mode!='title':
+			stadium.burst(r.p+Vector3(0,.12,0),Color('#fffaf0'),8);tone(300,.1)
+		last_jobs[i]=climbing
+		shadows[i].position=Vector3(node.position.x,field.height(node.position)+.012,node.position.z);shadows[i].visible=node.visible
 		if mode=='title':body.position.y=sin(title_clock*2+i)*.035
 	for i in range(items.size()):
 		var o=game.objects[i];var node: Node3D=items[i]
@@ -237,7 +253,9 @@ func _process(dt):
 		node.position=node.position.lerp(pos,1-exp(-20*dt))
 		if o.kind=='S':node.rotation.z=lerp_angle(node.rotation.z,PI if o.face==1 else 0.0,1-exp(-12*dt))
 		if last_states[i]!=o.where:
-			if mode!='title' and last_states[i]!='':tone(650 if o.where=='tower' else 430,.065)
+			if mode!='title' and last_states[i]!='':
+				tone(650 if o.where=='tower' else 430,.065)
+				if o.where in ['tower','pillar','buffer']:stadium.burst(pos+Vector3(0,.15,0),ArenaVisuals.RED if o.owner==0 else ArenaVisuals.BLUE,24 if o.where=='pillar' else 12)
 			node.scale=Vector3(1.14,.86,1.14);last_states[i]=o.where
 		node.scale=node.scale.lerp(Vector3.ONE,1-exp(-12*dt))
 	var target: Vector3=game.robots[game.active[team]].p+Vector3(0,.45,0)
