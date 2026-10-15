@@ -6,13 +6,13 @@ Run date: 2026-10-15. Godot 4.7.2 Compatibility Web export, single-threaded. Lin
 
 `tests/run.gd`: 31 assertions passed. Checks cover CAD levels, territory and step boundaries, interaction reach, carrying limits, delivery accounting, tower scores and ownership, retained Mustika eligibility, action completion at the buzzer, simultaneous object/tower reservations, retry, robot switching, snapshot serialization and a full CPU match. The CPU reached Mustika and scored 905 against an idle opponent. This is a functional run, not an AI strength benchmark.
 
-## Online
+## Initial online baseline
 
 `tests/network.py` passed against the native Godot WebSocket server: create/join/ready, authoritative movement, shared state, stale-input stopping, token reconnection and a 30-second disconnection forfeit while the match clock continued.
 
 `tests/network_browser.py` passed with two Chromium clients using the visible menus: room creation, code entry, readiness, movement and synchronized positions/scores. Browser error list was empty. An online start opens the menu until the player clicks RESUME, allowing the browser to capture the mouse from a user gesture.
 
-`tests/network_rematch.py` completed a natural 180-second server match and verified that both players requesting AGAIN resets the match and score. Tests used localhost; Internet latency, TLS deployment and remote-device reconnect behavior have not been validated.
+`tests/network_rematch.py` completed a natural 180-second server match and verified that both players requesting AGAIN resets the match and score. These baseline tests used localhost. Public deployment checks are recorded below; remote-device reconnect behavior remains untested.
 
 ## Presentation and scope
 
@@ -34,4 +34,8 @@ The room-code UI was replaced with a compatible FIFO queue. The protocol rejects
 
 The new palette was inspected at 1280 × 720 and 960 × 600, with title, driving and overview captures in `build/qa/vivid-*.png`. Yellow platforms, cyan surroundings and saturated team colors replace the pastel palette; actionable targets use a white ring with a dark edge.
 
-GitHub Actions run 38677647486 passed the rule suite, matchmaking suite, Web export and Docker server check. Its deployment step stopped because the repository's Cloudflare API token was not yet configured. Public deployment and Internet matchmaking are not validated yet. A local Workers runtime served the gzip WebAssembly successfully; decompression reproduced the original binary byte for byte.
+GitHub Actions run [38678208335](https://github.com/kotek-7/robocon-2027-game/actions/runs/38678208335) passed the rule suite, matchmaking suite, Web export, Docker server check, Cloudflare deployment and public asset verification. The live endpoint is https://robocon2027.kotek7.com. Two public WSS clients matched successfully. The public, decompressed WebAssembly matched the build byte for byte.
+
+A fresh Chromium client reached the title without JavaScript or Godot errors. Its first WebAssembly download transferred 10,055,058 bytes including response overhead in 133.6 seconds on this desktop connection. The initial 60-second test timeout was too short. This is a cold-load measurement, separate from gameplay FPS.
+
+Two fresh Chromium clients then passed the full ONLINE UI check against the public URL: automatic pairing, direct robot movement, synchronized positions and scores, and zero browser errors. Captures and the report are `build/qa/online-production.png` and `build/qa/network-browser-production.json`. Public cold-load waits were extended to 240 seconds for this check.
