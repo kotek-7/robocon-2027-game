@@ -1,6 +1,6 @@
 # Audio and player identity
 
-Music and sound effects: **Koichi Morita / MaouDamashii (魔王魂)**, https://maou.audio/ . Used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); source terms: https://maou.audio/rule/ . The supplied BGM is [Fantasy 13](https://maou.audio/bgm_fantasy13/). Original files remain unchanged; playback applies gain, pitch and looping. `assets/audio/sources.json` records every URL and SHA-256.
+Music and sound effects: **Koichi Morita / MaouDamashii (魔王魂)**, https://maou.audio/ . Used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); source terms: https://maou.audio/rule/ . The BGM is [Neorock 44](https://maou.audio/bgm_neorock44/), using the official game-loop MP3. Original files remain unchanged; playback applies gain, pitch and looping. `assets/audio/sources.json` records every URL and SHA-256.
 
 | Source cue | Uses |
 | --- | --- |

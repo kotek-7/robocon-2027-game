@@ -76,9 +76,9 @@
       "sha256": "7a526e988ed58b4d032d580991dadfe490a33012c023ac24c77f449b95407d25"
     },
     {
-      "file": "maou_bgm_fantasy13.mp3",
-      "source": "https://maou.audio/bgm_fantasy13/",
-      "sha256": "f154534bca631836a2ee3c6af14f182b65c53759df877b401f2ed4b2806cd384"
+      "file": "maou_loop_bgm_neorock44.mp3",
+      "source": "https://maou.audio/sound/bgm/maou_loop_bgm_neorock44.mp3",
+      "sha256": "3a63b51069afd055ce2463818c08382f7c2dca2de0459e018f8b30cfdafc9bf9"
     }
   ]
 }
