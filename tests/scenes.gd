@@ -27,6 +27,7 @@ func check_scenes():
 	await physics_frame
 	await process_frame
 	assert(scene.hud.get_node('Finish').visible and not scene.result_shown)
+	assert(not scene.hud.get_node('Names').visible)
 	assert(scene.audio.cue_counts.get('finish',0)==1)
 	assert(scene.audio.match_start_delay.is_stopped())
 	await create_timer(scene.finish_remaining+.15).timeout

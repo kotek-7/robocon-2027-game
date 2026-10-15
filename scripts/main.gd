@@ -142,7 +142,7 @@ func panel(content: PackedScene):
 	menu=content.instantiate()
 	overlay.get_node('Center').add_child(menu)
 	menu.configure(touch_mode)
-	ui_open=true;Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
+	ui_open=true;hud.menu_open=true;hud.update_view();Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
 
 func bind_button(path: String, callback: Callable, cue='confirm') -> Button:
 	var node: Button=menu.get_node(path)
@@ -250,7 +250,7 @@ func close_menu():
 	if OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
 		pause_menu();return
 	if is_instance_valid(overlay):overlay.queue_free()
-	ui_open=false;pending.clear();capture_grace=.5;capture_confirmed=false
+	ui_open=false;hud.menu_open=false;pending.clear();capture_grace=.5;capture_confirmed=false
 	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if touch_mode else Input.MOUSE_MODE_CAPTURED
 	touch.reset();touch.visible=touch_mode
 
@@ -419,7 +419,7 @@ func _process(dt):
 		qa_clock+=dt
 		if qa_clock>.5:
 			qa_clock=0
-			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'robot_id':net.robot_id,'format':online_format,'nickname':profile.nickname,'names':hud.name_tags.map(func(tag):return tag.name),'audio':audio.cue_counts,'music_playing':audio.music.playing,'music_paused':audio.music.stream_paused,'motors':audio.motors.filter(func(player):return player.playing).size(),'audio_peak':AudioServer.get_bus_peak_volume_left_db(AudioServer.get_bus_index('Master'),0),'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
+			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'robot_id':net.robot_id,'format':online_format,'nickname':profile.nickname,'nameplates_visible':hud.get_node('Names').visible,'names':hud.name_tags.map(func(tag):return tag.name),'audio':audio.cue_counts,'music_playing':audio.music.playing,'music_paused':audio.music.stream_paused,'motors':audio.motors.filter(func(player):return player.playing).size(),'audio_peak':AudioServer.get_bus_peak_volume_left_db(AudioServer.get_bus_index('Master'),0),'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
 
 func qa_buttons() -> Array:
 	var out=[]

@@ -20,6 +20,7 @@ var action={}
 var name_tags=[]
 var action_screen=Vector2.ZERO
 var title=false
+var menu_open=true
 var touch_mode=false
 var using_pad=false
 var disconnected=false
@@ -27,7 +28,7 @@ var disconnected=false
 func update_view():
 	$Desktop.visible=not title and not touch_mode and match_state!=null
 	$Mobile.visible=not title and touch_mode and match_state!=null
-	$Names.visible=not title
+	$Names.visible=not title and not menu_open and match_state!=null and not match_state.finished
 	if title or not match_state:return
 	var layout=$Mobile if touch_mode else $Desktop
 	var m=match_state

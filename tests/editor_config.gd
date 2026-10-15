@@ -31,10 +31,14 @@ func run():
 		check(scene.hud.get_node('Mobile').visible==compact and scene.hud.get_node('Desktop').visible!=compact,'HUD selects its saved responsive layout')
 		scene.pause_menu();await process_frame
 		check(scene.menu.get_node('Reset').visible,'local pause offers reset')
+		check(not scene.hud.get_node('Names').visible,'pause hides nameplates')
+		scene.close_menu();await process_frame
+		check(scene.hud.get_node('Names').visible,'resume restores nameplates')
 		scene.mode='online';scene.pause_menu();await process_frame
 		check(not scene.menu.get_node('Reset').visible,'online pause hides local reset')
 		scene.game.winner=0;scene.results();await process_frame
 		check(scene.menu.get_node('Heading').text=='YOU WIN','result scene receives live state')
+		check(not scene.hud.get_node('Names').visible,'results hide nameplates')
 	scene.start('free');scene.touch_mode=true;scene.touch.visible=true
 	var action_button=scene.touch.get_node('Buttons/act')
 	action_button.position-=Vector2(60,0)
