@@ -61,7 +61,11 @@ func switch_robot(team: int):
 func command(team: int, cmd: Dictionary, dt: float):
 	if finished or team<0 or team>1: return
 	if cmd.get('switch',false): switch_robot(team)
-	var rid=int(active[team]); var r=robots[rid]
+	command_robot(int(active[team]),cmd,dt)
+
+func command_robot(rid: int, cmd: Dictionary, dt: float):
+	if finished or rid<0 or rid>=robots.size():return
+	var r=robots[rid]
 	if cmd.has('select'): r.selected+=clampi(int(cmd.select),-1,1)
 	if cmd.get('retry',false): retry(rid)
 	if not r.job.is_empty():r.v=Vector3.ZERO;return

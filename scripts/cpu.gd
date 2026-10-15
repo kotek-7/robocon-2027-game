@@ -7,7 +7,7 @@ var stuck=0.0
 var previous=Vector3.ZERO
 var next_flip=0.0
 
-func command(m: MatchState, team: int, dt: float) -> Dictionary:
+func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictionary:
 	var tr=team*2;var br=tr+1
 	var buffer=[]
 	for i in range(m.objects.size()):
@@ -31,7 +31,8 @@ func command(m: MatchState, team: int, dt: float) -> Dictionary:
 	if rid==tr and not parking and (not m.robots[tr].job.is_empty() or m.robots[tr].carry.is_empty()) and br_work and m.robots[br].job.is_empty(): rid=br
 	elif rid==br and (not m.robots[br].job.is_empty() or not br_work) and m.robots[tr].job.is_empty(): rid=tr
 	if flip_spot>=0 and m.robots[br].job.is_empty():rid=br
-	var cmd={'switch':rid!=m.active[team],'x':0.0,'z':0.0}
+	if fixed_rid>=0:rid=fixed_rid
+	var cmd={'switch':fixed_rid<0 and rid!=m.active[team],'x':0.0,'z':0.0}
 	var r=m.robots[rid]
 	if not r.job.is_empty(): return cmd
 	var target=Vector3(999,999,999)
@@ -71,6 +72,7 @@ func command(m: MatchState, team: int, dt: float) -> Dictionary:
 		elif flip_spot>=0:target=m.field.spot_pos(flip_spot)
 		elif not buffer.is_empty(): target=m.objects[buffer[0]].p
 		else:
+			target=m.field.transfer(team)+Vector3(.65 if team==0 else -.65,0,0)
 			for s in range(m.towers.size()):
 				if m.towers[s].size()==3 and m.objects[m.towers[s][2]].face!=team and m.field.spots[s][4]==-1:
 					target=m.field.spot_pos(s);break

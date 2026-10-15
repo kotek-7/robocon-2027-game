@@ -137,5 +137,23 @@ func _initialize():
 	check(m.scores[1]>30,'CPU constructs towers without debug positioning')
 	check(m.mandate[1] and m.objects[52].where=='pillar','CPU continues through multiple towers and Mustika')
 	print('CPU SCORE ',m.scores,' active ',m.active,' positions ',m.robots[2].p,' ',m.robots[3].p)
+	m.reset('cpu')
+	var pilots=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()]
+	var human_start: Vector3=m.robots[0].p
+	for tick in range(360):
+		for rid in [1,2,3]:m.command_robot(rid,pilots[rid].command(m,int(rid/2),1.0/60,rid),1.0/60)
+		m.step(1.0/60)
+	check(m.robots[0].p==human_start and m.active[0]==0,'partner AI never moves or switches the human robot')
+	check(m.robots[1].p.distance_to(Vector3(-4.05,0,4.9))>.5,'idle BR partner approaches transfer area')
+	m.switch_robot(0);var br_start: Vector3=m.robots[1].p
+	for tick in range(120):
+		m.command_robot(0,pilots[0].command(m,0,1.0/60,0),1.0/60);m.step(1.0/60)
+	check(m.robots[0].p.distance_to(human_start)>.5 and m.robots[1].p==br_start and m.active[0]==1,'switch hands TR to AI and BR to human')
+	m.reset('cpu');pilots=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()]
+	for tick in range(10801):
+		for rid in [2,3]:m.command_robot(rid,pilots[rid].command(m,1,1.0/60,rid),1.0/60)
+		m.step(1.0/60)
+	print('DUAL CPU SCORE ',m.scores)
+	check(m.finished and m.scores[1]>100,'two simultaneous CPU pilots complete a match and construct towers')
 	print('RESULT ',checks-failed,'/',checks)
 	quit(1 if failed else 0)

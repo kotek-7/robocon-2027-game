@@ -2,6 +2,8 @@ class_name ArenaHUD
 extends Control
 var match_state: MatchState
 var team=0
+var can_switch=true
+var partner_cpu=false
 var action={}
 var action_screen=Vector2.ZERO
 var title=false
@@ -36,7 +38,8 @@ func _draw():
 	var rid=int(m.active[team]);var r=m.robots[rid]
 	tile(Rect2(28,h-96,240,68),Color('#fffaf0'))
 	text(Vector2(47,h-49),'TR' if rid%2==0 else 'BR',30)
-	text(Vector2(49,h-76),'Y' if using_pad else 'Q',13,Color('#433074'))
+	if can_switch:text(Vector2(49,h-76),'Y' if using_pad else 'Q',13,Color('#433074'))
+	if partner_cpu:text(Vector2(43,h-108),('BR' if rid%2==0 else 'TR')+' · CPU',16)
 	for i in range(m.capacity(rid)):
 		var p=Vector2(130+i*43,h-62)
 		draw_circle(p,17,Color('#c6cee8'))
@@ -74,6 +77,7 @@ func control_legend(origin: Vector2):
 	var ink=Color('#25204e')
 	var keys=['LS','A','Y','LT'] if using_pad else ['WASD','E','Q','TAB']
 	for i in range(4):
+		if i==2 and not can_switch:continue
 		var p=origin+Vector2(i*88,0)
 		match i:
 			0:
@@ -106,6 +110,7 @@ func draw_touch_hud():
 	tile(Rect2(w/2-48,12,96,46),Color('#fffaf0'),14);text(Vector2(w/2-34,43),clock,24)
 	var rid=int(m.active[team]);var r=m.robots[rid]
 	text(Vector2(18,84),'TR' if rid%2==0 else 'BR',20)
+	if partner_cpu:text(Vector2(18,110),('BR' if rid%2==0 else 'TR')+' · CPU',14)
 	for i in range(m.capacity(rid)):
 		var p=Vector2(62+i*25,78);draw_circle(p,10,Color('#c6cee8'))
 		if i<r.carry.size():

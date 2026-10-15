@@ -1,20 +1,27 @@
-"""A complete authoritative match and mutual rematch, without changing its clock."""
-import asyncio,json,websockets
+"""A natural 180-second match and unanimous rematch (1v1 or 2v2)."""
+import asyncio,json,sys,websockets
+from contextlib import AsyncExitStack
+from network_helpers import enqueue,receive
 async def send(ws,**d):await ws.send(json.dumps(d))
 async def until(ws,predicate):
  async for raw in ws:
   d=json.loads(raw)
   if predicate(d):return d
 async def main():
- async with websockets.connect('ws://127.0.0.1:9080') as a, websockets.connect('ws://127.0.0.1:9080') as b:
-  from network_helpers import match_pair
-  await match_pair(a,b)
-  await send(a,type='ready');await send(b,type='ready')
+ format='2v2' if '--2v2' in sys.argv else '1v1'
+ async with AsyncExitStack() as stack:
+  players=[await stack.enter_async_context(websockets.connect('ws://127.0.0.1:9080')) for _ in range(4 if format=='2v2' else 2)]
+  for p in players:await enqueue(p,format=format)
+  await asyncio.gather(*(receive(p,'joined') for p in players))
+  for p in players:await send(p,type='ready')
   async with asyncio.timeout(190):
-   await asyncio.gather(until(a,lambda d:d['type']=='state' and d['state']['finished']),until(b,lambda d:d['type']=='state' and d['state']['finished']))
-  await send(a,type='rematch');await send(b,type='rematch')
+   await asyncio.gather(*(until(p,lambda d:d['type']=='state' and d['state']['finished']) for p in players))
+  for p in players[:-1]:await send(p,type='rematch')
+  # No reset before the final player's consent.
+  d=await until(players[-1],lambda d:d['type']=='state');assert d['state']['finished']
+  await send(players[-1],type='rematch')
   async with asyncio.timeout(5):
-   sa,sb=await asyncio.gather(until(a,lambda d:d['type']=='state' and not d['state']['finished']),until(b,lambda d:d['type']=='state' and not d['state']['finished']))
-  assert sa['state']['elapsed']<2 and sb['state']['scores']==[0,0]
-  print('PASS: natural 180-second online match and mutual rematch')
+   states=await asyncio.gather(*(until(p,lambda d:d['type']=='state' and not d['state']['finished']) for p in players))
+  assert all(d['state']['elapsed']<2 and d['state']['scores']==[0,0] for d in states)
+  print('PASS:',format,'natural 180-second online match and unanimous rematch')
 asyncio.run(main())

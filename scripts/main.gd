@@ -1,7 +1,9 @@
 extends Node3D
 var field: ArenaField
 var game: MatchState
-var cpu=ArenaCPU.new()
+var drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()]
+var previous_human=-1
+var online_format='1v1'
 var art=ArenaVisuals.new()
 var net: ArenaNetwork
 var camera: Camera3D
@@ -151,7 +153,7 @@ func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
 
 func show_title():
 	mode='title';net.leave();game.reset('cpu');panel();hud.title=true;result_shown=false
-	var logo=ArenaTitle.new();logo.compact=touch_mode;logo.custom_minimum_size=Vector2(320,110 if touch_mode else 210);menu.add_child(logo)
+	var logo=ArenaTitle.new();logo.compact=touch_mode;logo.custom_minimum_size=Vector2(370 if touch_mode else 540,132 if touch_mode else 260);menu.add_child(logo)
 	button('VS CPU',func(): start('cpu'),Color('#ffda16')).grab_focus()
 	button('ONLINE',show_online)
 	button('FREE',func(): start('free'))
@@ -160,23 +162,29 @@ func show_title():
 	note.custom_minimum_size=Vector2(48,40);note.icon=load('res://assets/info.svg');note.add_theme_constant_override('icon_max_width',22)
 
 func show_notes():
-	panel();label('TR + BR',30);label('Both robots are manually controlled.',16)
+	panel();label('TR + BR',30);label('VS CPU: partner on autopilot.',16)
 	label('ABU 2027 / v1.1',16)
 	button('BACK',show_title)
 
 func show_online():
-	mode='title';hud.title=true;net.leave();panel();label('ONLINE',42);info=label('CONNECTING',22)
-	button('CANCEL',show_title).grab_focus();net.connect_to(net.endpoint)
+	mode='title';hud.title=true;net.leave();panel();label('ONLINE',42)
+	button('1 vs 1',func():search_online('1v1'),Color('#ffda16')).grab_focus()
+	button('2 vs 2',func():search_online('2v2'))
+	button('BACK',show_title)
+
+func search_online(format: String):
+	online_format=format;panel();label('1 vs 1' if format=='1v1' else '2 vs 2',42);info=label('CONNECTING',22)
+	button('CANCEL',show_online).grab_focus();net.connect_to(net.endpoint)
 
 func network_message(d: Dictionary):
 	match d.type:
-		'connected':net.find_match()
+		'connected':net.find_match(online_format)
 		'queued':
-			if is_instance_valid(info):info.text='FINDING PLAYER'
+			if is_instance_valid(info):info.text='FINDING PLAYERS' if online_format=='2v2' else 'FINDING PLAYER'
 		'joined':
 			team=int(d.team)
 			if mode!='online':
-				panel();label('MATCH FOUND',40);info=label('',18);net.send({'type':'ready'})
+				panel();label('MATCH FOUND',40);info=label(('TR' if net.robot_id%2==0 else 'BR') if net.robot_id>=0 else '',18);net.send({'type':'ready'})
 			hud.disconnected=false
 		'ready':
 			if d.started: start('online')
@@ -184,13 +192,17 @@ func network_message(d: Dictionary):
 			if mode!='online': start('online')
 			# Authoritative correction; presentation interpolates the resulting poses.
 			game.restore(d.state)
+			if net.robot_id>=0:game.active[team]=net.robot_id
 		'lost': hud.disconnected=true
 		'error':
 			net.leave();panel();label(str(d.text),24);button('RETRY',show_online);button('BACK',show_title)
 
 func start(which: String):
-	mode=which;game.reset(which);cpu=ArenaCPU.new();pending.clear();result_shown=false
+	mode=which;game.reset(which);drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];previous_human=-1;pending.clear();result_shown=false
 	if which!='online':team=0
+	elif net.robot_id>=0:game.active[team]=net.robot_id
+	hud.can_switch=which!='online' or net.robot_id<0;touch.can_switch=hud.can_switch
+	hud.partner_cpu=which=='cpu'
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
 	camera_target=game.robots[game.active[team]].p+Vector3(0,.4,0)
@@ -278,14 +290,20 @@ func _physics_process(dt):
 		if gamepad_pressed(JOY_BUTTON_LEFT_SHOULDER):cmd.select=-1
 		if gamepad_pressed(JOY_BUTTON_RIGHT_SHOULDER):cmd.select=1
 		overview=touch.overview if touch_mode else (Input.is_physical_key_pressed(KEY_TAB) or Input.get_joy_axis(0,JOY_AXIS_TRIGGER_LEFT)>.5)
+	if not hud.can_switch:cmd.erase('switch')
 	if mode=='online':
 		net.input(cmd)
 		if not ui_open and not landscape_required and net.connected:
 			# Predict locomotion only. Object operations always await authority.
-			game.command(team,{'x':cmd.get('x',0),'z':cmd.get('z',0)},dt)
+			game.command_robot(int(game.active[team]),{'x':cmd.get('x',0),'z':cmd.get('z',0)},dt)
 	elif not ui_open and not landscape_required:
 		game.command(team,cmd,dt)
-		if mode=='cpu':game.command(1,cpu.command(game,1,dt),dt)
+		if mode=='cpu':
+			var human=int(game.active[team])
+			if human!=previous_human:
+				drivers[1-human]=ArenaCPU.new();previous_human=human
+			for rid in range(4):
+				if rid!=human:game.command_robot(rid,drivers[rid].command(game,int(rid/2),dt,rid),dt)
 		game.step(dt)
 
 func _process(dt):
@@ -358,7 +376,7 @@ func _process(dt):
 		qa_clock+=dt
 		if qa_clock>.5:
 			qa_clock=0
-			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
+			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'robot_id':net.robot_id,'format':online_format,'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
 
 func tone(frequency: float, length: float):
 	if tones.has(frequency):sound.stream=tones[frequency];sound.play();return

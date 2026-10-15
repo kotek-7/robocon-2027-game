@@ -10,6 +10,7 @@ var endpoint='ws://127.0.0.1:9080'
 var room_code=''
 var token=''
 var team=0
+var robot_id=-1
 var connected=false
 var server_mode=false
 var field: ArenaField
@@ -19,8 +20,8 @@ var reconnect_until=0.0
 var client_seq=0
 var latest_seq={}
 var server_id=1
-const PROTOCOL = 'robocon2027-v2'
-const RULESET = 'abu2027-v1.1-fixed-r3'
+const PROTOCOL = 'robocon2027-v3'
+const RULESET = 'abu2027-v1.1-fixed-r4'
 var queue: Array=[]
 var ticket=''
 var connect_clock=0.0
@@ -48,14 +49,14 @@ func _process(dt):
 		while server.is_connection_available():
 			var stream=server.take_connection()
 			if peers.size()>=128:stream.disconnect_from_host();continue
-			var ws=WebSocketPeer.new();ws.accept_stream(stream);peers[server_id]={'ws':ws,'room':'','team':-1,'ticket':'','revision':0,'queued_at':0.0};server_id+=1
+			var ws=WebSocketPeer.new();ws.accept_stream(stream);peers[server_id]={'ws':ws,'room':'','team':-1,'seat':-1,'format':'1v1','ticket':'','revision':0,'queued_at':0.0};server_id+=1
 		for id in peers.keys():
 			var p=peers[id];p.ws.poll()
 			if p.ws.get_ready_state()==WebSocketPeer.STATE_CLOSED:
 				queue.erase(id);latest_seq.erase(id)
 				if rooms.has(p.room) and p.team>=0:
 					var room=rooms[p.room]
-					if room.ids[p.team]==id: room.ids[p.team]=0;room.deadline[p.team]=Time.get_ticks_msec()/1000.0+30;inputs.erase(id)
+					if room.ids[p.seat]==id: room.ids[p.seat]=0;room.deadline[p.seat]=Time.get_ticks_msec()/1000.0+30;inputs.erase(id)
 				peers.erase(id);continue
 			var packets=0
 			while p.ws.get_available_packet_count()>0 and packets<32:
@@ -82,7 +83,7 @@ func _process(dt):
 			while client.get_available_packet_count()>0:
 				var data=JSON.parse_string(client.get_packet().get_string_from_utf8())
 				if not data is Dictionary: continue
-				if data.get('type')=='joined': room_code=data.room;token=data.token;team=int(data.team);reconnect_until=0
+				if data.get('type')=='joined': room_code=data.room;token=data.token;team=int(data.team);robot_id=int(data.robot_id);reconnect_until=0
 				message.emit(data)
 		elif client.get_ready_state()==WebSocketPeer.STATE_CLOSED:
 			if connected:
@@ -101,16 +102,23 @@ func _physics_process(dt):
 	for code in rooms.keys():
 		var room=rooms[code]
 		var now=Time.get_ticks_msec()/1000.0
-		if room.ids==[0,0] and now>max(room.deadline[0],room.deadline[1]): rooms.erase(code);continue
+		if room.ids.all(func(id):return id==0) and now>room.deadline.max():rooms.erase(code);continue
+		if not room.started and now-room.created>45:
+			for id in room.ids:
+				emit_to(id,{'type':'error','text':'Match expired'})
+				if peers.has(id):peers[id].ws.close()
+			rooms.erase(code);continue
 		if not room.started: continue
 		var m: MatchState=room.match
-		for t in range(2):
-			var id=room.ids[t]
-			if id==0 and room.deadline[t]>0 and now>room.deadline[t] and not m.finished:
+		for seat in range(room.ids.size()):
+			var t=seat%2
+			var id=room.ids[seat]
+			if id==0 and room.deadline[seat]>0 and now>room.deadline[seat] and not m.finished:
 				m.finished=true;m.winner=1-t; room.reason='disconnect'
 			var cmd=inputs.get(id,{}).duplicate()
 			if now-cmd.get('at',0)>0.25: cmd={}
-			m.command(t,cmd,dt)
+			if room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
+			else:m.command(t,cmd,dt)
 			if inputs.has(id):
 				for key in ['act','switch','retry','select']: inputs[id].erase(key)
 		m.step(dt)
@@ -130,13 +138,15 @@ func handle(id: int, d: Dictionary):
 			if not d.get('revision',0) is float and not d.get('revision',0) is int:return
 			if d.get('protocol')!=PROTOCOL or d.get('ruleset')!=RULESET:
 				emit_to(id,{'type':'error','text':'Reload to update'});return
+			var format=str(d.get('format','1v1'))
+			if format not in ['1v1','2v2']:emit_to(id,{'type':'error','text':'Invalid format'});return
 			var requested=str(d.get('ticket',''))
 			var revision=int(d.get('revision',0))
 			if requested.length()<8 or requested.length()>64 or revision<1:return
 			if p.ticket==requested and revision<=p.revision:
 				if id in queue:emit_to(id,{'type':'queued','ticket':requested,'revision':revision})
 				return
-			queue.erase(id);p.ticket=requested;p.revision=revision;p.queued_at=Time.get_ticks_msec()/1000.0
+			queue.erase(id);p.format=format;p.ticket=requested;p.revision=revision;p.queued_at=Time.get_ticks_msec()/1000.0
 			queue.append(id);emit_to(id,{'type':'queued','ticket':requested,'revision':revision})
 			match_waiting()
 		'cancel':
@@ -147,27 +157,27 @@ func handle(id: int, d: Dictionary):
 			var code=str(d.get('room',''))
 			if p.room!='' or not rooms.has(code): return
 			var room=rooms[code]
-			for t in range(2):
-				if str(d.get('token',''))==room.tokens[t] and room.ids[t]==0 and Time.get_ticks_msec()/1000.0<room.deadline[t]:
-					room.ids[t]=id;join(id,code,t);return
+			for seat in range(room.ids.size()):
+				if str(d.get('token',''))==room.tokens[seat] and room.ids[seat]==0 and Time.get_ticks_msec()/1000.0<room.deadline[seat]:
+					queue.erase(id);room.ids[seat]=id;join(id,code,seat);return
 		'ready':
 			if not rooms.has(p.room): return
 			var room=rooms[p.room]
 			if room.started: return
-			room.ready[p.team]=true
-			if room.ready==[true,true] and room.ids[0]!=0 and room.ids[1]!=0: room.started=true
+			room.ready[p.seat]=true
+			if room.ready.all(func(value):return value) and not room.ids.has(0): room.started=true
 			for pid in room.ids: emit_to(pid,{'type':'ready','ready':room.ready,'started':room.started})
 		'rematch':
 			if not rooms.has(p.room):return
 			var room=rooms[p.room]
-			if not room.match.finished or room.ids[0]==0 or room.ids[1]==0:return
-			if not room.has('again'):room.again=[false,false]
-			room.again[p.team]=true
-			if room.again==[true,true]:
-				room.match.reset('online');room.reason='';room.again=[false,false]
+			if not room.match.finished or room.ids.has(0):return
+			if not room.has('again'):room.again=[];room.again.resize(room.ids.size());room.again.fill(false)
+			room.again[p.seat]=true
+			if room.again.all(func(value):return value):
+				room.match.reset('online');room.reason='';room.again.fill(false)
 				for pid in room.ids:
 					inputs.erase(pid)
-					emit_to(pid,{'type':'ready','ready':[true,true],'started':true})
+					emit_to(pid,{'type':'ready','ready':room.ready,'started':true})
 		'input':
 			if not rooms.has(p.room) or not rooms[p.room].started or not d.get('cmd') is Dictionary: return
 			if not d.get('seq',0) is float and not d.get('seq',0) is int:return
@@ -186,24 +196,30 @@ func handle(id: int, d: Dictionary):
 		'leave':
 			p.ws.close()
 
-func join(id: int, code: String, t: int):
-	peers[id].room=code;peers[id].team=t
-	emit_to(id,{'type':'joined','room':code,'team':t,'token':rooms[code].tokens[t]})
+func join(id: int, code: String, seat: int):
+	var room=rooms[code];var t=seat%2
+	peers[id].room=code;peers[id].team=t;peers[id].seat=seat
+	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':t*2+int(seat/2) if room.format=='2v2' else -1,'token':room.tokens[seat]})
 
 func match_waiting():
-	while queue.size()>=2 and rooms.size()<32:
-		var a=int(queue.pop_front());var b=int(queue.pop_front())
-		if not peers.has(a) or not peers.has(b):continue
-		var code=Crypto.new().generate_random_bytes(12).hex_encode()
-		var m=MatchState.new(field);m.reset('online')
-		rooms[code]={'match':m,'ids':[a,b],'tokens':[Crypto.new().generate_random_bytes(16).hex_encode(),Crypto.new().generate_random_bytes(16).hex_encode()],'ready':[false,false],'started':false,'deadline':[0.0,0.0],'reason':''}
-		join(a,code,0);join(b,code,1)
+	for format in ['1v1','2v2']:
+		var count=2 if format=='1v1' else 4
+		var waiting=queue.filter(func(id):return peers.has(id) and peers[id].format==format)
+		while waiting.size()>=count and rooms.size()<32:
+			var ids=[];var tokens=[];var ready=[];var deadline=[]
+			for seat in range(count):
+				var id=int(waiting.pop_front());queue.erase(id);ids.append(id)
+				tokens.append(Crypto.new().generate_random_bytes(16).hex_encode());ready.append(false);deadline.append(0.0)
+			var code=Crypto.new().generate_random_bytes(12).hex_encode()
+			var m=MatchState.new(field);m.reset('online')
+			rooms[code]={'match':m,'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
+			for seat in range(count):join(ids[seat],code,seat)
 
-func find_match():
+func find_match(format: String = '1v1'):
 	ticket=Crypto.new().generate_random_bytes(16).hex_encode()
-	send({'type':'queue','ticket':ticket,'revision':1,'protocol':PROTOCOL,'ruleset':RULESET})
+	send({'type':'queue','ticket':ticket,'revision':1,'protocol':PROTOCOL,'ruleset':RULESET,'format':format})
 
 func leave():
 	if not ticket.is_empty():send({'type':'cancel','ticket':ticket,'revision':2})
 	if client: client.close()
-	client=null;connected=false;token='';room_code='';ticket=''
+	client=null;connected=false;token='';room_code='';ticket='';robot_id=-1

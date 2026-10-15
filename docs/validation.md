@@ -69,3 +69,15 @@ The title uses outlined Fredoka lettering, a gold Mustika and cyan/gold subtitle
 The touch regression passed again at 844 × 390 and 390 × 844, including simultaneous move/look, pickup, switching, portrait blocking and fullscreen, with zero browser errors. The compact title and menu fit the landscape viewport. Mobile checks use Chromium emulation; physical phones remain untested.
 
 Firefox 157 smoke checks passed for movement and robot switching, with a 60fps sample and zero browser errors. CD run [38703601485](https://github.com/kotek-7/robocon-2027-game/actions/runs/38703601485) deployed commit `9c6ad6b` and passed public asset verification. The public HTML serves the full title, and two public WSS clients matched with ruleset r3. The first connection attempt timed out during container startup; a subsequent attempt with a 40-second opening timeout succeeded.
+
+## CPU partner and online team formats
+
+The rule suite passes 57/57 checks. Fixed robot commands share the existing movement and action validation. Added checks verify that a CPU partner leaves the human-controlled robot alone, approaches the transfer area as BR, takes over TR after switching, and completes a 180-second match with two simultaneous opposing pilots (605 points).
+
+`tests/modes_browser.py` passed with four headed Chromium clients and zero browser errors: CPU partner movement, Q handoff, selection of the 2v2 queue, four unique robot assignments, BR movement on both teams, ignored switch requests in 2v2, and synchronized positions. The title is captured at 1280 × 720 with 80px primary lettering and a 540px menu width. The mobile title uses 42px lettering and a 370px menu width.
+
+`tests/teams_network.py` passed against the headless server: separate 1v1/2v2 queues, all four ready acknowledgements, fixed seat authority despite a forged robot ID, reconnect to the same BR, and team forfeit after a disconnected seat's grace expires. This test also runs in CD. Queued and assigned sessions continue to use the existing cancellation revisions and reconnect tokens.
+
+The existing 1v1 protocol and two-browser movement/synchronization checks also passed through the new format picker. Chromium mobile emulation at 844 × 390 and 390 × 844 passed the touch suite with the enlarged title, including simultaneous input, pickup, portrait gating and fullscreen. These checks do not cover physical phone performance.
+
+`tests/network_rematch.py --2v2` completed a natural 180-second four-player match, verified that three votes do not reset it, and confirmed a fresh match with zero scores after the fourth vote.

@@ -4,6 +4,7 @@ signal action(name: String)
 signal look(delta: Vector2)
 var movement=Vector2.ZERO
 var overview=false
+var can_switch=true
 var landscape_required=false
 var fullscreen_supported=true
 var move_id=-1
@@ -27,6 +28,7 @@ func layout():
 	buttons={'act':Rect2(w-92,h-104,72,72),'switch':Rect2(w-82,h-178,60,52),
 		'previous':Rect2(w-208,h-82,48,48),'next':Rect2(w-150,h-82,48,48),
 		'menu':Rect2(w-62,76,44,44),'overview':Rect2(w-118,76,44,44),'fullscreen':Rect2(w-174,76,44,44)}
+	if not can_switch:buttons.erase('switch')
 
 func _input(event):
 	if not visible:return

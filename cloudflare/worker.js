@@ -9,7 +9,7 @@ export class ArenaServer extends Container {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/health') return Response.json({ status: 'ok', protocol: 'robocon2027-v2' });
+    if (url.pathname === '/health') return Response.json({ status: 'ok', protocol: 'robocon2027-v3' });
     if (url.pathname === '/ws') {
       if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') return new Response('WebSocket required', { status: 426 });
       const origin = request.headers.get('Origin');

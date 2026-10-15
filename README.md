@@ -20,7 +20,7 @@ WASD moves relative to the camera. Mouse orbits; when pointer lock is unavailabl
 
 Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, TR/BR switches robots, < and > select cargo. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
 
-VS CPU uses the same fixed robot performance and one active driver per team. FREE has no opponent or time limit. ONLINE searches for another player automatically. Compatible clients are paired in arrival order; CANCEL leaves the queue. Search times out after two minutes. Both players can request a rematch after the result.
+VS CPU assigns the other friendly robot to a CPU partner; switching robots hands the previous robot to that partner. Both opposing robots run simultaneously, with identical robot performance. FREE has no opponent or time limit. ONLINE offers separate 1 vs 1 and 2 vs 2 queues. In 1 vs 1, each player switches between their team’s robots; the inactive robot waits. In 2 vs 2, four players each drive one assigned TR or BR. Assignments alternate teams, with TR seats filled first. CANCEL leaves the queue; search times out after two minutes. A rematch requires every player.
 
 ## Delivery
 
@@ -40,14 +40,16 @@ godot --headless --path . --script tests/run.gd
 # With the room server running, in an environment containing websockets:
 python tests/matchmaking.py
 python tests/network.py
+python tests/teams_network.py
 # With Playwright and the Web build served on 8087:
 python tests/browser.py
 python tests/network_browser.py
-python tests/network_rematch.py
+python tests/network_rematch.py --2v2
 python tests/gamepad_browser.py
 python tests/firefox_browser.py
 python tests/touch_browser.py
 python tests/fixes_browser.py
+python tests/modes_browser.py
 ```
 
 The browser harness uses `?qa=1` for read-only state and UI bounds. It sends keyboard/mouse inputs; it cannot alter match state through that interface. Browser evidence is written under `build/qa`. Run browser checks sequentially because changing the foreground window pauses local play. The harness currently uses the local Playwright Chromium path; adjust it for another machine. The gamepad check injects Gamepad API inputs, not match state.
