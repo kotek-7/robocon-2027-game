@@ -122,7 +122,10 @@ func _physics_process(dt):
 				m.finished=true;m.winner=1-t; room.reason='disconnect'
 			var cmd=inputs.get(id,{}).duplicate()
 			if now-cmd.get('at',0)>0.25: cmd={}
-			if room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
+			if room.cpu_seats[seat]:
+				var rid=t*2+int(seat/2)
+				m.command_robot(rid,room.drivers[rid].command(m,t,dt,rid),dt)
+			elif room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
 			else:m.command(t,cmd,dt)
 			if room.format=='1v1':
 				var human=int(m.active[t])
@@ -164,22 +167,20 @@ func handle(id: int, d: Dictionary):
 			if p.room!='':return
 			if d.get('protocol')!=PROTOCOL or d.get('ruleset')!=RULESET:
 				emit_to(id,{'type':'error','text':'Reload to update'});return
-			var format=str(d.get('format',''))
-			if format not in ['1v1','2v2']:emit_to(id,{'type':'error','text':'Invalid format'});return
+			var format='2v2'
 			var code=str(d.get('room','')).strip_edges().to_upper()
 			if d.type=='create_room':
-				if rooms.size()>=32:emit_to(id,{'type':'error','text':'サーバーが満員です'});return
+				if rooms.size()>=32:emit_to(id,{'type':'error','text':'Server full'});return
 				code=create_room(format,true)
 			if not rooms.has(code) or not rooms[code].get('private',false):
-				emit_to(id,{'type':'error','text':'ルームが見つかりません'});return
+				emit_to(id,{'type':'error','text':'Room not found'});return
 			var room=rooms[code]
-			if room.format!=format:emit_to(id,{'type':'error','text':'ルームの対戦人数が異なります'});return
-			if room.started:emit_to(id,{'type':'error','text':'このルームは対戦中です'});return
+			if room.started:emit_to(id,{'type':'error','text':'Match in progress'});return
 			var seat=-1
 			for i in range(room.ids.size()):
 				if room.ids[i]==0 and room.deadline[i]<=Time.get_ticks_msec()/1000.0:
 					seat=i;break
-			if seat<0:emit_to(id,{'type':'error','text':'ルームが満員です'});return
+			if seat<0:emit_to(id,{'type':'error','text':'Room full'});return
 			queue.erase(id);p.nickname=ArenaProfile.clean_name(str(d.get('nickname','Pilot')))
 			room.ids[seat]=id;room.ready[seat]=false;room.deadline[seat]=0.0
 			room.tokens[seat]=Crypto.new().generate_random_bytes(16).hex_encode()
@@ -206,15 +207,33 @@ func handle(id: int, d: Dictionary):
 			var room=rooms[p.room]
 			if room.started: return
 			room.ready[p.seat]=true
-			if room.ready.all(func(value):return value) and not room.ids.has(0): room.started=true
+			if not room.get('private',false) and room.ready.all(func(value):return value) and not room.ids.has(0): room.started=true
 			for pid in room.ids: emit_to(pid,{'type':'ready','ready':room.ready,'started':room.started})
+		'start_room':
+			if not rooms.has(p.room):return
+			var room=rooms[p.room]
+			if not room.get('private',false) or room.started or p.seat!=room.host_seat:return
+			for seat in range(room.ids.size()):
+				room.cpu_seats[seat]=room.ids[seat]==0
+				if room.cpu_seats[seat]:
+					room.names[(seat%2)*2+int(seat/2)]='CPU'
+					room.deadline[seat]=0.0
+					room.tokens[seat]=Crypto.new().generate_random_bytes(16).hex_encode()
+			room.started=true
+			broadcast_lobby(p.room)
+			for pid in room.ids:emit_to(pid,{'type':'ready','ready':room.ready,'started':true})
 		'rematch':
 			if not rooms.has(p.room):return
 			var room=rooms[p.room]
-			if not room.match.finished or room.ids.has(0):return
+			if not room.match.finished:return
+			for seat in range(room.ids.size()):
+				if room.ids[seat]==0 and not room.cpu_seats[seat]:return
 			if not room.has('again'):room.again=[];room.again.resize(room.ids.size());room.again.fill(false)
 			room.again[p.seat]=true
-			if room.again.all(func(value):return value):
+			var everyone=true
+			for seat in range(room.ids.size()):
+				if not room.cpu_seats[seat] and not room.again[seat]:everyone=false
+			if everyone:
 				room.match.reset('online');room.reason='';room.again.fill(false)
 				room.drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];room.previous_human=[-1,-1]
 				for pid in room.ids:
@@ -248,8 +267,12 @@ func join(id: int, code: String, seat: int):
 
 func broadcast_lobby(code: String):
 	var room=rooms[code]
+	if room.ids[room.host_seat]==0:
+		for seat in range(room.ids.size()):
+			if room.ids[seat]!=0:
+				room.host_seat=seat;break
 	for id in room.ids:
-		emit_to(id,{'type':'lobby','room':code,'count':room.ids.filter(func(pid):return pid!=0).size(),'capacity':room.ids.size(),'robot_names':room.names})
+		emit_to(id,{'host':id==room.ids[room.host_seat],'type':'lobby','room':code,'count':room.ids.filter(func(pid):return pid!=0).size(),'capacity':room.ids.size(),'robot_names':room.names})
 
 func create_room(format: String, private_room: bool = false) -> String:
 	var count=2 if format=='1v1' else 4
@@ -259,7 +282,7 @@ func create_room(format: String, private_room: bool = false) -> String:
 	var code=Crypto.new().generate_random_bytes(3 if private_room else 12).hex_encode().to_upper()
 	while rooms.has(code):code=Crypto.new().generate_random_bytes(3 if private_room else 12).hex_encode().to_upper()
 	var m=MatchState.new(field);m.reset('online')
-	rooms[code]={'private':private_room,'drivers':[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()],'previous_human':[-1,-1],'match':m,'names':['Pilot','Pilot','Pilot','Pilot'],'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
+	rooms[code]={'private':private_room,'host_seat':0,'cpu_seats':[false,false,false,false] if count==4 else [false,false],'drivers':[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()],'previous_human':[-1,-1],'match':m,'names':['Pilot','Pilot','Pilot','Pilot'],'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
 	return code
 
 func match_waiting():
@@ -276,8 +299,8 @@ func match_waiting():
 				if format=='1v1':room.names[rid+1]=room.names[rid]
 			for seat in range(count):join(room.ids[seat],code,seat)
 
-func request_room(format: String, code: String = ''):
-	send({'type':'create_room' if code.is_empty() else 'join_room','room':code,'protocol':PROTOCOL,'ruleset':RULESET,'format':format,'nickname':nickname})
+func request_room(code: String = ''):
+	send({'type':'create_room' if code.is_empty() else 'join_room','room':code,'protocol':PROTOCOL,'ruleset':RULESET,'nickname':nickname})
 
 func find_match(format: String = '1v1'):
 	ticket=Crypto.new().generate_random_bytes(16).hex_encode()
