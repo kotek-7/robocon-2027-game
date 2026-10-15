@@ -81,3 +81,5 @@ The rule suite passes 57/57 checks. Fixed robot commands share the existing move
 The existing 1v1 protocol and two-browser movement/synchronization checks also passed through the new format picker. Chromium mobile emulation at 844 × 390 and 390 × 844 passed the touch suite with the enlarged title, including simultaneous input, pickup, portrait gating and fullscreen. These checks do not cover physical phone performance.
 
 `tests/network_rematch.py --2v2` completed a natural 180-second four-player match, verified that three votes do not reset it, and confirmed a fresh match with zero scores after the fourth vote.
+
+CD run [38705491042](https://github.com/kotek-7/robocon-2027-game/actions/runs/38705491042) deployed commit `63e80ae` and passed the rule, matchmaking, 2v2, container and public asset checks. After the server rollout, four public WSS clients received distinct TR/BR assignments in one match and received authoritative state after all four acknowledged. During rollout, earlier connection attempts received the old protocol rejection and a transient HTTP 500 before the new server became available.
