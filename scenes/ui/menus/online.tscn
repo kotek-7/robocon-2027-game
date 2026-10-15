@@ -19,16 +19,16 @@ text = "ONLINE"
 theme_type_variation = "Heading"
 horizontal_alignment = 1
 
-[node name="Solo" type="Button" parent="."]
+[node name="Room" type="Button" parent="."]
 layout_mode = 2
 custom_minimum_size = Vector2(300, 58)
-text = "1 vs 1"
+text = "ROOM"
 theme_type_variation = &"Accent"
 
-[node name="Teams" type="Button" parent="."]
+[node name="Automatic" type="Button" parent="."]
 layout_mode = 2
 custom_minimum_size = Vector2(300, 58)
-text = "2 vs 2"
+text = "AUTO MATCH"
 
 [node name="Back" type="Button" parent="."]
 layout_mode = 2

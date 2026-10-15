@@ -5,6 +5,9 @@ extends Node3D
 @export var notes_menu: PackedScene
 @export var profile_menu: PackedScene
 @export var online_menu: PackedScene
+@export var online_format_menu: PackedScene
+@export var room_menu: PackedScene
+@export var room_lobby_menu: PackedScene
 @export var search_menu: PackedScene
 @export var found_menu: PackedScene
 @export var error_menu: PackedScene
@@ -17,6 +20,8 @@ var game: MatchState
 var drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()]
 var previous_human=-1
 var online_format='1v1'
+var online_method='auto'
+var requested_room=''
 var art=ArenaVisuals.new()
 var net: ArenaNetwork
 var camera
@@ -195,27 +200,74 @@ func _input(event):
 
 func show_online():
 	mode='title';hud.title=true;net.leave();panel(online_menu)
-	bind_button('Solo',func():search_online('1v1')).grab_focus()
-	bind_button('Teams',func():search_online('2v2'))
+	bind_button('Room',show_room_options).grab_focus()
+	bind_button('Automatic',func():show_online_format())
 	bind_button('Back',show_title,'back')
+
+func show_online_format():
+	online_method='auto';net.leave();panel(online_format_menu)
+	menu.get_node('Heading').text='AUTO MATCH'
+	bind_button('Solo',func():select_online_format('1v1')).grab_focus()
+	bind_button('Teams',func():select_online_format('2v2'))
+	bind_button('Back',show_online,'back')
+
+func select_online_format(format: String):
+	search_online(format)
+
+func show_room_options():
+	online_method='room';online_format='2v2'
+	net.leave();panel(room_menu)
+	bind_button('Create',func():connect_room('')).grab_focus()
+	bind_button('Join',join_room_code)
+	menu.get_node('Code').text_submitted.connect(func(_value):join_room_code())
+	bind_button('Back',show_online,'back')
+
+func join_room_code():
+	var code=menu.get_node('Code').text.strip_edges().to_upper()
+	if code.length()!=6 or not code.is_valid_hex_number():
+		menu.get_node('Info').visible=true
+		menu.get_node('Info').text='INVALID CODE';return
+	connect_room(code)
+
+func connect_room(code: String):
+	requested_room=code
+	panel(search_menu);info=menu.get_node('Info')
+	menu.get_node('Heading').text='CONNECTING'
+	bind_button('Cancel',show_room_options,'back').grab_focus()
+	net.connect_to(net.endpoint)
 
 func search_online(format: String):
 	online_format=format;panel(search_menu)
 	menu.get_node('Heading').text='1 vs 1' if format=='1v1' else '2 vs 2'
 	info=menu.get_node('Info')
-	bind_button('Cancel',show_online,'back').grab_focus();net.connect_to(net.endpoint)
+	bind_button('Cancel',func():show_online_format(),'back').grab_focus();net.connect_to(net.endpoint)
 
 func network_message(d: Dictionary):
 	match d.type:
-		'connected':net.find_match(online_format)
+		'connected':
+			if online_method=='room':net.request_room(requested_room)
+			else:net.find_match(online_format)
 		'queued':
 			if is_instance_valid(info):info.text='FINDING PLAYERS' if online_format=='2v2' else 'FINDING PLAYER'
 		'joined':
 			audio.play('reconnected' if mode=='online' else 'found');awaiting_audio_baseline=true
 			team=int(d.team)
 			if mode!='online':
-				panel(found_menu);info=menu.get_node('Info');info.text=profile.nickname;net.send({'type':'ready'})
+				if d.get('private',false):
+					panel(room_lobby_menu);info=menu.get_node('Info')
+					menu.get_node('Code').text=str(d.room)
+					bind_button('Copy',func():DisplayServer.clipboard_set(net.room_code))
+					bind_button('Start',func():net.send({'type':'start_room'}))
+					bind_button('Cancel',show_room_options,'back').grab_focus()
+				else:
+					panel(found_menu);info=menu.get_node('Info');info.text=profile.nickname
+				net.send({'type':'ready'})
 			hud.disconnected=false
+		'lobby':
+			if mode!='online' and is_instance_valid(info):
+				info.text='%dP + %d CPU'%[int(d.count),int(d.capacity)-int(d.count)]
+				menu.get_node('Start').visible=bool(d.host)
+				menu.get_node('Waiting').visible=not bool(d.host)
 		'ready':
 			if d.started: start('online')
 		'state':
@@ -228,7 +280,7 @@ func network_message(d: Dictionary):
 		'error':
 			audio.play('deny')
 			net.leave();panel(error_menu);menu.get_node('Info').text=str(d.text)
-			bind_button('Retry',show_online);bind_button('Back',show_title,'back')
+			bind_button('Retry',show_room_options if online_method=='room' else show_online);bind_button('Back',show_title,'back')
 
 func start(which: String):
 	finish_remaining=0.0;hud.hide_finish()
@@ -236,7 +288,7 @@ func start(which: String):
 	if which!='online':team=0
 	elif net.robot_id>=0:game.active[team]=net.robot_id
 	hud.can_switch=which!='online' or net.robot_id<0;touch.can_switch=hud.can_switch
-	hud.partner_cpu=which=='cpu' or (which=='online' and online_format=='1v1')
+	hud.partner_cpu=which=='cpu' or (which=='online' and (online_format=='1v1' or net.robot_names[team*2+(1-net.robot_id%2)]=='CPU'))
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
 	camera.follow_target=game.robots[game.active[team]].p+Vector3(0,.4,0)

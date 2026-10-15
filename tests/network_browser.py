@@ -18,9 +18,9 @@ async def main():
    p.on('pageerror',lambda e:errors.append(str(e)))
    p.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
    await p.goto('http://127.0.0.1:8087/?qa=1');await p.wait_for_function('window.__arenaQA',timeout=30000)
-  await click(a,'ONLINE');await click(a,'1 vs 1');await a.wait_for_timeout(1000)
+  await click(a,'ONLINE');await click(a,'AUTO MATCH');await click(a,'1 vs 1');await a.wait_for_timeout(1000)
   assert not any(x['text'] in ['CREATE','JOIN','READY'] for x in (await state(a))['buttons'])
-  await click(b,'ONLINE');await click(b,'1 vs 1')
+  await click(b,'ONLINE');await click(b,'AUTO MATCH');await click(b,'1 vs 1')
   await b.wait_for_function("window.__arenaQA?.mode==='online'",timeout=10000)
   if (await state(b))['menu']:await click(b,'RESUME')
   before=(await state(b))['state']['robots'][2]['p']

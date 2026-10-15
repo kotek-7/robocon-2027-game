@@ -19,6 +19,9 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/notes.tscn" id="menu_notes"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/profile.tscn" id="menu_profile"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/online.tscn" id="menu_online"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/online_format.tscn" id="menu_online_format"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/room.tscn" id="menu_room"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menus/room_lobby.tscn" id="menu_room_lobby"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/search.tscn" id="menu_search"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/found.tscn" id="menu_found"]
 [ext_resource type="PackedScene" path="res://scenes/ui/menus/error.tscn" id="menu_error"]
@@ -111,6 +114,9 @@ title_menu = ExtResource("menu_title")
 notes_menu = ExtResource("menu_notes")
 profile_menu = ExtResource("menu_profile")
 online_menu = ExtResource("menu_online")
+online_format_menu = ExtResource("menu_online_format")
+room_menu = ExtResource("menu_room")
+room_lobby_menu = ExtResource("menu_room_lobby")
 search_menu = ExtResource("menu_search")
 found_menu = ExtResource("menu_found")
 error_menu = ExtResource("menu_error")

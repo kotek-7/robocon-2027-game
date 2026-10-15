@@ -26,7 +26,7 @@ async def main():
   await a.screenshot(path=str(OUT/'cpu-partner.png'))
   await a.keyboard.press('Escape');await click(a,'EXIT')
   for p in pages:
-   await click(p,'ONLINE');await p.screenshot(path=str(OUT/'online-formats.png'))
+   await click(p,'ONLINE');await click(p,'AUTO MATCH');await p.screenshot(path=str(OUT/'online-formats.png'))
    await click(p,'1 vs 1')
   for p in pages:await p.wait_for_function("window.__arenaQA?.mode==='online'",timeout=15000)
   states=[await state(p) for p in pages]

@@ -40,7 +40,7 @@ WASD moves relative to the camera. Mouse orbits; when pointer lock is unavailabl
 
 Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, the paired arrows switch robots. Cargo is chosen automatically for the action target. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
 
-VS CPU assigns the other friendly robot to a CPU partner; switching robots hands the previous robot to that partner. Both opposing robots run simultaneously, with identical robot performance. FREE has no opponent or time limit. ONLINE offers separate 1 vs 1 and 2 vs 2 queues. In 1 vs 1, each human teams up with a server-controlled CPU partner. Switching robots hands the previous robot to the CPU. In 2 vs 2, four humans each drive one assigned TR or BR. CANCEL leaves the queue; search times out after two minutes. A rematch requires every player.
+VS CPU assigns the other friendly robot to a CPU partner; switching robots hands the previous robot to that partner. Both opposing robots run simultaneously, with identical robot performance. FREE has no opponent or time limit. ONLINE first selects code-based rooms or automatic matchmaking. Rooms accept up to four people without a format selection; the host starts when ready and CPU pilots fill the vacant seats. A six-character code lets friends join. Public queues never fill private rooms. Private lobbies expire after ten minutes; leaving a lobby releases the seat immediately. Automatic matchmaking then selects separate 1 vs 1 and 2 vs 2 queues. In 1 vs 1, each human teams up with a server-controlled CPU partner. Switching robots hands the previous robot to the CPU. In 2 vs 2, four humans each drive one assigned TR or BR. CANCEL leaves the queue; search times out after two minutes. A rematch requires every player.
 
 The title’s name button edits the saved nickname and BGM/SE volume. A random nickname is assigned on first visit. Nameplates show player names or CPU; robot types use pictograms. Loading and portrait screens retain a view of the field. Music and effects are credited to Koichi Morita / MaouDamashii; see [audio sources and behavior](docs/audio.md).
 
@@ -64,6 +64,7 @@ godot --headless --path . --script tests/scenes.gd
 godot --headless --path . --script tests/editor_config.gd
 # With the room server running, in an environment containing websockets:
 python tests/matchmaking.py
+python tests/private_rooms.py
 python tests/network.py
 python tests/teams_network.py
 python tests/partners_network.py

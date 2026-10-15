@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[node name="RoomLobbyMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+text = "ROOM"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Code" type="Label" parent="."]
+layout_mode = 2
+text = "------"
+horizontal_alignment = 1
+theme_type_variation = "Heading"
+
+[node name="Copy" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "COPY CODE"
+
+[node name="Info" type="Label" parent="."]
+layout_mode = 2
+text = "WAITING"
+theme_type_variation = "BodyText"
+horizontal_alignment = 1
+
+[node name="Start" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "START"
+theme_type_variation = &"Accent"
+visible = false
+
+[node name="Waiting" type="Label" parent="."]
+layout_mode = 2
+text = "WAITING FOR HOST"
+theme_type_variation = "BodyText"
+horizontal_alignment = 1
+visible = false
+
+[node name="Cancel" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "LEAVE"
