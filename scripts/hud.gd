@@ -82,7 +82,7 @@ func update_names():
 		var tag=name_tags[i]
 		var node=$Names.get_child(i)
 		var label: Label=node.get_node('Label')
-		label.text=('• ' if tag.team==0 else '•• ')+str(tag.name)
+		label.text=str(tag.name)
 		label.add_theme_font_size_override('font_size',14 if touch_mode else 18)
 		label.modulate=local_name_color if tag.self else Color.WHITE
 		node.reset_size()
