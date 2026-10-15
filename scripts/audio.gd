@@ -18,6 +18,9 @@ var streams={}
 var voices: Array=[]
 var motors: Array=[]
 var music: AudioStreamPlayer
+var menu_music: AudioStream
+var match_music: AudioStream
+var in_menu=true
 var next_voice=0
 var unlocked=false
 var focused=true
@@ -42,7 +45,17 @@ func _ready():
 	var roll=load('res://assets/audio/maou_se_sound23.ogg').duplicate();roll.loop=true
 	for i in range(4):
 		var player=AudioStreamPlayer3D.new();player.stream=roll;player.bus='SFX';player.unit_size=2;player.max_distance=16;player.volume_db=-24;add_child(player);motors.append(player)
-	music=AudioStreamPlayer.new();music.bus='Music';music.stream=load('res://assets/audio/maou_loop_bgm_neorock82.mp3').duplicate();music.stream.loop=true;music.volume_db=-10;add_child(music)
+	menu_music=load('res://assets/audio/maou_loop_bgm_neorock44.mp3').duplicate();menu_music.loop=true
+	match_music=load('res://assets/audio/maou_loop_bgm_neorock82.mp3').duplicate();match_music.loop=true
+	music=AudioStreamPlayer.new();music.bus='Music';music.stream=menu_music;music.volume_db=-10;add_child(music)
+
+func set_menu(value: bool):
+	if in_menu==value:return
+	in_menu=value
+	music.stop()
+	music.stream=menu_music if in_menu else match_music
+	if unlocked and music.stream:
+		music.play();music.stream_paused=not focused
 
 func levels(bgm: float, sfx: float):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index('Music'),linear_to_db(maxf(.0001,bgm)))
@@ -51,7 +64,7 @@ func levels(bgm: float, sfx: float):
 func unlock():
 	if unlocked:return
 	unlocked=true
-	music.play()
+	if music.stream:music.play()
 
 func play(cue: String, gain=0.0, cooldown=.08):
 	if not unlocked or not focused or not CUES.has(cue):return

@@ -79,6 +79,11 @@
       "file": "maou_loop_bgm_neorock82.mp3",
       "source": "https://maou.audio/sound/bgm/maou_loop_bgm_neorock82.mp3",
       "sha256": "19fe30754fca7da19bb89ffcb8868e07e8fec458224a001be956b9a2794346d7"
+    },
+    {
+      "file": "maou_loop_bgm_neorock44.mp3",
+      "source": "https://maou.audio/sound/bgm/maou_loop_bgm_neorock44.mp3",
+      "sha256": "3a63b51069afd055ce2463818c08382f7c2dca2de0459e018f8b30cfdafc9bf9"
     }
   ]
 }
