@@ -1,0 +1,20 @@
+[gd_scene format=3]
+[ext_resource type="FontFile" path="res://assets/DelaGothicOne-Regular.ttf" id="font"]
+[ext_resource type="Script" path="res://scripts/event_bubble.gd" id="script"]
+[sub_resource type="StyleBoxEmpty" id="body"]
+content_margin_left = 7.0
+content_margin_right = 7.0
+content_margin_top = 5.0
+content_margin_bottom = 4.0
+[node name="EventBubble" type="PanelContainer"]
+mouse_filter = 2
+script = ExtResource("script")
+theme_override_styles/panel = SubResource("body")
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_fonts/font = ExtResource("font")
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.125, 0.141, 0.243, 1)
+text = "マンデート！"
+horizontal_alignment = 1

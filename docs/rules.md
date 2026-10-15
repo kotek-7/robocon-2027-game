@@ -27,3 +27,9 @@ Human and AI use the same command/context validation. In VS CPU, the non-selecte
 ## Initial block layout
 
 Earth stock uses ten columns per team, each two blocks high, inside the CAD storage bounds: |X| 3.5–5.45 m, Z −5.45 to −4.5 m. Rule 4.1.3 permits a team-selected layout within that area, with at most two blocks per column. This game fixes a 5 × 2 column layout. Sky stock follows Figure 4 (rulebook page 15): even checkerboard cells of the 5 × 5 grid, center empty, with each two-color cube initially lying sideways. Its red half points N/S/E/W according to the diagram; a tower placement turns the scoring color upward.
+
+## BR return and cargo rotation
+
+A full BR can use the normal action at its own Transfer Area to return its selected carried object to the floor (0.65 seconds, the same as a normal delivery). The next action retrieves another reachable buffer object; returned objects go to the back of the retrieval order, enabling round-robin cargo exchange. The buffer's eight-slot limit still applies. BR return grants no transfer points and does not erase already-earned TR delivery points. CPU drivers do not automatically undo their pickups with this operation.
+
+This is an interpretation of v1.1 sections 4.3.2 and 4.4.1–4.4.3: BR can operate in the Transfer Area, objects must be lifted and carried, and release outside the area is a violation. The text does not explicitly describe a BR return operation. Transfer scoring remains restricted to TR under 8.1. An intentional placement inside the area is modeled separately from an accidental drop.

@@ -40,11 +40,13 @@ func update_view():
 	layout.get_node('Cargo/SwitchKey').visible=can_switch and not touch_mode
 	layout.get_node('Cargo/SwitchKey').text='Y' if using_pad else 'Q'
 	layout.get_node('Cargo/Partner').visible=partner_cpu
+	var selected_slot=posmod(robot.selected,maxi(1,robot.carry.size()))
+	if action.get('type') in ['place','mustika']:selected_slot=robot.carry.find(action.object)
 	for i in range(3):
 		var slot=layout.get_node('Cargo/Slot%d'%i)
 		slot.visible=i<m.capacity(rid)
 		slot.get_node('Icon').visible=i<robot.carry.size()
-		slot.get_node('Selection').visible=i<robot.carry.size() and i==posmod(robot.selected,maxi(1,robot.carry.size()))
+		slot.get_node('Selection').visible=i<robot.carry.size() and i==selected_slot
 		if i<robot.carry.size():
 			var o=m.objects[robot.carry[i]]
 			var icon=slot.get_node('Icon')
@@ -62,12 +64,13 @@ func update_view():
 		prompt.get_node('Key/Label').text='A' if using_pad else 'E'
 		prompt.get_node('Climb').visible=action.type=='climb'
 		prompt.get_node('Pick').visible=action.type=='pick' and not touch_mode
-		prompt.get_node('Seconds').visible=action.type=='climb'
+		prompt.get_node('Seconds').visible=action.type in ['climb','return']
+		if action.type=='return':prompt.get_node('Seconds').text='戻す'
 		if action.type=='climb':prompt.get_node('Seconds').text='%ds'%int(action.seconds)
 	var progress=layout.get_node('JobProgress')
 	progress.visible=not robot.job.is_empty()
 	if progress.visible:
-		var duration=robot.job.seconds if robot.job.type=='climb' else .65 if robot.job.type in ['pick','drop','give'] else 1.1
+		var duration=robot.job.seconds if robot.job.type=='climb' else .65 if robot.job.type in ['pick','drop','give','return'] else 1.1
 		progress.value=1-robot.left/duration
 	update_names()
 

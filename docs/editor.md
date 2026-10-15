@@ -68,3 +68,11 @@ HUDには `Desktop` と `Mobile` の2種類の配置があります。タッチ�
 - Project Settings → **Input Map**: 移動、視点操作、決定、切替、積載物選択、全体表示、ポーズのキー／ゲームパッド割り当て。
 
 得点判定、AI、通信、保存、試合中の位置と状態の更新は引き続きGDScriptが担当します。競技物とロボットの初期配置・リトライ位置は試合モデル、歩行可能領域はCADデータを使用します。3Dの見た目を移動・拡縮しても、それだけではルールや通行判定は変わりません。
+
+## Match feedback
+
+`HUD/Feedback` consumes authoritative match events once and clears its history on restart/reconnect. Its `Bubble Seconds` and `Score Seconds` settings control display duration. Edit `scenes/ui/event_bubble.tscn` for the robot speech bubble (Japanese font fallback included), and `scenes/ui/score_popup.tscn` for the floating score delta and particles. Retry, Mandate and Mustika completion show リトライ！, マンデート！ and 奉納！ on the responsible robot. Positive score events include the team and exact delta; both teams receive visual feedback while score audio remains local-team-only.
+
+Placement previews choose a compatible carried object for the nearest reachable tower, or Mustika for the pillar. The cargo highlight previews that choice; starting the placement updates the selected slot without a selection sound. BR CPU waiting for work never contributes to the stuck/retry timer; blocked movement toward real work still does.
+
+Speech bubbles use Dela Gothic One from https://github.com/google/fonts/tree/main/ofl/delagothicone, distributed with `assets/DelaGothicOne-OFL.txt` (SIL OFL 1.1). The shared HUD font remains unchanged.

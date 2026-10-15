@@ -17,7 +17,6 @@
 [ext_resource type="AudioStream" uid="uid://d0thnaydvp3i6" path="res://assets/audio/maou_loop_bgm_neorock82.mp3" id="match"]
 [ext_resource type="AudioStream" uid="uid://cp0a5y44hdh6c" path="res://assets/audio/maou_loop_bgm_neorock44.mp3" id="menu"]
 [ext_resource type="AudioStream" uid="uid://dto73bbirsgbb" path="res://assets/audio/maou_se_onepoint15.ogg" id="onepoint15"]
-[ext_resource type="AudioStream" uid="uid://cfuuoqd3jgfwq" path="res://assets/audio/maou_se_onepoint24.ogg" id="onepoint24"]
 [ext_resource type="Script" uid="uid://cmonn30gelis5" path="res://scripts/audio_preview.gd" id="preview"]
 [ext_resource type="AudioStream" uid="uid://b4g2tqcqgckui" path="res://assets/audio/maou_se_sound05.ogg" id="sound05"]
 [ext_resource type="AudioStream" uid="uid://bh4sps1rwuc2p" path="res://assets/audio/maou_se_sound19.ogg" id="sound19"]
@@ -103,7 +102,6 @@ script = ExtResource("cue")
 event = &"drop"
 
 [node name="give" type="AudioStreamPlayer" parent="Cues" unique_id=492421986]
-stream = ExtResource("onepoint24")
 volume_db = -14.0
 pitch_scale = 1.2
 script = ExtResource("cue")

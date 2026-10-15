@@ -47,8 +47,11 @@ func reset(new_mode: String):
 func add_object(kind: String, team: int, p: Vector3):
 	objects.append({'kind':kind,'owner':team,'face':team,'p':p,'home':p,'where':'ground','holder':-1,'spot':-1,'delivered':[false,false],'lock':-1,'slot':-1})
 
-func emit_event(kind: String, rid: int = -1):
-	event_seq+=1;events.append({'id':event_seq,'tick':tick,'type':kind,'rid':rid})
+func emit_event(kind: String, rid: int = -1, details: Dictionary = {}):
+	event_seq+=1
+	var event={'id':event_seq,'tick':tick,'type':kind,'rid':rid}
+	event.merge(details)
+	events.append(event)
 	if events.size()>64:events.pop_front()
 
 func selected(rid: int) -> int:
@@ -115,23 +118,14 @@ func context(rid: int) -> Dictionary:
 		var receiver=robots[team*2+1]
 		if receiver.job.is_empty() and receiver.carry.size()<2 and Vector2(receiver.p.x-transfer.x,receiver.p.z-transfer.z).length()<.7:
 			return {'type':'give','object':held,'p':transfer,'receiver':team*2+1}
-		var count=0
-		for obj in objects:
-			if obj.where=='buffer' and obj.holder==team:count+=1
-		if count<8:return {'type':'drop','object':held,'p':transfer}
+		if transfer_load(team)<8:return {'type':'drop','object':held,'p':transfer}
 		return {}
 	if rid%2==1:
-		if held>=0:
-			var o=objects[held]
-			if o.kind=='M' and r.p.y>.85 and accessible(rid,Vector3(0,1.7,0)):
-				return {'type':'mustika','object':held,'p':Vector3(0,1.805,0)}
-			for s in range(towers.size()):
-				if tower_locks[s]>=0 or field.spots[s][4] not in [-1,team]: continue
-				var pos=field.spot_pos(s)
-				if not accessible(rid,pos) or (field.spots[s][3]==2 and r.p.y<.85): continue
-				var stack=towers[s]
-				if (o.kind=='E' and stack.size()<2) or (o.kind=='S' and stack.size()==2):
-					return {'type':'place','object':held,'spot':s,'p':pos}
+		if r.carry.size()>=capacity(rid):
+			var returned=return_context(rid)
+			if not returned.is_empty():return returned
+		var placement=placement_context(rid)
+		if not placement.is_empty():return placement
 		for s in range(towers.size()):
 			if tower_locks[s]>=0 or towers[s].size()!=3 or field.spots[s][4] not in [-1,team]: continue
 			var oid=towers[s][2]
@@ -139,7 +133,7 @@ func context(rid: int) -> Dictionary:
 			if accessible(rid,field.spot_pos(s)) and (field.spots[s][3]!=2 or r.p.y>.85):
 				return {'type':'flip','object':oid,'spot':s,'p':field.spot_pos(s)}
 	if r.carry.size()>=capacity(rid): return stair_context(rid)
-	var best={}; var distance=INF
+	var best={}; var distance=INF;var first_order=INF
 	for i in range(objects.size()):
 		var o=objects[i]
 		if o.lock>=0 or o.where not in ['ground','buffer']: continue
@@ -155,8 +149,50 @@ func context(rid: int) -> Dictionary:
 			if other.where=='ground' and other.p.y>o.p.y+.1 and Vector2(other.p.x-o.p.x,other.p.z-o.p.z).length()<.1: covered=true
 		if covered: continue
 		var d=r.p.distance_to(o.p)
-		if d<distance: distance=d;best={'type':'pick','object':i,'p':o.p}
+		var order=int(o.get('return_order',0)) if o.where=='buffer' else 0
+		if order<first_order or (order==first_order and d<distance):
+			first_order=order;distance=d;best={'type':'pick','object':i,'p':o.p}
 	return best if not best.is_empty() else stair_context(rid)
+
+func return_context(rid: int) -> Dictionary:
+	if finished or rid<0 or rid>=robots.size() or rid%2==0:return {}
+	var r=robots[rid];var held=selected(rid);var team=int(rid/2)
+	if held<0 or not r.job.is_empty() or r.p.y<.55:return {}
+	var target=field.transfer(team)
+	if not accessible(rid,target):return {}
+	if transfer_load(team)>=8:return {}
+	return {'type':'return','object':held,'p':target}
+
+func transfer_load(team: int) -> int:
+	var occupied=0
+	for o in objects:
+		if o.where=='buffer' and o.holder==team:occupied+=1
+	for i in range(robots.size()):
+		if int(i/2)==team and robots[i].job.get('type') in ['drop','give','return']:occupied+=1
+	return occupied
+
+func placement_context(rid: int) -> Dictionary:
+	var r=robots[rid];var team=int(rid/2)
+	var cargo=r.carry.duplicate()
+	var held=selected(rid)
+	if held>=0:cargo.erase(held);cargo.push_front(held)
+	for oid in cargo:
+		if objects[oid].kind=='M' and r.p.y>.85 and accessible(rid,Vector3(0,1.7,0)):
+			return {'type':'mustika','object':oid,'p':Vector3(0,1.805,0)}
+	var best={};var distance=INF
+	for s in range(towers.size()):
+		if tower_locks[s]>=0 or field.spots[s][4] not in [-1,team]:continue
+		var pos=field.spot_pos(s)
+		if not accessible(rid,pos) or (field.spots[s][3]==2 and r.p.y<.85):continue
+		var n=towers[s].size()
+		for oid in cargo:
+			var kind=objects[oid].kind
+			if not ((kind=='E' and n<2) or (kind=='S' and n==2)):continue
+			var d=r.p.distance_squared_to(pos)
+			if d<distance:
+				distance=d;best={'type':'place','object':oid,'spot':s,'p':pos}
+			break
+	return best
 
 func stair_context(rid: int) -> Dictionary:
 	if finished or not robots[rid].job.is_empty():return {}
@@ -191,10 +227,12 @@ func begin(rid: int, job: Dictionary):
 	if job.has('spot'):
 		if tower_locks[job.spot]>=0:return
 		tower_locks[job.spot]=rid
+	if job.type in ['place','mustika']:
+		robots[rid].selected=robots[rid].carry.find(oid)
 	emit_event('work',rid)
 	objects[oid].lock=rid
 	robots[rid].job=job.duplicate(true)
-	robots[rid].left=0.65 if job.type in ['pick','drop','give'] else 1.1
+	robots[rid].left=0.65 if job.type in ['pick','drop','give','return'] else 1.1
 	if job.type=='flip':
 		objects[oid].where='held';objects[oid].holder=rid
 		towers[job.spot].erase(oid); robots[rid].carry.append(oid)
@@ -232,8 +270,11 @@ func complete(rid: int):
 	match j.type:
 		'pick':
 			o.where='held';o.holder=rid;r.carry.append(oid)
-		'drop','give':
+		'drop','give','return':
 			r.carry.erase(oid);o.where='buffer';o.holder=team
+			if j.type=='return':
+				o.return_order=event_seq+1
+				r.selected=posmod(r.selected,maxi(1,r.carry.size()))
 			var used=[]
 			for a in objects:
 				if a!=o and a.where=='buffer' and a.holder==team:used.append(a.slot)
@@ -241,7 +282,7 @@ func complete(rid: int):
 			while slot in used:slot+=1
 			o.slot=slot
 			o.p=field.transfer(team)+Vector3((slot%2)*.38-.19,.18+int(slot/4)*.35,(int(slot/2)%2)*.38-.19)
-			if o.kind!='M' and not o.delivered[team]: transfer_points[team]+=5;o.delivered[team]=true
+			if rid%2==0 and o.kind!='M' and not o.delivered[team]: transfer_points[team]+=5;o.delivered[team]=true
 			if j.type=='give':
 				var receiver=robots[j.receiver]
 				if receiver.carry.size()<2 and receiver.job.is_empty() and Vector2(receiver.p.x-j.p.x,receiver.p.z-j.p.z).length()<.7:
@@ -257,7 +298,8 @@ func complete(rid: int):
 			r.carry.erase(oid);o.where='pillar';o.owner=team;o.p=j.p;o.holder=-1
 	if j.has('spot'):tower_locks[j.spot]=-1
 	o.lock=-1;r.job={};r.left=0
-	emit_event(j.type,rid)
+	emit_event('drop' if j.type=='return' else j.type,rid)
+	update_score(rid)
 
 func retry(rid: int):
 	emit_event('retry',rid)
@@ -273,7 +315,7 @@ func retry(rid: int):
 	r.p=Vector3(-4.8 if rid<2 else 4.8,0,4.9)
 	r.upper=false
 
-func update_score():
+func update_score(actor: int = -1):
 	var prior=scores.duplicate()
 	scores=transfer_points.duplicate()
 	var count=[0,0];var shared=[0,0]
@@ -288,10 +330,12 @@ func update_score():
 			var t=int(objects[towers[s][2]].face);count[t]+=1
 			if field.spots[s][4]==-1: shared[t]+=1
 	for t in range(2):
-		if count[t]>=2 and shared[t]>=1 and not mandate[t]:mandate[t]=true;emit_event('mandate')
+		if count[t]>=2 and shared[t]>=1 and not mandate[t]:mandate[t]=true;emit_event('mandate',t*2+1)
 	for o in objects:
 		if o.where=='pillar': scores[o.owner]+=250
-	if prior!=scores:emit_event('score')
+	for t in range(2):
+		var delta=int(scores[t]-prior[t])
+		if delta!=0:emit_event('score',actor,{'team':t,'delta':delta})
 
 func decide_winner():
 	if scores[0]!=scores[1]: winner=0 if scores[0]>scores[1] else 1; return

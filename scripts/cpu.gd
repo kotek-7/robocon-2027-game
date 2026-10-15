@@ -34,9 +34,11 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 	if fixed_rid>=0:rid=fixed_rid
 	var cmd={'switch':fixed_rid<0 and rid!=m.active[team],'x':0.0,'z':0.0}
 	var r=m.robots[rid]
-	if not r.job.is_empty(): return cmd
+	if not r.job.is_empty():
+		stuck=0;previous=r.p;return cmd
 	var target=Vector3(999,999,999)
 	var wanted=-1
+	var waiting=false
 	if rid%2==0:
 		if parking: target=Vector3(-4.6 if team==0 else 4.6,0,3.0)
 		elif not r.carry.is_empty(): target=m.field.transfer(team)
@@ -56,7 +58,7 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 	else:
 		if not buildable.is_empty():
 			if m.selected(rid) not in buildable:
-				cmd.select=1;return cmd
+				stuck=0;cmd.select=1;return cmd
 			var oid=m.selected(rid);var o=m.objects[oid]
 			if o.kind=='M': target=Vector3(0,.9,0)
 			else:
@@ -70,18 +72,21 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 					if m.field.spots[s][4]==-1: weight-=1
 					if weight<best:best=weight;target=p
 		elif flip_spot>=0:target=m.field.spot_pos(flip_spot)
-		elif not buffer.is_empty(): target=m.objects[buffer[0]].p
+		elif not buffer.is_empty() and r.carry.size()<m.capacity(rid): target=m.objects[buffer[0]].p
 		else:
 			target=m.field.transfer(team)+Vector3(.65 if team==0 else -.65,0,0)
+			waiting=true
 			for s in range(m.towers.size()):
 				if m.towers[s].size()==3 and m.objects[m.towers[s][2]].face!=team and m.field.spots[s][4]==-1:
-					target=m.field.spot_pos(s);break
-	if target.x==999: return cmd
+					target=m.field.spot_pos(s);waiting=false;break
+	if target.x==999:
+		stuck=0;return cmd
 	var ctx=m.context(rid)
-	if not ctx.is_empty() and ctx.type!='climb' and (ctx.type!='pick' or wanted<0 or m.objects[ctx.object].kind==m.objects[wanted].kind):
+	if not ctx.is_empty() and ctx.type not in ['climb','return'] and (ctx.type!='pick' or wanted<0 or m.objects[ctx.object].kind==m.objects[wanted].kind):
 		if ctx.type=='flip':next_flip=m.elapsed+6
 		cmd.act=true;return cmd
 	if target.distance_to(goal)>.25 or last_rid!=rid or path.is_empty():
+		if last_rid!=rid:stuck=0;previous=r.p
 		path=m.field.route(r.p,target,rid);goal=target;last_rid=rid
 	while path.size()>1 and Vector2(path[0].x-r.p.x,path[0].z-r.p.z).length()<.18 and abs(path[0].y-r.p.y)<.08: path.remove_at(0)
 	if not path.is_empty():
@@ -93,7 +98,7 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 				if waypoint.distance_to(r.p)>2:break
 		var d: Vector3=(path[0]-r.p);d.y=0
 		if d.length()>.06: d=d.normalized();cmd.x=d.x;cmd.z=d.z
-	if r.p.distance_to(previous)<.002: stuck+=dt
+	if not waiting and Vector2(cmd.x,cmd.z).length()>.1 and r.p.distance_to(previous)<.002: stuck+=dt
 	else: stuck=0
 	previous=r.p
 	if stuck>2.5:

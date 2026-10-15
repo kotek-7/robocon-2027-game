@@ -47,6 +47,7 @@ jobs:
           godot --headless --path . --import
           godot --headless --path . --script tests/run.gd
           godot --headless --path . --script tests/audio.gd
+          godot --headless --path . --script tests/feedback.gd
           godot --headless --path . --script tests/scenes.gd
           godot --headless --path . --script tests/editor_config.gd
           godot --headless --path . -- --server > /tmp/server.log 2>&1 &

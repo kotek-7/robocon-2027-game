@@ -225,7 +225,7 @@ func network_message(d: Dictionary):
 			# Authoritative correction; presentation interpolates the resulting poses.
 			game.restore(d.state)
 			if net.robot_id>=0:game.active[team]=net.robot_id
-			if awaiting_audio_baseline:audio.prime(game);awaiting_audio_baseline=false
+			if awaiting_audio_baseline:audio.prime(game);hud.get_node('Feedback').prime(game);awaiting_audio_baseline=false
 		'lost': hud.disconnected=true;audio.play('lost')
 		'error':
 			audio.play('deny')
@@ -245,7 +245,7 @@ func start(which: String):
 	# Network start arrives outside a browser gesture; capture only on RESUME.
 	if which=='online':pause_menu()
 	else:close_menu()
-	audio.prime(game);audio.start_match();audio.play('start')
+	audio.prime(game);hud.get_node('Feedback').prime(game);audio.start_match();audio.play('start')
 
 func close_menu():
 	audio.play('resume')
@@ -400,6 +400,7 @@ func _process(dt):
 		node.update_pose(pos,art.sky_rotation(o),o.kind=='S',changed,dt)
 	camera.update_view(dt,game.robots[game.active[team]].p,field,mode=='title',overview,yaw,pitch)
 	var ctx=game.context(game.active[team]) if mode!='title' and not ui_open else {}
+	touch.get_node('Buttons/act').text='戻す' if ctx.get('type')=='return' else 'ACT'
 	hud.action=ctx
 	if not ctx.is_empty():
 		var p: Vector3=ctx.p+Vector3(0,.75,0)
@@ -417,6 +418,7 @@ func _process(dt):
 			elif mode=='online':name=net.robot_names[rid]
 			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.unproject_position(point)})
 	hud.update_view()
+	hud.get_node('Feedback').observe(game,camera,hud,mode=='title' or ui_open or landscape_required or hud.disconnected,dt)
 	if qa_enabled:
 		qa_clock+=dt
 		if qa_clock>.5:
