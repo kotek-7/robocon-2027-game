@@ -168,7 +168,7 @@ func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
 		if state=='focus': style.bg_color=Color.TRANSPARENT;style.border_color=Color('#20243e');style.set_border_width_all(3)
 		if state=='normal':style.shadow_color=Color(.17,.1,.3,.16);style.shadow_size=8;style.shadow_offset=Vector2(0,4)
 		b.add_theme_stylebox_override(state,style)
-	b.pressed.connect(func():audio.play('back' if s in ['BACK','CANCEL','EXIT'] else 'confirm');call.call());b.mouse_entered.connect(func():audio.play('hover',0,.12));b.focus_entered.connect(func():audio.play('hover',0,.12));menu.add_child(b);return b
+	b.pressed.connect(func():audio.play('back' if s in ['BACK','CANCEL','EXIT'] else 'confirm');call.call());menu.add_child(b);return b
 
 func show_title():
 	mode='title';net.leave();game.reset('cpu');panel();hud.title=true;result_shown=false

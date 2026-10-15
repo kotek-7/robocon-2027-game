@@ -105,4 +105,3 @@ func observe(m: MatchState, local_rid: int, silent: bool, dt: float):
 			if previous_moving[rid] and not moving:play('brake',0,.3)
 			if not moving and r.v.length()>.3 and r.job.is_empty():play('bump',0,.7)
 		previous_moving[rid]=moving
-	music.volume_db=lerpf(music.volume_db,-17 if silent else -10,minf(1,dt*4))

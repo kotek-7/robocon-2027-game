@@ -4,7 +4,7 @@ Music and sound effects: **Koichi Morita / MaouDamashii (魔王魂)**, https://m
 
 | Source cue | Uses |
 | --- | --- |
-| System 08 | Menu focus, camera gesture onset, final countdown |
+| System 08 | Nickname typing, camera gesture onset, final countdown |
 | System 49 | Confirm, reconnect |
 | System 18 | Back, pause, unavailable action, disconnect, buzzer |
 | System 03 | Start, retry |
@@ -17,7 +17,7 @@ Music and sound effects: **Koichi Morita / MaouDamashii (魔王魂)**, https://m
 | Onepoint 20 | Tower flip, Mustika eligibility |
 | Onepoint 24 | Handover, time warning, draw |
 
-UI inputs trigger UI cues. Competitive cues follow monotonic event IDs in authoritative snapshots; the last 64 events are retained. Audio consumes each event once, primes its cursor on reconnect, and discards events while the gameplay presentation is paused. Music and SFX have separate saved levels; zero mutes that bus. Four movement voices and twelve one-shot voices bound resource use. Repeated cues have short cooldowns, remote events are quieter, and continuous movement stops on pause, focus loss and match end. Missing or locked audio never delays a game command. Browser playback starts after a user gesture. Human listening and subjective mix balance remain separate from automated signal checks.
+UI inputs trigger UI cues. Competitive cues follow monotonic event IDs in authoritative snapshots; the last 64 events are retained. Audio consumes each event once, primes its cursor on reconnect, and discards events while the gameplay presentation is paused. Hover and focus changes are silent. BGM playback gain stays constant across menus and gameplay. Music and SFX have separate saved levels; zero mutes that bus. Four movement voices and twelve one-shot voices bound resource use. Repeated cues have short cooldowns, remote events are quieter, and continuous movement stops on pause, focus loss and match end. Missing or locked audio never delays a game command. Browser playback starts after a user gesture. Human listening and subjective mix balance remain separate from automated signal checks.
 
 Names are generated on first visit and saved on the device. The profile editor is available from the title's name button. Names allow letters, numbers, spaces, dot, underscore and hyphen, up to 16 characters. Empty/reserved CPU names become Pilot; controls and bidi overrides are excluded. Japanese text uses M PLUS 1p, distributed under OFL from https://github.com/google/fonts/tree/main/ofl/mplus1p . Names are presentation text, not account identities.
 
