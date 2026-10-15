@@ -5,6 +5,7 @@ var team=0
 var can_switch=true
 var partner_cpu=false
 var action={}
+var name_tags=[]
 var action_screen=Vector2.ZERO
 var title=false
 var touch_mode=false
@@ -24,6 +25,7 @@ func tile(rect: Rect2,color: Color,radius=18):
 
 func _draw():
 	if title or not match_state: return
+	draw_names()
 	if touch_mode:draw_touch_hud();return
 	var m=match_state;var w=size.x;var h=size.y
 	for t in range(2):
@@ -37,9 +39,9 @@ func _draw():
 	text(Vector2(w/2-52,68),clock,32)
 	var rid=int(m.active[team]);var r=m.robots[rid]
 	tile(Rect2(28,h-96,240,68),Color('#fffaf0'))
-	text(Vector2(47,h-49),'TR' if rid%2==0 else 'BR',30)
+	robot_mark(Vector2(66,h-54),rid)
 	if can_switch:text(Vector2(49,h-76),'Y' if using_pad else 'Q',13,Color('#433074'))
-	if partner_cpu:text(Vector2(43,h-108),('BR' if rid%2==0 else 'TR')+' · CPU',16)
+	if partner_cpu:text(Vector2(43,h-108),'CPU',16)
 	for i in range(m.capacity(rid)):
 		var p=Vector2(130+i*43,h-62)
 		draw_circle(p,17,Color('#c6cee8'))
@@ -109,8 +111,8 @@ func draw_touch_hud():
 	var clock='%d:%02d'%[seconds/60,seconds%60] if m.mode!='free' else 'FREE'
 	tile(Rect2(w/2-48,12,96,46),Color('#fffaf0'),14);text(Vector2(w/2-34,43),clock,24)
 	var rid=int(m.active[team]);var r=m.robots[rid]
-	text(Vector2(18,84),'TR' if rid%2==0 else 'BR',20)
-	if partner_cpu:text(Vector2(18,110),('BR' if rid%2==0 else 'TR')+' · CPU',14)
+	robot_mark(Vector2(32,78),rid)
+	if partner_cpu:text(Vector2(18,110),'CPU',14)
 	for i in range(m.capacity(rid)):
 		var p=Vector2(62+i*25,78);draw_circle(p,10,Color('#c6cee8'))
 		if i<r.carry.size():
@@ -126,3 +128,26 @@ func draw_touch_hud():
 		draw_arc(Vector2(w-56,size.y-68),40,-PI/2,-PI/2+TAU*(1-r.left/duration),32,Color('#20243e'),5,true)
 	if m.mandate[team]:draw_circle(Vector2(154,78),8,Color('#ffda16'))
 	if disconnected:text(Vector2(w/2-68,83),'RECONNECTING',16)
+
+func draw_names():
+	var used=[];var fs=14 if touch_mode else 18
+	for tag in name_tags:
+		var value=str(tag.name)
+		var width=font.get_string_size(value,HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x+20
+		var rect=Rect2(tag.p-Vector2(width/2,24),Vector2(width,28))
+		for other in used:
+			if rect.intersects(other):rect.position.y=other.position.y-30
+		if rect.position.x<0 or rect.end.x>size.x or rect.position.y<65:continue
+		used.append(rect)
+		tile(rect,Color('#20243e'),10)
+		draw_circle(rect.position+Vector2(7,14),3,ArenaVisuals.RED if tag.team==0 else ArenaVisuals.BLUE)
+		text(rect.position+Vector2(13,20),value,fs,Color('#ffda16') if tag.self else Color.WHITE)
+
+func robot_mark(center: Vector2, rid: int):
+	var ink=Color('#20243e')
+	draw_rect(Rect2(center-Vector2(12,9),Vector2(24,18)),ink,false,2)
+	for side in [-1,1]:
+		draw_rect(Rect2(center+Vector2(side*15-3,-6),Vector2(6,12)),ink)
+	if rid%2==0:
+		for side in [-1,1]:draw_line(center+Vector2(side*7,-7),center+Vector2(side*7,-18),ink,3)
+	else:draw_polyline(PackedVector2Array([center+Vector2(-10,5),center+Vector2(-10,-17),center+Vector2(10,-17),center+Vector2(10,5)]),ink,3)

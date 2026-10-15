@@ -83,3 +83,13 @@ The existing 1v1 protocol and two-browser movement/synchronization checks also p
 `tests/network_rematch.py --2v2` completed a natural 180-second four-player match, verified that three votes do not reset it, and confirmed a fresh match with zero scores after the fourth vote.
 
 CD run [38705491042](https://github.com/kotek-7/robocon-2027-game/actions/runs/38705491042) deployed commit `63e80ae` and passed the rule, matchmaking, 2v2, container and public asset checks. After the server rollout, four public WSS clients received distinct TR/BR assignments in one match and received authoritative state after all four acknowledged. During rollout, earlier connection attempts received the old protocol rejection and a transient HTTP 500 before the new server became available.
+
+## Audio, nicknames and field-backed overlays
+
+The rule suite passes 62/62 checks, including name normalization and sequenced event snapshots. The audio harness passes eight checks: the supplied MP3 decodes and loops, all cue sources load, each cue plays, repeated snapshots do not replay sounds, reconnect skips old events, paused events stay silent, and focus loss/restoration stops and resumes audio. Worker packaging passes its dry run.
+
+Headed Chromium at 1280 × 720 passes the profile/audio browser check with no browser errors: Japanese nickname entry and reload persistence, CPU nameplates, a running browser AudioContext, BGM startup, switch/retry sounds, stopped motors in menus, and the field loading backdrop. The visibility callback is checked with an injected visibility event; this host did not report background-tab focus changes, so this is not an OS focus test. The latest HUD, touch controls and nameplates omit TR/BR text and use pictograms where needed.
+
+Chromium mobile emulation at 844 × 390 passes nickname entry, a reduced 844 × 210 keyboard viewport, Enter-to-save and the 390 × 844 portrait backdrop. Screenshots were inspected for the nameplates and field-backed rotate screen. Physical mobile keyboards, hardware audio output and subjective mix balance remain unverified.
+
+The touch regression passes move/look, pointer release/cancel, switch, pickup, overview, portrait blocking and fullscreen without browser errors. Two real browser clients match in 1v1, synchronize movement/scores and agree on both Japanese and Latin-script nameplates. The four-client protocol test also verifies normalized names, fixed seats and name preservation on reconnect.

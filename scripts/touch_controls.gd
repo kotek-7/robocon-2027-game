@@ -63,7 +63,7 @@ func _input(event):
 
 func _draw():
 	if landscape_required:
-		draw_rect(Rect2(Vector2.ZERO,size),Color('#20243e'))
+		draw_rect(Rect2(Vector2.ZERO,size),Color(.04,.06,.13,.70))
 		var center=size/2
 		var phone=StyleBoxFlat.new();phone.bg_color=Color('#12bfe7');phone.border_color=Color('#fffaf0');phone.set_border_width_all(5);phone.set_corner_radius_all(12)
 		draw_style_box(phone,Rect2(center-Vector2(65,34),Vector2(130,68)))
@@ -82,10 +82,14 @@ func _draw():
 		if key=='fullscreen' and not fullscreen_supported:style.bg_color=Color(.6,.6,.65,.7)
 		style.set_corner_radius_all(20 if key=='act' else 14)
 		style.border_color=Color('#20243e');style.set_border_width_all(2);draw_style_box(style,rect)
-		var label={'act':'ACT','switch':'TR/BR','previous':'<','next':'>','menu':'II','overview':'','fullscreen':''}[key]
+		var label={'act':'ACT','switch':'','previous':'<','next':'>','menu':'II','overview':'','fullscreen':''}[key]
 		var fs=18 if key in ['act','switch'] else 24
 		var width=font.get_string_size(label,HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x
 		draw_string(font,rect.get_center()+Vector2(-width/2,fs*.35),label,HORIZONTAL_ALIGNMENT_LEFT,-1,fs,Color('#20243e'))
+		if key=='switch':
+			var c=rect.get_center()
+			draw_polyline(PackedVector2Array([c+Vector2(-16,-6),c+Vector2(15,-6),c+Vector2(8,-13)]),Color('#20243e'),3,true)
+			draw_polyline(PackedVector2Array([c+Vector2(16,6),c+Vector2(-15,6),c+Vector2(-8,13)]),Color('#20243e'),3,true)
 		if key=='fullscreen':
 			for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(-1,1),Vector2(1,1)]:
 				var point=rect.get_center()+corner*11

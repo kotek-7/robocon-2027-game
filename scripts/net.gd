@@ -11,6 +11,8 @@ var room_code=''
 var token=''
 var team=0
 var robot_id=-1
+var nickname='Pilot'
+var robot_names=['Pilot','Pilot','Pilot','Pilot']
 var connected=false
 var server_mode=false
 var field: ArenaField
@@ -20,7 +22,7 @@ var reconnect_until=0.0
 var client_seq=0
 var latest_seq={}
 var server_id=1
-const PROTOCOL = 'robocon2027-v3'
+const PROTOCOL = 'robocon2027-v4'
 const RULESET = 'abu2027-v1.1-fixed-r4'
 var queue: Array=[]
 var ticket=''
@@ -49,7 +51,7 @@ func _process(dt):
 		while server.is_connection_available():
 			var stream=server.take_connection()
 			if peers.size()>=128:stream.disconnect_from_host();continue
-			var ws=WebSocketPeer.new();ws.accept_stream(stream);peers[server_id]={'ws':ws,'room':'','team':-1,'seat':-1,'format':'1v1','ticket':'','revision':0,'queued_at':0.0};server_id+=1
+			var ws=WebSocketPeer.new();ws.accept_stream(stream);peers[server_id]={'ws':ws,'room':'','team':-1,'seat':-1,'format':'1v1','ticket':'','revision':0,'queued_at':0.0,'nickname':'Pilot'};server_id+=1
 		for id in peers.keys():
 			var p=peers[id];p.ws.poll()
 			if p.ws.get_ready_state()==WebSocketPeer.STATE_CLOSED:
@@ -83,7 +85,7 @@ func _process(dt):
 			while client.get_available_packet_count()>0:
 				var data=JSON.parse_string(client.get_packet().get_string_from_utf8())
 				if not data is Dictionary: continue
-				if data.get('type')=='joined': room_code=data.room;token=data.token;team=int(data.team);robot_id=int(data.robot_id);reconnect_until=0
+				if data.get('type')=='joined': room_code=data.room;token=data.token;team=int(data.team);robot_id=int(data.robot_id);robot_names=data.robot_names;reconnect_until=0
 				message.emit(data)
 		elif client.get_ready_state()==WebSocketPeer.STATE_CLOSED:
 			if connected:
@@ -146,7 +148,7 @@ func handle(id: int, d: Dictionary):
 			if p.ticket==requested and revision<=p.revision:
 				if id in queue:emit_to(id,{'type':'queued','ticket':requested,'revision':revision})
 				return
-			queue.erase(id);p.format=format;p.ticket=requested;p.revision=revision;p.queued_at=Time.get_ticks_msec()/1000.0
+			queue.erase(id);p.nickname=ArenaProfile.clean_name(str(d.get('nickname','Pilot')));p.format=format;p.ticket=requested;p.revision=revision;p.queued_at=Time.get_ticks_msec()/1000.0
 			queue.append(id);emit_to(id,{'type':'queued','ticket':requested,'revision':revision})
 			match_waiting()
 		'cancel':
@@ -199,7 +201,7 @@ func handle(id: int, d: Dictionary):
 func join(id: int, code: String, seat: int):
 	var room=rooms[code];var t=seat%2
 	peers[id].room=code;peers[id].team=t;peers[id].seat=seat
-	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':t*2+int(seat/2) if room.format=='2v2' else -1,'token':room.tokens[seat]})
+	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':t*2+int(seat/2) if room.format=='2v2' else -1,'token':room.tokens[seat],'robot_names':room.names})
 
 func match_waiting():
 	for format in ['1v1','2v2']:
@@ -212,12 +214,17 @@ func match_waiting():
 				tokens.append(Crypto.new().generate_random_bytes(16).hex_encode());ready.append(false);deadline.append(0.0)
 			var code=Crypto.new().generate_random_bytes(12).hex_encode()
 			var m=MatchState.new(field);m.reset('online')
-			rooms[code]={'match':m,'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
+			var names=['Pilot','Pilot','Pilot','Pilot']
+			for seat in range(count):
+				var rid=(seat%2)*2+int(seat/2)
+				names[rid]=peers[ids[seat]].nickname
+				if format=='1v1':names[rid+1]=names[rid]
+			rooms[code]={'match':m,'names':names,'format':format,'ids':ids,'tokens':tokens,'ready':ready,'started':false,'deadline':deadline,'reason':'','created':Time.get_ticks_msec()/1000.0}
 			for seat in range(count):join(ids[seat],code,seat)
 
 func find_match(format: String = '1v1'):
 	ticket=Crypto.new().generate_random_bytes(16).hex_encode()
-	send({'type':'queue','ticket':ticket,'revision':1,'protocol':PROTOCOL,'ruleset':RULESET,'format':format})
+	send({'type':'queue','ticket':ticket,'revision':1,'protocol':PROTOCOL,'ruleset':RULESET,'format':format,'nickname':nickname})
 
 func leave():
 	if not ticket.is_empty():send({'type':'cancel','ticket':ticket,'revision':2})

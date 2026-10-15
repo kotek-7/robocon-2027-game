@@ -13,7 +13,8 @@ async def main():
   browser=await pw.chromium.launch(headless=False,executable_path='/home/kotek/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome',args=['--no-sandbox','--use-gl=angle','--use-angle=gl','--ignore-gpu-blocklist','--disable-background-timer-throttling','--disable-renderer-backgrounding'])
   a=await browser.new_page(viewport={'width':1280,'height':720});b=await browser.new_page(viewport={'width':1280,'height':720})
   errors=[]
-  for p in [a,b]:
+  for p,name in [(a,"Mango Rover"),(b,"はる7")]:
+   await p.add_init_script("localStorage.setItem('mustika-profile',"+json.dumps(json.dumps({"nickname":name,"music_volume":.45,"sfx_volume":.75}))+" )")
    p.on('pageerror',lambda e:errors.append(str(e)))
    p.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
    await p.goto('http://127.0.0.1:8087/?qa=1');await p.wait_for_function('window.__arenaQA',timeout=30000)
@@ -29,6 +30,8 @@ async def main():
   await a.bring_to_front();await a.wait_for_timeout(1000);sa=await state(a)
   assert sa['room']==sb['room'] and sa['room']
   room=sa['room']
+  assert sorted(sa['names'])==sorted(['Mango Rover','Mango Rover','はる7','はる7']),sa['names']
+  assert sa['names']==sb['names']
   assert sa['state']['scores']==sb['state']['scores']
   assert abs(sa['state']['robots'][2]['p'][2]-sb['state']['robots'][2]['p'][2])<.25
   assert sa['state']['elapsed']>0

@@ -1,0 +1,84 @@
+{
+  "author": "Koichi Morita / MaouDamashii",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "terms": "https://maou.audio/rule/",
+  "modifications": "Playback gain/pitch and looping only; source files unchanged.",
+  "files": [
+    {
+      "file": "maou_se_system49.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system49.ogg",
+      "sha256": "3221fc51dcbea07ea121211ffd52ea6d4df52f6f84e56ffb7ee1f75bbec71f55"
+    },
+    {
+      "file": "maou_se_system08.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system08.ogg",
+      "sha256": "01cb2424db9781608e2bf3029adb9dedbacd9c6bd9b9896a7bf55eabdb3d0108"
+    },
+    {
+      "file": "maou_se_system18.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system18.ogg",
+      "sha256": "c03253d97cb9481c559aacab0f7ee1b3c891c48c6ea3546558db9591706c9e52"
+    },
+    {
+      "file": "maou_se_system03.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system03.ogg",
+      "sha256": "1eb76be967af5331f6cfc324ce2f1a80f5e65d3c104a74ecfa691ee2aad0857c"
+    },
+    {
+      "file": "maou_se_system17.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system17.ogg",
+      "sha256": "6a6aeb2e3d5300d2c1d743a77b81870fed2dca39c2e3abc8dd6ab5e7692e72a1"
+    },
+    {
+      "file": "maou_se_system10.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_system10.ogg",
+      "sha256": "b07ce50aae647594f6650e1092b201248490a881e24fdfb39be769af9a714b98"
+    },
+    {
+      "file": "maou_se_sound23.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_sound23.ogg",
+      "sha256": "5bfbbdf056017f5a07a1233033755ea213bd90bb21056a6b1d30bbe51b3533e6"
+    },
+    {
+      "file": "maou_se_sound05.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_sound05.ogg",
+      "sha256": "d4b8484a01fd6b79a47821ecfe1d116974c847036b78e7736138b19860d5ae7d"
+    },
+    {
+      "file": "maou_se_sound20.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_sound20.ogg",
+      "sha256": "82d363ceb05391305f58b3fef6437b57ca20e2c92fa14296b4b2b5f9a80b3107"
+    },
+    {
+      "file": "maou_se_sound19.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_sound19.ogg",
+      "sha256": "869ac4761db9ad0d19fc36ca045bd2ae04a1fac25e4b661c3abe8bfdf5d3e05b"
+    },
+    {
+      "file": "maou_se_onepoint15.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_onepoint15.ogg",
+      "sha256": "5a98b7f28602b61fca7c6d250f0669b679ca04c2e9b04e47e18574f924e85898"
+    },
+    {
+      "file": "maou_se_onepoint14.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_onepoint14.ogg",
+      "sha256": "67091f0bd97ceb6e99b753500de216805728775cd6de8bbb22ca163afa71d3ad"
+    },
+    {
+      "file": "maou_se_onepoint20.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_onepoint20.ogg",
+      "sha256": "26f2d202bdbfd4e8d78406c4ec5859f684e684797452c23e7e0f001ed93dcb83"
+    },
+    {
+      "file": "maou_se_onepoint24.ogg",
+      "source": "https://maou.audio/sound/se/maou_se_onepoint24.ogg",
+      "sha256": "7a526e988ed58b4d032d580991dadfe490a33012c023ac24c77f449b95407d25"
+    },
+    {
+      "file": "maou_bgm_fantasy13.mp3",
+      "source": "https://maou.audio/bgm_fantasy13/",
+      "sha256": "f154534bca631836a2ee3c6af14f182b65c53759df877b401f2ed4b2806cd384"
+    }
+  ]
+}

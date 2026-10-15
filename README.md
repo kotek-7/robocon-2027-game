@@ -18,9 +18,11 @@ Alternatively, open `project.godot` in Godot and run the main scene. Use `godot 
 
 WASD moves relative to the camera. Mouse orbits; when pointer lock is unavailable, hold the left button and drag. E interacts, Q switches robots, mouse wheel selects cargo, Tab shows the field, Esc opens the menu. Gamepad: left stick moves, right stick orbits, lower face button interacts, upper face button switches, bumpers select cargo, left trigger shows the field, Start opens the menu.
 
-Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, TR/BR switches robots, < and > select cargo. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
+Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, the paired arrows switch robots, < and > select cargo. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
 
 VS CPU assigns the other friendly robot to a CPU partner; switching robots hands the previous robot to that partner. Both opposing robots run simultaneously, with identical robot performance. FREE has no opponent or time limit. ONLINE offers separate 1 vs 1 and 2 vs 2 queues. In 1 vs 1, each player switches between their team’s robots; the inactive robot waits. In 2 vs 2, four players each drive one assigned TR or BR. Assignments alternate teams, with TR seats filled first. CANCEL leaves the queue; search times out after two minutes. A rematch requires every player.
+
+The title’s name button edits the saved nickname and BGM/SE volume. A random nickname is assigned on first visit. Nameplates show player names or CPU; robot types use pictograms. Loading and portrait screens retain a view of the field. Music and effects are credited to Koichi Morita / MaouDamashii; see [audio sources and behavior](docs/audio.md).
 
 ## Delivery
 
@@ -37,6 +39,7 @@ See [deployment configuration](docs/deployment.md) for infrastructure and creden
 ```sh
 godot --headless --path . --import
 godot --headless --path . --script tests/run.gd
+godot --headless --path . --script tests/audio.gd
 # With the room server running, in an environment containing websockets:
 python tests/matchmaking.py
 python tests/network.py
@@ -50,6 +53,8 @@ python tests/firefox_browser.py
 python tests/touch_browser.py
 python tests/fixes_browser.py
 python tests/modes_browser.py
+python tests/audio_profile_browser.py
+python tests/mobile_profile.py
 ```
 
 The browser harness uses `?qa=1` for read-only state and UI bounds. It sends keyboard/mouse inputs; it cannot alter match state through that interface. Browser evidence is written under `build/qa`. Run browser checks sequentially because changing the foreground window pauses local play. The harness currently uses the local Playwright Chromium path; adjust it for another machine. The gamepad check injects Gamepad API inputs, not match state.

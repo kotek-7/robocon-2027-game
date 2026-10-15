@@ -8,10 +8,11 @@ async def main():
   async def connect():return await stack.enter_async_context(websockets.connect('ws://127.0.0.1:9080',close_timeout=1))
   solo=await connect();await enqueue(solo);await receive(solo,'queued')
   players=[await connect() for _ in range(4)]
-  for p in players:
-   await enqueue(p,format='2v2');await receive(p,'queued')
+  for p,name in zip(players,['はる7','Blue Bolt','CPU','A\u202eB']):
+   await enqueue(p,format='2v2',nickname=name);await receive(p,'queued')
   joins=await asyncio.gather(*(receive(p,'joined') for p in players))
   assert [j['robot_id'] for j in joins]==[0,2,1,3]
+  assert all(j['robot_names']==['はる7','Pilot','Blue Bolt','AB'] for j in joins)
   assert [j['team'] for j in joins]==[0,1,0,1] and len({j['room'] for j in joins})==1
   # The older solo ticket stays separate, and only matches another solo ticket.
   solo2=await connect();await enqueue(solo2)
@@ -31,7 +32,7 @@ async def main():
   assert after['robots'][0]['p']==initial['robots'][0]['p']
   await players[2].close();await asyncio.sleep(.2);players[2]=await connect()
   await send(players[2],type='resume',room=joins[2]['room'],token=joins[2]['token'])
-  restored=await receive(players[2],'joined');assert restored['robot_id']==1 and restored['seat']==2
+  restored=await receive(players[2],'joined');assert restored['robot_id']==1 and restored['seat']==2 and restored['robot_names']==joins[2]['robot_names']
   # Disconnect the other BR; its team forfeits after the normal 30-second grace.
   await players[3].close()
   async with asyncio.timeout(35):

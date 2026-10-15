@@ -20,6 +20,7 @@ var finished = false
 var winner = -1
 var tick = 0
 var events: Array = []
+var event_seq=0
 
 func _init(f: ArenaField):
 	field=f
@@ -27,7 +28,7 @@ func _init(f: ArenaField):
 func reset(new_mode: String):
 	mode=new_mode; robots.clear(); objects.clear(); towers.clear();tower_locks.clear()
 	active=[0,2]; transfer_points=[0,0]; mandate=[false,false]; scores=[0,0]
-	elapsed=0; tick=0; finished=false; winner=-1; events.clear()
+	elapsed=0; tick=0; finished=false; winner=-1; events.clear();event_seq=0
 	for i in range(4):
 		var x=(-4.8 if i<2 else 4.8)+(0.75 if i%2 else 0.0)*(-1 if i>=2 else 1)
 		robots.append({'p':Vector3(x,0,4.9),'v':Vector3.ZERO,'yaw':0.0,'carry':[],'selected':0,'job':{},'left':0.0,'upper':false})
@@ -46,6 +47,10 @@ func reset(new_mode: String):
 func add_object(kind: String, team: int, p: Vector3):
 	objects.append({'kind':kind,'owner':team,'face':team,'p':p,'home':p,'where':'ground','holder':-1,'spot':-1,'delivered':[false,false],'lock':-1,'slot':-1})
 
+func emit_event(kind: String, rid: int = -1):
+	event_seq+=1;events.append({'id':event_seq,'tick':tick,'type':kind,'rid':rid})
+	if events.size()>64:events.pop_front()
+
 func selected(rid: int) -> int:
 	var r=robots[rid]
 	if r.carry.is_empty(): return -1
@@ -57,6 +62,7 @@ func capacity(rid: int) -> int:
 func switch_robot(team: int):
 	if finished: return
 	active[team]=team*2+(1-active[team]%2)
+	emit_event('switch',int(active[team]))
 
 func command(team: int, cmd: Dictionary, dt: float):
 	if finished or team<0 or team>1: return
@@ -66,7 +72,8 @@ func command(team: int, cmd: Dictionary, dt: float):
 func command_robot(rid: int, cmd: Dictionary, dt: float):
 	if finished or rid<0 or rid>=robots.size():return
 	var r=robots[rid]
-	if cmd.has('select'): r.selected+=clampi(int(cmd.select),-1,1)
+	if cmd.has('select') and int(cmd.select)!=0:
+		r.selected+=clampi(int(cmd.select),-1,1);emit_event('select',rid)
 	if cmd.get('retry',false): retry(rid)
 	if not r.job.is_empty():r.v=Vector3.ZERO;return
 	var dir=Vector3(float(cmd.get('x',0)),0,float(cmd.get('z',0))).limit_length(1.0)
@@ -84,7 +91,10 @@ func command_robot(rid: int, cmd: Dictionary, dt: float):
 		if not blocked: p=next
 	p.y=field.height(p); r.p=p
 	if p.y>=0.59: r.upper=true
-	if cmd.get('act',false): begin(rid,context(rid))
+	if cmd.get('act',false):
+		var action=context(rid)
+		if action.is_empty():emit_event('deny',rid)
+		else:begin(rid,action)
 
 func accessible(rid: int, p: Vector3) -> bool:
 	var r=robots[rid]
@@ -171,6 +181,7 @@ func begin(rid: int, job: Dictionary):
 	if job.type=='climb':
 		var legal=stair_context(rid)
 		if legal.is_empty() or legal.stair!=job.stair or legal.to!=job.to:return
+		emit_event('climb',rid)
 		robots[rid].job=legal;robots[rid].left=legal.seconds;robots[rid].v=Vector3.ZERO
 		var direction: Vector3=legal.to-legal.from
 		robots[rid].yaw=atan2(-direction.x,-direction.z)
@@ -180,6 +191,7 @@ func begin(rid: int, job: Dictionary):
 	if job.has('spot'):
 		if tower_locks[job.spot]>=0:return
 		tower_locks[job.spot]=rid
+	emit_event('work',rid)
 	objects[oid].lock=rid
 	robots[rid].job=job.duplicate(true)
 	robots[rid].left=0.65 if job.type in ['pick','drop','give'] else 1.1
@@ -193,7 +205,7 @@ func step(dt: float):
 	tick+=1; elapsed+=dt
 	# End state is sampled before completions at the buzzer.
 	if mode!='free' and elapsed>=duration:
-		elapsed=duration; finished=true; update_score(); decide_winner(); return
+		elapsed=duration; finished=true; update_score(); decide_winner();emit_event('finish'); return
 	for rid in range(robots.size()):
 		var r=robots[rid]
 		if r.job.is_empty(): continue
@@ -214,7 +226,7 @@ func complete(rid: int):
 	var r=robots[rid]; var j=r.job; var team=int(rid/2)
 	if j.is_empty(): return
 	if j.type=='climb':
-		r.p=j.to;r.upper=true;r.job={};r.left=0
+		r.p=j.to;r.upper=true;r.job={};r.left=0;emit_event('land',rid)
 		return
 	var oid=int(j.object); var o=objects[oid]
 	match j.type:
@@ -245,10 +257,10 @@ func complete(rid: int):
 			r.carry.erase(oid);o.where='pillar';o.owner=team;o.p=j.p;o.holder=-1
 	if j.has('spot'):tower_locks[j.spot]=-1
 	o.lock=-1;r.job={};r.left=0
-	events.append({'type':j.type,'team':team,'object':oid})
-	if events.size()>24: events.pop_front()
+	emit_event(j.type,rid)
 
 func retry(rid: int):
+	emit_event('retry',rid)
 	var r=robots[rid]
 	for i in range(tower_locks.size()):
 		if tower_locks[i]==rid:tower_locks[i]=-1
@@ -262,6 +274,7 @@ func retry(rid: int):
 	r.upper=false
 
 func update_score():
+	var prior=scores.duplicate()
 	scores=transfer_points.duplicate()
 	var count=[0,0];var shared=[0,0]
 	for s in range(towers.size()):
@@ -275,9 +288,10 @@ func update_score():
 			var t=int(objects[towers[s][2]].face);count[t]+=1
 			if field.spots[s][4]==-1: shared[t]+=1
 	for t in range(2):
-		if count[t]>=2 and shared[t]>=1: mandate[t]=true
+		if count[t]>=2 and shared[t]>=1 and not mandate[t]:mandate[t]=true;emit_event('mandate')
 	for o in objects:
 		if o.where=='pillar': scores[o.owner]+=250
+	if prior!=scores:emit_event('score')
 
 func decide_winner():
 	if scores[0]!=scores[1]: winner=0 if scores[0]>scores[1] else 1; return
@@ -301,9 +315,10 @@ func snapshot() -> Dictionary:
 		rs.append(d)
 	for o in objects:
 		var d=o.duplicate(true);d.p=[o.p.x,o.p.y,o.p.z];d.home=[o.home.x,o.home.y,o.home.z];os.append(d)
-	return {'robots':rs,'objects':os,'towers':towers,'tower_locks':tower_locks,'active':active,'scores':scores,'transfer':transfer_points,'mandate':mandate,'elapsed':elapsed,'finished':finished,'winner':winner,'tick':tick,'mode':mode}
+	return {'robots':rs,'objects':os,'towers':towers,'tower_locks':tower_locks,'active':active,'scores':scores,'transfer':transfer_points,'mandate':mandate,'elapsed':elapsed,'finished':finished,'winner':winner,'tick':tick,'mode':mode,'events':events.duplicate(true),'event_seq':event_seq}
 
 func restore(s: Dictionary):
+	events=s.get('events',[]).duplicate(true);event_seq=int(s.get('event_seq',0))
 	robots=s.robots; objects=s.objects;towers=s.towers;tower_locks=s.tower_locks;active=s.active;scores=s.scores;transfer_points=s.transfer;mandate=s.mandate;elapsed=s.elapsed;finished=s.finished;winner=int(s.winner);tick=int(s.tick);mode=s.mode
 	for i in range(towers.size()): towers[i]=towers[i].map(func(v):return int(v))
 	scores=[int(scores[0]),int(scores[1])];active=[int(active[0]),int(active[1])]

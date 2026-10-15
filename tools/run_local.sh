@@ -3,6 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build/web
 godot --headless --path . --export-release Web build/web/index.html
+cp web/field-backdrop.jpg build/web/field-backdrop.jpg
 godot --headless --path . -- --server &
 room_pid=$!
 python3 -m http.server 8087 --bind 127.0.0.1 --directory build/web &

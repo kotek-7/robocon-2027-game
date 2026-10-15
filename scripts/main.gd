@@ -24,8 +24,14 @@ var capture_confirmed=false
 var pending={}
 var ui_open=true
 var net_clock=0.0
-var tones={}
-var sound: AudioStreamPlayer
+var audio: ArenaAudio
+var profile=ArenaProfile.new()
+var profile_button: Button
+var nickname_edit: LineEdit
+var editing_profile=false
+var awaiting_audio_baseline=false
+var browser_focus_callback
+var last_overview=false
 var last_states=[]
 var action_ring: MeshInstance3D
 var font: Font
@@ -52,6 +58,8 @@ func _ready():
 	if OS.has_feature('web'):touch_mode=bool(JavaScriptBridge.eval('navigator.maxTouchPoints > 0'))
 	if touch_mode:resize_mobile()
 	font=load('res://assets/Fredoka-Semibold.ttf')
+	font.fallbacks=[load('res://assets/MPLUS1p-Regular.ttf')]
+	profile.read();audio=ArenaAudio.new();add_child(audio);audio.levels(profile.music_volume,profile.sfx_volume);net.nickname=profile.nickname
 	if OS.has_feature('web'):qa_enabled=bool(JavaScriptBridge.eval("location.search.includes('qa=1')"))
 	if OS.has_feature('web'):
 		net.endpoint=str(JavaScriptBridge.eval("location.hostname==='localhost'||location.hostname==='127.0.0.1'?'ws://127.0.0.1:9080':`wss://${location.host}/ws`"))
@@ -77,7 +85,7 @@ func _ready():
 	ui=Control.new();ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);canvas.add_child(ui);ui.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	hud=ArenaHUD.new();hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(hud);hud.match_state=game;hud.touch_mode=touch_mode
 	touch=ArenaTouchControls.new();touch.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(touch);touch.visible=false;touch.z_index=100
-	touch.look.connect(func(delta):yaw-=delta.x*.005;pitch=clampf(pitch+delta.y*.004,.22,1.15))
+	touch.look.connect(func(delta):audio.look();yaw-=delta.x*.005;pitch=clampf(pitch+delta.y*.004,.22,1.15))
 	touch.action.connect(func(key):
 		match key:
 			'act':pending.act=true
@@ -106,11 +114,19 @@ func _ready():
 		fullscreen_button.disabled=not bool(JavaScriptBridge.eval('!!document.fullscreenEnabled && !!document.documentElement.requestFullscreen'))
 		touch.fullscreen_supported=not fullscreen_button.disabled
 	ui.add_child(fullscreen_button);fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60;fullscreen_button.pressed.connect(toggle_fullscreen)
-	sound=AudioStreamPlayer.new();sound.max_polyphony=4;add_child(sound)
+	profile_button=Button.new();profile_button.text=profile.nickname;profile_button.add_theme_font_override('font',font);profile_button.add_theme_font_size_override('font_size',18);profile_button.custom_minimum_size=Vector2(200,44);ui.add_child(profile_button);profile_button.position=Vector2(16,16);profile_button.icon=load('res://assets/edit.svg');profile_button.add_theme_constant_override('icon_max_width',20);profile_button.add_theme_color_override('font_color',Color('#20243e'));profile_button.add_theme_color_override('font_hover_color',Color('#20243e'));
+	for state in ['normal','hover','pressed','focus']:
+		var style=fullscreen_style.duplicate();style.content_margin_left=12;style.content_margin_right=12;style.bg_color=Color('#ffda16') if state=='hover' else Color('#fffaf0');profile_button.add_theme_stylebox_override(state,style)
+	profile_button.pressed.connect(func():audio.play('confirm');show_profile())
 	net.message.connect(network_message)
 	show_title()
+	if OS.has_feature('web'):
+		browser_focus_callback=JavaScriptBridge.create_callback(func(args):_notification(NOTIFICATION_APPLICATION_FOCUS_IN if bool(args[0]) else NOTIFICATION_APPLICATION_FOCUS_OUT))
+		JavaScriptBridge.get_interface('window').arenaFocusCallback=browser_focus_callback
+		JavaScriptBridge.eval("(()=>{const notify=()=>window.arenaFocusCallback(!document.hidden&&document.hasFocus());window.addEventListener('blur',notify);window.addEventListener('focus',notify);document.addEventListener('visibilitychange',notify);})()")
 
 func toggle_fullscreen():
+	audio.play('fullscreen')
 	if OS.has_feature('web'):
 		JavaScriptBridge.eval("""(() => {
 		const lock = () => { if (navigator.maxTouchPoints > 0 && screen.orientation?.lock) screen.orientation.lock('landscape').catch(() => {}); };
@@ -129,11 +145,14 @@ func resize_mobile():
 	if is_instance_valid(touch):touch.reset();pending.clear();overview=false
 
 func panel():
+	editing_profile=false
+	if OS.has_feature('web'):JavaScriptBridge.eval("document.getElementById('arena-name')?.remove();window.arenaNameSubmit=false")
 	pending.clear();overview=false
 	if is_instance_valid(touch):touch.reset();touch.visible=false
 	if is_instance_valid(overlay): overlay.queue_free()
 	overlay=Control.new();overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(overlay)
 	ui.move_child(fullscreen_button,ui.get_child_count()-1)
+	ui.move_child(profile_button,ui.get_child_count()-1)
 	var shade=ColorRect.new();shade.color=Color(.14,.1,.24,.18);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;overlay.add_child(shade)
 	var center=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);overlay.add_child(center)
 	menu=VBoxContainer.new();menu.add_theme_constant_override('separation',8 if touch_mode else 14);menu.custom_minimum_size=Vector2(320,0);center.add_child(menu)
@@ -149,7 +168,7 @@ func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
 		if state=='focus': style.bg_color=Color.TRANSPARENT;style.border_color=Color('#20243e');style.set_border_width_all(3)
 		if state=='normal':style.shadow_color=Color(.17,.1,.3,.16);style.shadow_size=8;style.shadow_offset=Vector2(0,4)
 		b.add_theme_stylebox_override(state,style)
-	b.pressed.connect(call);menu.add_child(b);return b
+	b.pressed.connect(func():audio.play('back' if s in ['BACK','CANCEL','EXIT'] else 'confirm');call.call());b.mouse_entered.connect(func():audio.play('hover',0,.12));b.focus_entered.connect(func():audio.play('hover',0,.12));menu.add_child(b);return b
 
 func show_title():
 	mode='title';net.leave();game.reset('cpu');panel();hud.title=true;result_shown=false
@@ -162,9 +181,44 @@ func show_title():
 	note.custom_minimum_size=Vector2(48,40);note.icon=load('res://assets/info.svg');note.add_theme_constant_override('icon_max_width',22)
 
 func show_notes():
-	panel();label('TR + BR',30);label('VS CPU: partner on autopilot.',16)
+	panel();label('ROBOTS',30);label('VS CPU: partner on autopilot.',16)
 	label('ABU 2027 / v1.1',16)
+	label('Music / SE: MaouDamashii',18)
+	label('Koichi Morita · CC BY 4.0',16)
+	button('maou.audio',func():OS.shell_open('https://maou.audio/'))
 	button('BACK',show_title)
+
+func show_profile():
+	panel();label('NAME',28)
+	nickname_edit=LineEdit.new();nickname_edit.text=profile.nickname;nickname_edit.max_length=16;nickname_edit.custom_minimum_size=Vector2(320,44);nickname_edit.add_theme_font_override('font',font);nickname_edit.add_theme_font_size_override('font_size',22);menu.add_child(nickname_edit)
+	var field_style=StyleBoxFlat.new();field_style.bg_color=Color('#fffaf0');field_style.set_corner_radius_all(12);field_style.content_margin_left=12;nickname_edit.add_theme_stylebox_override('normal',field_style);nickname_edit.add_theme_color_override('font_color',Color('#20243e'))
+	nickname_edit.text_changed.connect(func(_value):audio.play('hover',-6,.08))
+	button('RANDOM',func():
+		nickname_edit.text=ArenaProfile.random_name()
+		if OS.has_feature('web'):JavaScriptBridge.eval("document.getElementById('arena-name').value="+JSON.stringify(nickname_edit.text)))
+	for kind in ['BGM','SE']:
+		var row=HBoxContainer.new();menu.add_child(row)
+		var caption=Label.new();caption.text=kind;caption.custom_minimum_size.x=55;caption.add_theme_font_override('font',font);row.add_child(caption)
+		var slider=HSlider.new();slider.min_value=0;slider.max_value=1;slider.step=.05;slider.value=profile.music_volume if kind=='BGM' else profile.sfx_volume;slider.custom_minimum_size=Vector2(245,32);slider.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(slider)
+		slider.value_changed.connect(func(value):
+			if kind=='BGM':profile.music_volume=value
+			else:profile.sfx_volume=value
+			audio.levels(profile.music_volume,profile.sfx_volume);audio.play('select');profile.save())
+	button('OK',save_profile,Color('#ffda16'))
+	nickname_edit.text_submitted.connect(func(_value):save_profile())
+	nickname_edit.grab_focus();nickname_edit.select_all();editing_profile=true
+	if OS.has_feature('web'):
+		nickname_edit.modulate.a=0
+		JavaScriptBridge.eval("""(()=>{const input=document.createElement('input');input.id='arena-name';input.type='text';input.maxLength=16;input.autocomplete='nickname';input.setAttribute('aria-label','Nickname');input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:600 22px sans-serif;';input.addEventListener('input',()=>window.arenaNameChanged=true);input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;input.blur();}});document.body.append(input);input.value="""+JSON.stringify(profile.nickname)+";input.focus();input.select();})()")
+
+
+func save_profile():
+	var value=nickname_edit.text
+	if OS.has_feature('web'):value=str(JavaScriptBridge.eval("document.getElementById('arena-name')?.value||''"))
+	profile.nickname=ArenaProfile.clean_name(value);profile.save();net.nickname=profile.nickname;profile_button.text=profile.nickname;audio.play('confirm');show_title()
+
+func _input(event):
+	if is_instance_valid(audio) and ((event is InputEventMouseButton and event.pressed) or (event is InputEventScreenTouch and event.pressed) or (event is InputEventKey and event.pressed) or (event is InputEventJoypadButton and event.pressed)):audio.unlock()
 
 func show_online():
 	mode='title';hud.title=true;net.leave();panel();label('ONLINE',42)
@@ -182,9 +236,10 @@ func network_message(d: Dictionary):
 		'queued':
 			if is_instance_valid(info):info.text='FINDING PLAYERS' if online_format=='2v2' else 'FINDING PLAYER'
 		'joined':
+			audio.play('reconnected' if mode=='online' else 'found');awaiting_audio_baseline=true
 			team=int(d.team)
 			if mode!='online':
-				panel();label('MATCH FOUND',40);info=label(('TR' if net.robot_id%2==0 else 'BR') if net.robot_id>=0 else '',18);net.send({'type':'ready'})
+				panel();label('MATCH FOUND',40);info=label(profile.nickname,18);net.send({'type':'ready'})
 			hud.disconnected=false
 		'ready':
 			if d.started: start('online')
@@ -193,8 +248,10 @@ func network_message(d: Dictionary):
 			# Authoritative correction; presentation interpolates the resulting poses.
 			game.restore(d.state)
 			if net.robot_id>=0:game.active[team]=net.robot_id
-		'lost': hud.disconnected=true
+			if awaiting_audio_baseline:audio.prime(game);awaiting_audio_baseline=false
+		'lost': hud.disconnected=true;audio.play('lost')
 		'error':
+			audio.play('deny')
 			net.leave();panel();label(str(d.text),24);button('RETRY',show_online);button('BACK',show_title)
 
 func start(which: String):
@@ -209,9 +266,10 @@ func start(which: String):
 	# Network start arrives outside a browser gesture; capture only on RESUME.
 	if which=='online':pause_menu()
 	else:close_menu()
-	tone(500,.08)
+	audio.prime(game);audio.play('start')
 
 func close_menu():
+	audio.play('resume')
 	if OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
 		pause_menu();return
 	if is_instance_valid(overlay):overlay.queue_free()
@@ -221,6 +279,7 @@ func close_menu():
 
 func pause_menu():
 	if mode=='title':return
+	audio.play('pause')
 	panel();label('PAUSED' if mode!='online' else 'MENU',40)
 	button('RESUME',close_menu).grab_focus()
 	button('RETRY',func(): pending.retry=true;close_menu();pending.retry=true)
@@ -228,6 +287,7 @@ func pause_menu():
 	button('EXIT',show_title)
 
 func results():
+	audio.play('draw' if game.winner<0 else 'win' if game.winner==team else 'lose')
 	result_shown=true;panel()
 	label('DRAW' if game.winner<0 else ('YOU WIN' if game.winner==team else 'CPU WINS' if mode=='cpu' else 'YOU LOSE'),48)
 	label('%d : %d'%[game.scores[0],game.scores[1]],38)
@@ -248,13 +308,20 @@ func _unhandled_input(event):
 		if event.keycode==KEY_Q: pending.switch=true
 	if event is InputEventMouseMotion and not ui_open and not touch_mode and (Input.mouse_mode==Input.MOUSE_MODE_CAPTURED or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
 		hud.using_pad=false
-		yaw-=event.relative.x*.003;pitch=clampf(pitch+event.relative.y*.002,.22,1.15)
+		audio.look();yaw-=event.relative.x*.003;pitch=clampf(pitch+event.relative.y*.002,.22,1.15)
 	if event is InputEventMouseButton and event.pressed and not ui_open:
 		if event.button_index==MOUSE_BUTTON_LEFT and not touch_mode:Input.mouse_mode=Input.MOUSE_MODE_CAPTURED;capture_confirmed=false;capture_grace=.5
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP:pending.select=1
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:pending.select=-1
 
 func _notification(what):
+	if is_instance_valid(audio):
+		if what==NOTIFICATION_APPLICATION_FOCUS_OUT:
+			audio.focus(false)
+			if qa_enabled and OS.has_feature('web'):JavaScriptBridge.eval('window.__arenaAudioBackground=true')
+		elif what==NOTIFICATION_APPLICATION_FOCUS_IN:
+			audio.focus(true)
+			if qa_enabled and OS.has_feature('web'):JavaScriptBridge.eval('window.__arenaAudioBackground=false')
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(hud):
 		pending.clear()
 		if is_instance_valid(touch):touch.reset()
@@ -282,7 +349,7 @@ func _physics_process(dt):
 		var stick=Vector2(Input.get_joy_axis(0,JOY_AXIS_LEFT_X),Input.get_joy_axis(0,JOY_AXIS_LEFT_Y))
 		if stick.length()>.18:axes=stick;hud.using_pad=true
 		var look=Vector2(Input.get_joy_axis(0,JOY_AXIS_RIGHT_X),Input.get_joy_axis(0,JOY_AXIS_RIGHT_Y))
-		if look.length()>.18:yaw-=look.x*dt*2.5;pitch=clampf(pitch+look.y*dt*1.5,.22,1.15)
+		if look.length()>.18:audio.look();yaw-=look.x*dt*2.5;pitch=clampf(pitch+look.y*dt*1.5,.22,1.15)
 		var dir=Vector3(axes.x,0,axes.y).rotated(Vector3.UP,yaw).limit_length(1)
 		cmd=pending.duplicate();cmd.x=dir.x;cmd.z=dir.z;pending.clear()
 		if gamepad_pressed(JOY_BUTTON_A):cmd.act=true
@@ -308,9 +375,18 @@ func _physics_process(dt):
 
 func _process(dt):
 	if not camera:return
+	if editing_profile and OS.has_feature('web'):
+		var rect=nickname_edit.get_global_rect();var viewport_size=get_viewport().get_visible_rect().size
+		JavaScriptBridge.eval("(()=>{const e=document.getElementById('arena-name');if(!e)return;const c=document.getElementById('canvas').getBoundingClientRect();e.style.left=(c.left+"+str(rect.position.x/viewport_size.x)+"*c.width)+'px';e.style.top=Math.max(8,c.top+"+str(rect.position.y/viewport_size.y)+"*c.height)+'px';e.style.width=("+str(rect.size.x/viewport_size.x)+"*c.width)+'px';e.style.height=("+str(rect.size.y/viewport_size.y)+"*c.height)+'px';e.style.visibility="+JSON.stringify('hidden' if landscape_required else 'visible')+";})()")
+		if bool(JavaScriptBridge.eval('window.arenaNameChanged===true')):
+			audio.play('hover',-6,.08);JavaScriptBridge.eval('window.arenaNameChanged=false')
+		if bool(JavaScriptBridge.eval('window.arenaNameSubmit===true')):save_profile()
 	if touch_mode:
 		resize_mobile();touch.landscape_required=landscape_required;touch.visible=landscape_required or not ui_open;touch.queue_redraw()
+	profile_button.visible=mode=='title' and ui_open and hud.title and not landscape_required and is_instance_valid(menu) and menu.get_child(0) is ArenaTitle
 	fullscreen_button.visible=not landscape_required and ui_open
+	if overview!=last_overview:audio.play('overview');last_overview=overview
+	audio.observe(game,int(game.active[team]),mode=='title' or ui_open or landscape_required or hud.disconnected,dt)
 	fullscreen_button.offset_top=16 if mode=='title' else 100
 	fullscreen_button.offset_bottom=fullscreen_button.offset_top+44
 	title_clock+=dt
@@ -332,7 +408,7 @@ func _process(dt):
 			body.rotation.x=-.13 if r.job.to.y>r.job.from.y else .10
 			body.position.y=abs(sin(title_clock*10))*.035
 		if last_jobs[i] and not climbing and mode!='title':
-			stadium.burst(r.p+Vector3(0,.12,0),Color('#fffaf0'),8);tone(300,.1)
+			stadium.burst(r.p+Vector3(0,.12,0),Color('#fffaf0'),8)
 		last_jobs[i]=climbing
 		shadows[i].position=Vector3(node.position.x,field.height(node.position)+.012,node.position.z);shadows[i].visible=node.visible
 		if mode=='title':body.position.y=sin(title_clock*2+i)*.035
@@ -346,7 +422,6 @@ func _process(dt):
 		if o.kind=='S':node.quaternion=node.quaternion.slerp(Quaternion.from_euler(art.sky_rotation(o)),1-exp(-12*dt))
 		if last_states[i]!=o.where:
 			if mode!='title' and last_states[i]!='':
-				tone(650 if o.where=='tower' else 430,.065)
 				if o.where in ['tower','pillar','buffer']:stadium.burst(pos+Vector3(0,.15,0),ArenaVisuals.RED if o.owner==0 else ArenaVisuals.BLUE,24 if o.where=='pillar' else 12)
 			node.scale=Vector3(1.14,.86,1.14);last_states[i]=o.where
 		node.scale=node.scale.lerp(Vector3.ONE,1-exp(-12*dt))
@@ -371,22 +446,22 @@ func _process(dt):
 		hud.action_screen=camera.unproject_position(p) if not camera.is_position_behind(p) else Vector2(-1,-1)
 		action_ring.visible=true;action_ring.position=ctx.p+Vector3(0,.035,0)
 	else:action_ring.visible=false
+	hud.name_tags=[]
+	if mode!='title':
+		for rid in range(4):
+			if mode=='free' and rid>=2:continue
+			var point=robots[rid].position+Vector3(0,1.3,0)
+			if camera.is_position_behind(point):continue
+			var name=profile.nickname
+			if mode=='cpu' and rid!=game.active[team]:name='CPU'
+			elif mode=='online':name=net.robot_names[rid]
+			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.unproject_position(point)})
 	hud.queue_redraw()
 	if qa_enabled:
 		qa_clock+=dt
 		if qa_clock>.5:
 			qa_clock=0
-			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'robot_id':net.robot_id,'format':online_format,'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
-
-func tone(frequency: float, length: float):
-	if tones.has(frequency):sound.stream=tones[frequency];sound.play();return
-	var wav=AudioStreamWAV.new();wav.format=AudioStreamWAV.FORMAT_16_BITS;wav.mix_rate=22050
-	var data=PackedByteArray();data.resize(int(22050*length)*2)
-	for i in range(data.size()/2):
-		var envelope=pow(1-float(i)/(data.size()/2),2)
-		var v=int(sin(TAU*frequency*i/22050.0)*envelope*3200)
-		data.encode_s16(i*2,v)
-	wav.data=data;tones[frequency]=wav;sound.stream=wav;sound.play()
+			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'robot_id':net.robot_id,'format':online_format,'nickname':profile.nickname,'names':hud.name_tags.map(func(tag):return tag.name),'audio':audio.cue_counts,'music_playing':audio.music.playing,'music_paused':audio.music.stream_paused,'motors':audio.motors.filter(func(player):return player.playing).size(),'audio_peak':AudioServer.get_bus_peak_volume_left_db(AudioServer.get_bus_index('Master'),0),'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
 
 func qa_buttons() -> Array:
 	var out=[]
