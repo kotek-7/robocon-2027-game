@@ -207,6 +207,7 @@ event = &"finish"
 
 [node name="win" type="AudioStreamPlayer" parent="Cues" unique_id=1700865950]
 stream = ExtResource("21_8fj74")
+volume_db = -8.0
 script = ExtResource("cue")
 event = &"win"
 
