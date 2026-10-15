@@ -14,6 +14,26 @@ Open http://localhost:8087. The script exports the game, serves the Web build an
 
 Alternatively, open `project.godot` in Godot and run the main scene. Use `godot --headless --path . -- --server` for the room server.
 
+## Scene editing
+
+Open `main.tscn` to inspect the placed field, robots, all 53 competition objects, camera, lighting and interface before running the game.
+
+- `scenes/world/field.tscn`: CAD field mesh and material.
+- `scenes/world/stadium.tscn`: stands, crowd, balloons and arches. The script animates existing nodes.
+- `scenes/robots/`: red/blue TR and BR, with named chassis, wheels, forks and mast parts.
+- `scenes/objects/`: Earth blocks by team, Sky block and Mustika; instances are placed under `Objects` in the main scene.
+- `scenes/audio/audio.tscn`: event sound streams, volume, pitch, editor audition, BGM and motor players.
+- `scenes/ui/interface.tscn`: HUD, touch-control scene instances and toolbar buttons.
+- `scenes/ui/hud.tscn`, `touch_controls.tscn`, `title.tscn`, `menus/`: editable Control nodes for each screen.
+- `resources/ui/`: shared desktop/mobile themes and fonts.
+- `scenes/ui/menu_panel.tscn`: reusable menu shade, centering and layout.
+
+The match model still controls robot/object positions during play and resets, including online snapshots. Changing a visual transform does not change the competition rules: update `scripts/match.gd` for starting positions and the CAD data for traversability. Keep the order of `Robots` and `Objects` aligned with the match model. HUD, touch controls, menu contents and title graphics are saved nodes/resources. Scripts bind events and update live state. Camera, robot animation, touch sensitivity and scenery settings are exposed in the Inspector; keyboard/gamepad bindings live in Project Settings → Input Map.
+
+See [Godot editing guide (日本語)](docs/editor.md) for SE replacement and the location of each editable setting.
+
+Run `godot --headless --path . --script tests/scenes.gd` to check saved geometry, object mapping, stable node counts and menu transitions.
+
 ## Controls
 
 WASD moves relative to the camera. Mouse orbits; when pointer lock is unavailable, hold the left button and drag. E interacts, Q switches robots, mouse wheel selects cargo, Tab shows the field, Esc opens the menu. Gamepad: left stick moves, right stick orbits, lower face button interacts, upper face button switches, bumpers select cargo, left trigger shows the field, Start opens the menu.
@@ -40,6 +60,8 @@ See [deployment configuration](docs/deployment.md) for infrastructure and creden
 godot --headless --path . --import
 godot --headless --path . --script tests/run.gd
 godot --headless --path . --script tests/audio.gd
+godot --headless --path . --script tests/scenes.gd
+godot --headless --path . --script tests/editor_config.gd
 # With the room server running, in an environment containing websockets:
 python tests/matchmaking.py
 python tests/network.py

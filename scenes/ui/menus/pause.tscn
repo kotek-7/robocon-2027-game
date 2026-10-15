@@ -1,0 +1,40 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[node name="PauseMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+text = "PAUSED"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Resume" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "RESUME"
+
+[node name="Retry" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "RETRY"
+
+[node name="Reset" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "RESET"
+
+[node name="Exit" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "EXIT"

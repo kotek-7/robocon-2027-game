@@ -1,5 +1,7 @@
 # Audio and player identity
 
+Audio assignments are authored in `scenes/audio/audio.tscn`. Select `Cues/<event>` and edit Stream, Volume dB, Pitch Scale or Enabled; the Inspector has audition/stop buttons. Filenames and supported audio formats are unrestricted by the controller. BGM and motor loops are configured through their nodes and audio import settings. The audio buses/limiter are saved in `default_bus_layout.tres`. See [the editing guide](editor.md) for the complete workflow.
+
 Music and sound effects: **Koichi Morita / MaouDamashii (魔王魂)**, https://maou.audio/ . Used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); source terms: https://maou.audio/rule/ . Title menus and results use [Neorock 44](https://maou.audio/bgm_neorock44/); gameplay and pause use [Neorock 82](https://maou.audio/bgm_neorock82/). Both use the official game-loop MP3. Original files remain unchanged; playback applies gain, pitch and looping. `assets/audio/sources.json` records every URL and SHA-256.
 
 | Source cue | Uses |

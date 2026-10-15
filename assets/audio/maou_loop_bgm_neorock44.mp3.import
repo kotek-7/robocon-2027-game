@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/maou_loop_bgm_neorock44.mp3-b706b5a67d1495897
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

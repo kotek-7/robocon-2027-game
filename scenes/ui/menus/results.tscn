@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[node name="ResultsMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+text = "YOU WIN"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Score" type="Label" parent="."]
+layout_mode = 2
+text = "0 : 0"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Again" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "AGAIN"
+theme_type_variation = &"Accent"
+
+[node name="Back" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "BACK"

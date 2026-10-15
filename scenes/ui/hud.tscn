@@ -1,0 +1,1027 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/hud.gd" id="script"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="theme"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/robot_tr.svg" id="robot_tr"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/robot_br.svg" id="robot_br"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/tower.svg" id="tower"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/earth.svg" id="earth"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/mustika.svg" id="mustika"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/climb.svg" id="climb"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/pick.svg" id="pick"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/ring.svg" id="ring"]
+
+[sub_resource type="StyleBoxFlat" id="selection"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_right = 2
+border_width_top = 2
+border_width_bottom = 2
+border_color = Color(0.125, 0.141, 0.243, 1)
+corner_radius_top_left = 19
+corner_radius_top_right = 19
+corner_radius_bottom_left = 19
+corner_radius_bottom_right = 19
+
+[node name="HUD" type="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("script")
+theme = ExtResource("theme")
+tr_icon = ExtResource("robot_tr")
+br_icon = ExtResource("robot_br")
+earth_icon = ExtResource("earth")
+mustika_icon = ExtResource("mustika")
+
+[node name="Desktop" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+visible = true
+
+[node name="Red" type="PanelContainer" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 158.0
+offset_bottom = 94.0
+mouse_filter = 2
+theme_type_variation = "RedScore"
+
+[node name="Value" type="Label" parent="Desktop/Red"]
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="TeamMark" type="Label" parent="Desktop/Red"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -22.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "•"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="Blue" type="PanelContainer" parent="Desktop"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -158.0
+offset_top = 24.0
+offset_right = -28.0
+offset_bottom = 94.0
+mouse_filter = 2
+theme_type_variation = "BlueScore"
+
+[node name="Value" type="Label" parent="Desktop/Blue"]
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 40
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="TeamMark" type="Label" parent="Desktop/Blue"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -22.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "••"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="Clock" type="PanelContainer" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -70.0
+offset_top = 24.0
+offset_right = 70.0
+offset_bottom = 94.0
+mouse_filter = 2
+theme_type_variation = ""
+
+[node name="Value" type="Label" parent="Desktop/Clock"]
+layout_mode = 2
+text = "3:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 32
+
+[node name="Cargo" type="Panel" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -96.0
+offset_right = 268.0
+offset_bottom = -28.0
+mouse_filter = 2
+theme_type_variation = &"CargoPanel"
+
+[node name="Robot" type="TextureRect" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 16.0
+offset_top = 18.0
+offset_right = 48.0
+offset_bottom = 50.0
+mouse_filter = 2
+texture = ExtResource("robot_tr")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SwitchKey" type="Label" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 14.0
+offset_top = 0.0
+offset_right = 46.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "Q"
+theme_override_font_sizes/font_size = 13
+visible = true
+
+[node name="Partner" type="Label" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = -20.0
+offset_right = 48.0
+offset_bottom = 0.0
+mouse_filter = 2
+text = "CPU"
+theme_override_font_sizes/font_size = 14
+
+[node name="Slot0" type="Panel" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 85.0
+offset_top = 17.0
+offset_right = 119.0
+offset_bottom = 51.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Desktop/Cargo/Slot0"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 31.0
+offset_bottom = 31.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Desktop/Cargo/Slot0"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Slot1" type="Panel" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 128.0
+offset_top = 17.0
+offset_right = 162.0
+offset_bottom = 51.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Desktop/Cargo/Slot1"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 31.0
+offset_bottom = 31.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Desktop/Cargo/Slot1"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Slot2" type="Panel" parent="Desktop/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 171.0
+offset_top = 17.0
+offset_right = 205.0
+offset_bottom = 51.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Desktop/Cargo/Slot2"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 31.0
+offset_bottom = 31.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Desktop/Cargo/Slot2"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Objective" type="HBoxContainer" parent="Desktop"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -100.0
+offset_right = 0.0
+offset_bottom = -60.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Tower1" type="TextureRect" parent="Desktop/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Tower2" type="TextureRect" parent="Desktop/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Mustika" type="TextureRect" parent="Desktop/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Legend" type="Label" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = -50.0
+offset_right = 190.0
+offset_bottom = -26.0
+mouse_filter = 2
+text = "WASD  MOVE    E  ACT    Q  SWITCH    TAB  FIELD"
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+visible = true
+
+[node name="Connection" type="Label" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -100.0
+offset_top = 100.0
+offset_right = 100.0
+offset_bottom = 130.0
+mouse_filter = 2
+text = "RECONNECTING"
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="Action" type="Control" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 58.0
+offset_bottom = 58.0
+mouse_filter = 2
+visible = false
+
+[node name="Key" type="PanelContainer" parent="Desktop/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -29.0
+offset_top = -29.0
+offset_right = 29.0
+offset_bottom = 29.0
+mouse_filter = 2
+visible = true
+
+[node name="Label" type="Label" parent="Desktop/Action/Key"]
+layout_mode = 2
+text = "E"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Target" type="TextureRect" parent="Desktop/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 18.0
+offset_bottom = 18.0
+mouse_filter = 2
+texture = ExtResource("ring")
+visible = false
+
+[node name="Climb" type="TextureRect" parent="Desktop/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -18.0
+offset_top = -65.0
+offset_right = 18.0
+offset_bottom = -37.0
+mouse_filter = 2
+texture = ExtResource("climb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Pick" type="TextureRect" parent="Desktop/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -12.0
+offset_top = -65.0
+offset_right = 12.0
+offset_bottom = -41.0
+mouse_filter = 2
+texture = ExtResource("pick")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seconds" type="Label" parent="Desktop/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 34.0
+offset_top = -16.0
+offset_right = 94.0
+offset_bottom = 14.0
+mouse_filter = 2
+text = "3s"
+theme_override_font_sizes/font_size = 18
+
+[node name="JobProgress" type="TextureProgressBar" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = 36.0
+offset_right = 24.0
+offset_bottom = 84.0
+mouse_filter = 2
+texture_progress = ExtResource("ring")
+fill_mode = 4
+radial_initial_angle = 270.0
+max_value = 1.0
+step = 0.001
+nine_patch_stretch = true
+
+[node name="Mobile" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+visible = false
+
+[node name="Red" type="PanelContainer" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 98.0
+offset_bottom = 58.0
+mouse_filter = 2
+theme_type_variation = "RedScore"
+
+[node name="Value" type="Label" parent="Mobile/Red"]
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 25
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="TeamMark" type="Label" parent="Mobile/Red"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -22.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "•"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="Blue" type="PanelContainer" parent="Mobile"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -98.0
+offset_top = 12.0
+offset_right = -16.0
+offset_bottom = 58.0
+mouse_filter = 2
+theme_type_variation = "BlueScore"
+
+[node name="Value" type="Label" parent="Mobile/Blue"]
+layout_mode = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 25
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="TeamMark" type="Label" parent="Mobile/Blue"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -22.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "••"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+
+[node name="Clock" type="PanelContainer" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -48.0
+offset_top = 12.0
+offset_right = 48.0
+offset_bottom = 58.0
+mouse_filter = 2
+theme_type_variation = ""
+
+[node name="Value" type="Label" parent="Mobile/Clock"]
+layout_mode = 2
+text = "3:00"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="Cargo" type="Control" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 16.0
+offset_top = 64.0
+offset_right = 176.0
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_styles/panel = null
+
+[node name="Robot" type="TextureRect" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 32.0
+offset_bottom = 32.0
+mouse_filter = 2
+texture = ExtResource("robot_tr")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SwitchKey" type="Label" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 14.0
+offset_top = 0.0
+offset_right = 46.0
+offset_bottom = 16.0
+mouse_filter = 2
+text = "Q"
+theme_override_font_sizes/font_size = 13
+visible = false
+
+[node name="Partner" type="Label" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = -20.0
+offset_right = 48.0
+offset_bottom = 0.0
+mouse_filter = 2
+text = "CPU"
+theme_override_font_sizes/font_size = 14
+
+[node name="Slot0" type="Panel" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 36.0
+offset_top = 4.0
+offset_right = 56.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Mobile/Cargo/Slot0"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 17.0
+offset_bottom = 17.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Mobile/Cargo/Slot0"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 22.0
+offset_bottom = 22.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Slot1" type="Panel" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 61.0
+offset_top = 4.0
+offset_right = 81.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Mobile/Cargo/Slot1"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 17.0
+offset_bottom = 17.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Mobile/Cargo/Slot1"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 22.0
+offset_bottom = 22.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Slot2" type="Panel" parent="Mobile/Cargo"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 86.0
+offset_top = 4.0
+offset_right = 106.0
+offset_bottom = 24.0
+mouse_filter = 2
+theme_type_variation = &"CargoSlot"
+
+[node name="Icon" type="TextureRect" parent="Mobile/Cargo/Slot2"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 17.0
+offset_bottom = 17.0
+mouse_filter = 2
+texture = ExtResource("earth")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Selection" type="Panel" parent="Mobile/Cargo/Slot2"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -2.0
+offset_top = -2.0
+offset_right = 22.0
+offset_bottom = 22.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("selection")
+
+[node name="Objective" type="HBoxContainer" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 140.0
+offset_top = 70.0
+offset_right = 280.0
+offset_bottom = 110.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Tower1" type="TextureRect" parent="Mobile/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = false
+
+[node name="Tower2" type="TextureRect" parent="Mobile/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = false
+
+[node name="Mustika" type="TextureRect" parent="Mobile/Objective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Legend" type="Label" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -190.0
+offset_top = -50.0
+offset_right = 190.0
+offset_bottom = -26.0
+mouse_filter = 2
+text = "WASD  MOVE    E  ACT    Q  SWITCH    TAB  FIELD"
+theme_override_font_sizes/font_size = 13
+horizontal_alignment = 1
+visible = false
+
+[node name="Connection" type="Label" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -100.0
+offset_top = 66.0
+offset_right = 100.0
+offset_bottom = 96.0
+mouse_filter = 2
+text = "RECONNECTING"
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="Action" type="Control" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 58.0
+offset_bottom = 58.0
+mouse_filter = 2
+visible = false
+
+[node name="Key" type="PanelContainer" parent="Mobile/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -29.0
+offset_top = -29.0
+offset_right = 29.0
+offset_bottom = 29.0
+mouse_filter = 2
+visible = false
+
+[node name="Label" type="Label" parent="Mobile/Action/Key"]
+layout_mode = 2
+text = "E"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Target" type="TextureRect" parent="Mobile/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -18.0
+offset_top = -18.0
+offset_right = 18.0
+offset_bottom = 18.0
+mouse_filter = 2
+texture = ExtResource("ring")
+visible = true
+
+[node name="Climb" type="TextureRect" parent="Mobile/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -18.0
+offset_top = -65.0
+offset_right = 18.0
+offset_bottom = -37.0
+mouse_filter = 2
+texture = ExtResource("climb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Pick" type="TextureRect" parent="Mobile/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -12.0
+offset_top = -65.0
+offset_right = 12.0
+offset_bottom = -41.0
+mouse_filter = 2
+texture = ExtResource("pick")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Seconds" type="Label" parent="Mobile/Action"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 34.0
+offset_top = -16.0
+offset_right = 94.0
+offset_bottom = 14.0
+mouse_filter = 2
+text = "3s"
+theme_override_font_sizes/font_size = 18
+
+[node name="JobProgress" type="TextureProgressBar" parent="Mobile"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -96.0
+offset_top = -108.0
+offset_right = -16.0
+offset_bottom = -28.0
+mouse_filter = 2
+texture_progress = ExtResource("ring")
+fill_mode = 4
+radial_initial_angle = 270.0
+max_value = 1.0
+step = 0.001
+nine_patch_stretch = true
+
+[node name="Names" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Name0" type="PanelContainer" parent="Names"]
+visible = false
+theme_type_variation = &"Nameplate"
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="Names/Name0"]
+layout_mode = 2
+text = "Player"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+mouse_filter = 2
+
+[node name="Name1" type="PanelContainer" parent="Names"]
+visible = false
+theme_type_variation = &"Nameplate"
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="Names/Name1"]
+layout_mode = 2
+text = "Player"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+mouse_filter = 2
+
+[node name="Name2" type="PanelContainer" parent="Names"]
+visible = false
+theme_type_variation = &"Nameplate"
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="Names/Name2"]
+layout_mode = 2
+text = "Player"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+mouse_filter = 2
+
+[node name="Name3" type="PanelContainer" parent="Names"]
+visible = false
+theme_type_variation = &"Nameplate"
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="Names/Name3"]
+layout_mode = 2
+text = "Player"
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
+mouse_filter = 2

@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/object_visual.gd" id="visual_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smm16"]
+albedo_color = Color(0.92941177, 0.09019608, 0.29803923, 1)
+roughness = 0.72
+
+[sub_resource type="BoxMesh" id="BoxMesh_2mmd6"]
+size = Vector3(0.2, 0.1, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o4pa0"]
+albedo_color = Color(0, 0.47058824, 0.8666667, 1)
+roughness = 0.72
+
+[sub_resource type="BoxMesh" id="BoxMesh_s2kyh"]
+size = Vector3(0.2, 0.1, 0.2)
+
+[node name="CompetitionObject" type="Node3D" unique_id=767192759]
+script = ExtResource("visual_script")
+
+[node name="_MeshInstance3D_238" type="MeshInstance3D" parent="." unique_id=1160037441]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+material_override = SubResource("StandardMaterial3D_smm16")
+mesh = SubResource("BoxMesh_2mmd6")
+
+[node name="_MeshInstance3D_239" type="MeshInstance3D" parent="." unique_id=436972595]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
+material_override = SubResource("StandardMaterial3D_o4pa0")
+mesh = SubResource("BoxMesh_s2kyh")

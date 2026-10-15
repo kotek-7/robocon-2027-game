@@ -1,0 +1,28 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/object_visual.gd" id="visual_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o4pa0"]
+albedo_color = Color(0, 0.47058824, 0.8666667, 1)
+roughness = 0.72
+
+[sub_resource type="BoxMesh" id="BoxMesh_m12hr"]
+size = Vector3(0.35, 0.35, 0.35)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edsdh"]
+albedo_color = Color(1, 0.98039216, 0.9411765, 1)
+roughness = 0.72
+
+[sub_resource type="BoxMesh" id="BoxMesh_s8a3o"]
+size = Vector3(0.352, 0.045, 0.352)
+
+[node name="CompetitionObject" type="Node3D" unique_id=414085073]
+script = ExtResource("visual_script")
+
+[node name="_MeshInstance3D_178" type="MeshInstance3D" parent="." unique_id=1787031305]
+material_override = SubResource("StandardMaterial3D_o4pa0")
+mesh = SubResource("BoxMesh_m12hr")
+
+[node name="_MeshInstance3D_179" type="MeshInstance3D" parent="." unique_id=1930349683]
+material_override = SubResource("StandardMaterial3D_edsdh")
+mesh = SubResource("BoxMesh_s8a3o")

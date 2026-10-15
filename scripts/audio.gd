@@ -1,28 +1,19 @@
 class_name ArenaAudio
 extends Node
-const CUES={
-	'hover':['system08',-17.0,1.0], 'confirm':['system49',-9.0,1.0], 'back':['system18',-12.0,1.0],
-	'pause':['system18',-14.0,.9], 'resume':['system17',-13.0,1.0], 'start':['system03',-12.0,1.0],
-	'switch':['system17',-13.0,1.15], 'select':['system10',-15.0,1.2], 'deny':['system18',-14.0,.7],
-	'work':['sound19',-9.0,1.0], 'pick':['sound20',-8.0,1.2], 'drop':['sound20',-7.0,.85],
-	'give':['onepoint24',-14.0,1.2], 'place':['sound20',-6.0,.7], 'flip':['onepoint20',-13.0,1.0],
-	'mustika':['onepoint15',-9.0,1.0], 'mandate':['onepoint20',-11.0,1.0], 'score':['system10',-21.0,1.4],
-	'climb':['sound05',-12.0,1.0], 'land':['sound20',-8.0,.8], 'retry':['system03',-16.0,1.4],
-	'bump':['sound20',-20.0,.65], 'brake':['sound19',-22.0,.8], 'camera':['system08',-28.0,.85],
-	'overview':['system17',-16.0,.8], 'fullscreen':['system10',-16.0,1.0], 'tick':['system08',-12.0,1.0],
-	'warning':['onepoint24',-14.0,.8], 'finish':['system18',-10.0,.5], 'win':['onepoint15',-9.0,1.0],
-	'lose':['onepoint14',-13.0,1.0], 'draw':['onepoint24',-12.0,1.0], 'found':['onepoint15',-15.0,1.3],
-	'lost':['system18',-12.0,.8], 'reconnected':['system49',-12.0,1.2]
-}
-var streams={}
 var voices: Array=[]
 var motors: Array=[]
+var motor_pitches: Array=[]
 var music: AudioStreamPlayer
-var menu_music: AudioStream
-var match_music: AudioStream
+var menu_music: AudioStreamPlayer
+var match_music: AudioStreamPlayer
+var cues: Dictionary = {}
+@export_range(0.0, 3.0) var fade_out_seconds = 0.35
+@export_range(0.0, 3.0) var fade_in_seconds = 0.5
+@export_range(-40.0, 0.0) var remote_gain_db = -8.0
+@export_range(0.1, 2.0) var motor_base_pitch = 0.8
+@export_range(0.0, 1.0) var motor_speed_pitch = 0.15
 var in_menu=true
 var music_fade: Tween
-const MUSIC_GAIN = 0.316227766
 var next_voice=0
 var unlocked=false
 var focused=true
@@ -36,35 +27,32 @@ var last_seconds=-1
 var look_at_time=0.0
 
 func _ready():
-	AudioServer.add_bus_effect(0,AudioEffectLimiter.new())
-	for name in ['Music','SFX']:
-		if AudioServer.get_bus_index(name)<0:
-			AudioServer.add_bus();AudioServer.set_bus_name(AudioServer.bus_count-1,name)
-	for cue in CUES.values():
-		if not streams.has(cue[0]):streams[cue[0]]=load('res://assets/audio/maou_se_'+cue[0]+'.ogg')
-	for i in range(12):
-		var player=AudioStreamPlayer.new();player.bus='SFX';add_child(player);voices.append(player)
-	var roll=load('res://assets/audio/maou_se_sound23.ogg').duplicate();roll.loop=true
-	for i in range(4):
-		var player=AudioStreamPlayer3D.new();player.stream=roll;player.bus='SFX';player.unit_size=2;player.max_distance=16;player.volume_db=-24;add_child(player);motors.append(player)
-	menu_music=load('res://assets/audio/maou_loop_bgm_neorock44.mp3').duplicate();menu_music.loop=true
-	match_music=load('res://assets/audio/maou_loop_bgm_neorock82.mp3').duplicate();match_music.loop=true
-	music=AudioStreamPlayer.new();music.bus='Music';music.stream=menu_music;music.volume_db=-10;add_child(music)
+	voices=$Voices.get_children()
+	motors=$Motors.get_children()
+	for motor in motors:motor_pitches.append(motor.pitch_scale)
+	music=$Music
+	menu_music=$MenuMusic
+	match_music=$MatchMusic
+	music.stream=menu_music.stream;music.pitch_scale=menu_music.pitch_scale;music.bus=menu_music.bus
+	for cue in $Cues.get_children():
+		if cues.has(String(cue.event)):push_error('Duplicate audio event: '+String(cue.event))
+		cues[String(cue.event)]=cue
 
 func set_menu(value: bool):
 	if in_menu==value:return
 	in_menu=value
 	var target=menu_music if in_menu else match_music
-	if is_instance_valid(music_fade):music_fade.kill()
+	music.pitch_scale=target.pitch_scale;music.bus=target.bus
+	if is_instance_valid(music_fade) and music_fade.is_valid():music_fade.kill()
 	if not unlocked:
-		music.stream=target
+		music.stream=target.stream;music.pitch_scale=target.pitch_scale;music.bus=target.bus
 		return
 	music_fade=create_tween()
-	if music.stream!=target or not music.playing:
-		music_fade.tween_property(music,'volume_linear',0.0,.35)
+	if music.stream!=target.stream or not music.playing:
+		music_fade.tween_property(music,'volume_linear',0.0,fade_out_seconds)
 		music_fade.tween_callback(func():
-			music.stop();music.stream=target;music.play();music.stream_paused=not focused)
-	music_fade.tween_property(music,'volume_linear',MUSIC_GAIN,.5)
+			music.stop();music.stream=target.stream;music.pitch_scale=target.pitch_scale;music.bus=target.bus;music.play();music.stream_paused=not focused)
+	music_fade.tween_property(music,'volume_linear',db_to_linear(target.volume_db),fade_in_seconds)
 	if not focused:music_fade.pause()
 
 func levels(bgm: float, sfx: float):
@@ -72,26 +60,29 @@ func levels(bgm: float, sfx: float):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index('SFX'),linear_to_db(maxf(.0001,sfx)))
 
 func unlock():
+	var target=menu_music if in_menu else match_music
 	if unlocked:return
 	unlocked=true
 	if music.stream:
 		music.volume_linear=0;music.play();music.stream_paused=not focused
 		music_fade=create_tween()
-		music_fade.tween_property(music,'volume_linear',MUSIC_GAIN,.5)
+		music_fade.tween_property(music,'volume_linear',db_to_linear(target.volume_db),fade_in_seconds)
 		if not focused:music_fade.pause()
 
 func play(cue: String, gain=0.0, cooldown=.08):
-	if not unlocked or not focused or not CUES.has(cue):return
+	if not unlocked or not focused or not cues.has(cue):return
+	var spec=cues[cue]
+	if not spec.enabled or not spec.stream:return
 	var now=Time.get_ticks_msec()/1000.0
 	if now<float(cooldowns.get(cue,-100)):return
 	cooldowns[cue]=now+cooldown
-	var spec=CUES[cue];var player=voices[next_voice];next_voice=(next_voice+1)%voices.size()
-	player.stream=streams[spec[0]];player.volume_db=spec[1]+gain;player.pitch_scale=spec[2];player.play()
+	var player=voices[next_voice];next_voice=(next_voice+1)%voices.size()
+	player.stream=spec.stream;player.volume_db=spec.volume_db+gain;player.pitch_scale=spec.pitch_scale;player.bus=spec.bus;player.play()
 	cue_counts[cue]=int(cue_counts.get(cue,0))+1
 
 func focus(value: bool):
 	focused=value;music.stream_paused=not value
-	if is_instance_valid(music_fade):
+	if is_instance_valid(music_fade) and music_fade.is_valid():
 		if value:music_fade.play()
 		else:music_fade.pause()
 	if not value:
@@ -116,7 +107,7 @@ func observe(m: MatchState, local_rid: int, silent: bool, dt: float):
 		last_event=int(event.id)
 		if silent:continue
 		var rid=int(event.rid)
-		play(str(event.type),0 if rid==local_rid or rid<0 else -8)
+		play(str(event.type),0 if rid==local_rid or rid<0 else remote_gain_db)
 	var seconds=ceili(m.duration-m.elapsed)
 	if seconds!=last_seconds and not silent and m.mode!='free':
 		if seconds in [60,30]:play('warning')
@@ -128,7 +119,7 @@ func observe(m: MatchState, local_rid: int, silent: bool, dt: float):
 		var moving=not silent and not m.finished and (motion_hold[rid]>0 or r.job.get('type')=='climb')
 		var player=motors[rid];player.position=r.p
 		if moving and unlocked and focused:
-			player.pitch_scale=.8+clampf(moved/maxf(dt,.001),0,1.7)*.15
+			player.pitch_scale=motor_pitches[rid]*(motor_base_pitch+clampf(moved/maxf(dt,.001),0,1.7)*motor_speed_pitch)
 			if not player.playing:player.play()
 		else:player.stop()
 		if rid==local_rid and not silent:

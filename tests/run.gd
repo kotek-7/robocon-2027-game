@@ -98,8 +98,8 @@ func _initialize():
 	check(m.stair_context(1).is_empty(),'occupied landing prevents stair operation')
 	m.reset('cpu');m.robots[1].p=f.stairs[0].a;m.begin(1,m.stair_context(1));m.elapsed=179.9;m.step(.2)
 	check(m.finished and not m.robots[1].job.is_empty(),'buzzer stops an unfinished climb')
-	var view=Node3D.new();f.build(view)
-	var arrays=view.get_child(0).mesh.surface_get_arrays(0);var hard_top=false;var hard_side=false
+	var view=load("res://scenes/world/field.tscn").instantiate()
+	var arrays=view.mesh.surface_get_arrays(0);var hard_top=false;var hard_side=false
 	for normal in arrays[Mesh.ARRAY_NORMAL]:
 		if normal.y>.999:hard_top=true
 		if abs(normal.y)<.001:hard_side=true

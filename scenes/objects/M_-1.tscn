@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/object_visual.gd" id="visual_script"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f58v4"]
+albedo_color = Color(1, 0.85490197, 0.08627451, 1)
+roughness = 0.72
+
+[sub_resource type="SphereMesh" id="SphereMesh_to5in"]
+radius = 0.105
+height = 0.21
+radial_segments = 20
+rings = 10
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edsdh"]
+albedo_color = Color(1, 0.98039216, 0.9411765, 1)
+roughness = 0.72
+
+[sub_resource type="TorusMesh" id="TorusMesh_uyjvf"]
+inner_radius = 0.105
+outer_radius = 0.12
+rings = 20
+ring_segments = 8
+
+[node name="CompetitionObject" type="Node3D" unique_id=740621875]
+script = ExtResource("visual_script")
+
+[node name="_MeshInstance3D_274" type="MeshInstance3D" parent="." unique_id=609532154]
+material_override = SubResource("StandardMaterial3D_f58v4")
+mesh = SubResource("SphereMesh_to5in")
+
+[node name="_MeshInstance3D_275" type="MeshInstance3D" parent="." unique_id=1592065077]
+transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_edsdh")
+mesh = SubResource("TorusMesh_uyjvf")

@@ -1,0 +1,238 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/touch_controls.gd" id="script"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="theme"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/switch.svg" id="switch"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/overview.svg" id="overview"]
+
+[ext_resource type="Texture2D" path="res://assets/fullscreen.svg" id="fullscreen"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/rotate.svg" id="rotate"]
+
+[sub_resource type="StyleBoxFlat" id="base"]
+bg_color = Color(0.1, 0.1, 0.2, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.7)
+corner_radius_top_left = 58
+corner_radius_top_right = 58
+corner_radius_bottom_left = 58
+corner_radius_bottom_right = 58
+
+[sub_resource type="StyleBoxFlat" id="knob"]
+bg_color = Color(1, 1, 1, 0.75)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_left = 24
+corner_radius_bottom_right = 24
+
+[node name="TouchControls" type="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("script")
+theme = ExtResource("theme")
+
+[node name="Buttons" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="act" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -92.0
+offset_top = -104.0
+offset_right = -20.0
+offset_bottom = -32.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = "ACT"
+focus_mode = 0
+toggle_mode = true
+
+[node name="switch" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -82.0
+offset_top = -178.0
+offset_right = -22.0
+offset_bottom = -126.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = ""
+focus_mode = 0
+toggle_mode = true
+icon = ExtResource("switch")
+expand_icon = true
+icon_alignment = 1
+theme_override_constants/icon_max_width = 30
+
+[node name="previous" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -208.0
+offset_top = -82.0
+offset_right = -160.0
+offset_bottom = -34.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = "<"
+focus_mode = 0
+toggle_mode = true
+
+[node name="next" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -82.0
+offset_right = -102.0
+offset_bottom = -34.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = ">"
+focus_mode = 0
+toggle_mode = true
+
+[node name="menu" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -62.0
+offset_top = 76.0
+offset_right = -18.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = "II"
+focus_mode = 0
+toggle_mode = true
+
+[node name="overview" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -118.0
+offset_top = 76.0
+offset_right = -74.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = ""
+focus_mode = 0
+toggle_mode = true
+icon = ExtResource("overview")
+expand_icon = true
+icon_alignment = 1
+theme_override_constants/icon_max_width = 30
+
+[node name="fullscreen" type="Button" parent="Buttons"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -174.0
+offset_top = 76.0
+offset_right = -130.0
+offset_bottom = 120.0
+mouse_filter = 2
+theme_type_variation = &"TouchButton"
+text = ""
+focus_mode = 0
+toggle_mode = true
+icon = ExtResource("fullscreen")
+expand_icon = true
+icon_alignment = 1
+theme_override_constants/icon_max_width = 30
+
+[node name="JoystickHome" type="Control" parent="."]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 84.0
+offset_top = -92.0
+offset_right = 84.0
+offset_bottom = -92.0
+mouse_filter = 2
+
+[node name="Joystick" type="Panel" parent="."]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = -150.0
+offset_right = 142.0
+offset_bottom = -34.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("base")
+
+[node name="Knob" type="Panel" parent="Joystick"]
+layout_mode = 0
+anchor_left = 0.0
+anchor_right = 0.0
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 34.0
+offset_top = 34.0
+offset_right = 82.0
+offset_bottom = 82.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("knob")
+
+[node name="Portrait" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+visible = false
+color = Color(0.04, 0.06, 0.13, 0.7)
+
+[node name="Rotate" type="TextureRect" parent="Portrait"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 100.0
+mouse_filter = 2
+texture = ExtResource("rotate")

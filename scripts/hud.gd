@@ -1,5 +1,17 @@
 class_name ArenaHUD
 extends Control
+
+@export_group("Icons")
+@export var tr_icon: Texture2D
+@export var br_icon: Texture2D
+@export var earth_icon: Texture2D
+@export var mustika_icon: Texture2D
+@export_group("Colors")
+@export var red_color = Color('#ed174c')
+@export var blue_color = Color('#0078dd')
+@export var inactive_color = Color('#433074')
+@export var local_name_color = Color('#ffda16')
+
 var match_state: MatchState
 var team=0
 var can_switch=true
@@ -11,143 +23,67 @@ var title=false
 var touch_mode=false
 var using_pad=false
 var disconnected=false
-var font: Font
 
-func _ready():
-	mouse_filter=Control.MOUSE_FILTER_IGNORE
-	font=load('res://assets/Fredoka-Semibold.ttf')
-
-func text(p: Vector2, s: String, size: int, color=Color('#20243e')):
-	draw_string(font,p,s,HORIZONTAL_ALIGNMENT_LEFT,-1,size,color)
-
-func tile(rect: Rect2,color: Color,radius=18):
-	var style=StyleBoxFlat.new();style.bg_color=color;style.set_corner_radius_all(radius);style.shadow_color=Color(0.12,.1,.2,.15);style.shadow_size=8;style.shadow_offset=Vector2(0,3);draw_style_box(style,rect)
-
-func _draw():
-	if title or not match_state: return
-	draw_names()
-	if touch_mode:draw_touch_hud();return
-	var m=match_state;var w=size.x;var h=size.y
-	for t in range(2):
-		var x=28 if t==0 else w-158
-		tile(Rect2(x,24,130,70),ArenaVisuals.RED if t==0 else ArenaVisuals.BLUE)
-		text(Vector2(x+22,75),str(m.scores[t]),40,Color.WHITE)
-		for j in range(1 if t==0 else 2): draw_circle(Vector2(x+105+j*12,40),4,Color.WHITE)
+func update_view():
+	$Desktop.visible=not title and not touch_mode and match_state!=null
+	$Mobile.visible=not title and touch_mode and match_state!=null
+	$Names.visible=not title
+	if title or not match_state:return
+	var layout=$Mobile if touch_mode else $Desktop
+	var m=match_state
+	layout.get_node('Red/Value').text=str(m.scores[0])
+	layout.get_node('Blue/Value').text=str(m.scores[1])
 	var seconds=maxi(0,ceili(m.duration-m.elapsed))
-	var clock='%d:%02d'%[seconds/60,seconds%60] if m.mode!='free' else 'FREE'
-	tile(Rect2(w/2-70,24,140,62),Color('#fffaf0'))
-	text(Vector2(w/2-52,68),clock,32)
-	var rid=int(m.active[team]);var r=m.robots[rid]
-	tile(Rect2(28,h-96,240,68),Color('#fffaf0'))
-	robot_mark(Vector2(66,h-54),rid)
-	if can_switch:text(Vector2(49,h-76),'Y' if using_pad else 'Q',13,Color('#433074'))
-	if partner_cpu:text(Vector2(43,h-108),'CPU',16)
-	for i in range(m.capacity(rid)):
-		var p=Vector2(130+i*43,h-62)
-		draw_circle(p,17,Color('#c6cee8'))
-		if i<r.carry.size():
-			var o=m.objects[r.carry[i]]
-			var c=Color('#ffda16') if o.kind=='M' else (ArenaVisuals.RED if (o.face if o.kind=='S' else o.owner)==0 else ArenaVisuals.BLUE)
-			if o.kind=='M': draw_circle(p,12,c)
-			else: draw_rect(Rect2(p-Vector2(12,12),Vector2(24,24)),c)
-			if i==posmod(r.selected,maxi(1,r.carry.size())): draw_arc(p,19,0,TAU,24,Color('#20243e'),2,true)
-	# Objective is pictured as two towers, a shared-zone ring and the gold sphere.
-	for j in range(2):
-		var p=Vector2(w-122+j*42,h-61)
-		var c=Color('#fffaf0') if m.mandate[team] else Color('#433074')
-		draw_rect(Rect2(p+Vector2(-9,0),Vector2(18,16)),c)
-		draw_rect(Rect2(p+Vector2(-9,-19),Vector2(18,16)),c)
-		draw_rect(Rect2(p+Vector2(-6,-32),Vector2(12,10)),c)
-	draw_circle(Vector2(w-34,h-62),12,Color('#ffda16') if m.mandate[team] else Color('#433074'))
-	control_legend(Vector2(w/2-155,h-38))
-	if not action.is_empty() and action_screen.x>0:
-		var p=action_screen
-		tile(Rect2(p-Vector2(29,29),Vector2(58,58)),Color('#fffaf0'),29)
-		text(p+Vector2(-10,10),'A' if using_pad else 'E',26)
-		if action.type=='climb':
-			draw_polyline(PackedVector2Array([p+Vector2(-18,-42),p+Vector2(-6,-42),p+Vector2(-6,-51),p+Vector2(6,-51),p+Vector2(6,-60),p+Vector2(18,-60)]),Color('#20243e'),4,true)
-			text(p+Vector2(34,7),'%ds'%int(action.seconds),18,Color('#20243e'))
-		if action.type=='pick':
-			draw_line(p+Vector2(0,-43),p+Vector2(0,-60),Color('#fffaf0'),4,true)
-			draw_polyline(PackedVector2Array([p+Vector2(-6,-54),p+Vector2(0,-60),p+Vector2(6,-54)]),Color('#fffaf0'),3,true)
-	if not r.job.is_empty():
-		var fraction=1-r.left/(r.job.seconds if r.job.type=='climb' else .65 if r.job.type in ['pick','drop','give'] else 1.1)
-		draw_arc(Vector2(w/2,h/2+60),24,-PI/2,-PI/2+TAU*fraction,32,Color('#fffaf0'),5,true)
-	if disconnected: text(Vector2(w/2-80,120),'RECONNECTING',18,Color('#20243e'))
+	layout.get_node('Clock/Value').text='%d:%02d'%[seconds/60,seconds%60] if m.mode!='free' else 'FREE'
+	var rid=int(m.active[team]);var robot=m.robots[rid]
+	layout.get_node('Cargo/Robot').texture=tr_icon if rid%2==0 else br_icon
+	layout.get_node('Cargo/SwitchKey').visible=can_switch and not touch_mode
+	layout.get_node('Cargo/SwitchKey').text='Y' if using_pad else 'Q'
+	layout.get_node('Cargo/Partner').visible=partner_cpu
+	for i in range(3):
+		var slot=layout.get_node('Cargo/Slot%d'%i)
+		slot.visible=i<m.capacity(rid)
+		slot.get_node('Icon').visible=i<robot.carry.size()
+		slot.get_node('Selection').visible=i<robot.carry.size() and i==posmod(robot.selected,maxi(1,robot.carry.size()))
+		if i<robot.carry.size():
+			var o=m.objects[robot.carry[i]]
+			var icon=slot.get_node('Icon')
+			icon.texture=mustika_icon if o.kind=='M' else earth_icon
+			icon.self_modulate=Color.WHITE if o.kind=='M' else red_color if (o.face if o.kind=='S' else o.owner)==0 else blue_color
+	layout.get_node('Objective').modulate=Color.WHITE if m.mandate[team] else inactive_color
+	layout.get_node('Objective').visible=not touch_mode or m.mandate[team]
+	var legend='LS  MOVE    A  ACT    %sLT  FIELD' if using_pad else 'WASD  MOVE    E  ACT    %sTAB  FIELD'
+	layout.get_node('Legend').text=legend%(('Y  SWITCH    ' if using_pad else 'Q  SWITCH    ') if can_switch else '')
+	layout.get_node('Connection').visible=disconnected
+	var prompt=layout.get_node('Action')
+	prompt.visible=not action.is_empty() and action_screen.x>0
+	if prompt.visible:
+		prompt.position=action_screen
+		prompt.get_node('Key/Label').text='A' if using_pad else 'E'
+		prompt.get_node('Climb').visible=action.type=='climb'
+		prompt.get_node('Pick').visible=action.type=='pick' and not touch_mode
+		prompt.get_node('Seconds').visible=action.type=='climb'
+		if action.type=='climb':prompt.get_node('Seconds').text='%ds'%int(action.seconds)
+	var progress=layout.get_node('JobProgress')
+	progress.visible=not robot.job.is_empty()
+	if progress.visible:
+		var duration=robot.job.seconds if robot.job.type=='climb' else .65 if robot.job.type in ['pick','drop','give'] else 1.1
+		progress.value=1-robot.left/duration
+	update_names()
 
-func control_legend(origin: Vector2):
-	var ink=Color('#25204e')
-	var keys=['LS','A','Y','LT'] if using_pad else ['WASD','E','Q','TAB']
-	for i in range(4):
-		if i==2 and not can_switch:continue
-		var p=origin+Vector2(i*88,0)
-		match i:
-			0:
-				draw_line(p+Vector2(-9,0),p+Vector2(9,0),ink,2,true)
-				draw_line(p+Vector2(0,-9),p+Vector2(0,9),ink,2,true)
-				for v in [Vector2(1,0),Vector2(-1,0),Vector2(0,1),Vector2(0,-1)]:
-					var n=v.orthogonal()
-					draw_polyline(PackedVector2Array([p+v*6+n*3,p+v*10,p+v*6-n*3]),ink,2,true)
-			1:
-				draw_rect(Rect2(p-Vector2(5,5),Vector2(10,10)),ink,false,2)
-				draw_polyline(PackedVector2Array([p+Vector2(-7,-9),p+Vector2(-12,-9),p+Vector2(-12,9),p+Vector2(-7,9)]),ink,2,true)
-				draw_polyline(PackedVector2Array([p+Vector2(7,-9),p+Vector2(12,-9),p+Vector2(12,9),p+Vector2(7,9)]),ink,2,true)
-			2:
-				draw_polyline(PackedVector2Array([p+Vector2(-12,-5),p+Vector2(10,-5),p+Vector2(5,-10)]),ink,2,true)
-				draw_polyline(PackedVector2Array([p+Vector2(12,5),p+Vector2(-10,5),p+Vector2(-5,10)]),ink,2,true)
-			3:
-				draw_rect(Rect2(p-Vector2(11,9),Vector2(22,18)),ink,false,2)
-				draw_rect(Rect2(p-Vector2(5,4),Vector2(10,8)),ink,false,2)
-		text(p+Vector2(18,5),keys[i],13,ink)
-
-func draw_touch_hud():
-	var m=match_state;var w=size.x
-	for t in range(2):
-		var x=16 if t==0 else w-98
-		tile(Rect2(x,12,82,46),ArenaVisuals.RED if t==0 else ArenaVisuals.BLUE,14)
-		text(Vector2(x+12,44),str(m.scores[t]),25,Color.WHITE)
-		for j in range(1 if t==0 else 2):draw_circle(Vector2(x+62+j*10,23),3,Color.WHITE)
-	var seconds=maxi(0,ceili(m.duration-m.elapsed))
-	var clock='%d:%02d'%[seconds/60,seconds%60] if m.mode!='free' else 'FREE'
-	tile(Rect2(w/2-48,12,96,46),Color('#fffaf0'),14);text(Vector2(w/2-34,43),clock,24)
-	var rid=int(m.active[team]);var r=m.robots[rid]
-	robot_mark(Vector2(32,78),rid)
-	if partner_cpu:text(Vector2(18,110),'CPU',14)
-	for i in range(m.capacity(rid)):
-		var p=Vector2(62+i*25,78);draw_circle(p,10,Color('#c6cee8'))
-		if i<r.carry.size():
-			var o=m.objects[r.carry[i]];var c=Color('#ffda16') if o.kind=='M' else (ArenaVisuals.RED if o.owner==0 else ArenaVisuals.BLUE)
-			draw_rect(Rect2(p-Vector2(7,7),Vector2(14,14)),c)
-			if i==posmod(r.selected,maxi(1,r.carry.size())):draw_arc(p,12,0,TAU,20,Color('#20243e'),2,true)
-	if not action.is_empty() and action_screen.x>0:
-		draw_arc(action_screen,18,0,TAU,24,Color('#20243e'),5,true)
-		draw_arc(action_screen,18,0,TAU,24,Color.WHITE,2,true)
-		if action.type=='climb':text(action_screen+Vector2(-10,-27),'%ds'%int(action.seconds),18)
-	if not r.job.is_empty():
-		var duration=r.job.seconds if r.job.type=='climb' else .65 if r.job.type in ['pick','drop','give'] else 1.1
-		draw_arc(Vector2(w-56,size.y-68),40,-PI/2,-PI/2+TAU*(1-r.left/duration),32,Color('#20243e'),5,true)
-	if m.mandate[team]:draw_circle(Vector2(154,78),8,Color('#ffda16'))
-	if disconnected:text(Vector2(w/2-68,83),'RECONNECTING',16)
-
-func draw_names():
-	var used=[];var fs=14 if touch_mode else 18
-	for tag in name_tags:
-		var value=str(tag.name)
-		var width=font.get_string_size(value,HORIZONTAL_ALIGNMENT_LEFT,-1,fs).x+20
-		var rect=Rect2(tag.p-Vector2(width/2,24),Vector2(width,28))
+func update_names():
+	var used=[]
+	for node in $Names.get_children():node.visible=false
+	for i in range(mini(name_tags.size(),$Names.get_child_count())):
+		var tag=name_tags[i]
+		var node=$Names.get_child(i)
+		var label: Label=node.get_node('Label')
+		label.text=('• ' if tag.team==0 else '•• ')+str(tag.name)
+		label.add_theme_font_size_override('font_size',14 if touch_mode else 18)
+		label.modulate=local_name_color if tag.self else Color.WHITE
+		node.reset_size()
+		var rect=Rect2(tag.p-Vector2(node.size.x/2,24),node.size)
 		for other in used:
-			if rect.intersects(other):rect.position.y=other.position.y-30
+			if rect.intersects(other):rect.position.y=other.position.y-rect.size.y-2
 		if rect.position.x<0 or rect.end.x>size.x or rect.position.y<65:continue
-		used.append(rect)
-		tile(rect,Color('#20243e'),10)
-		draw_circle(rect.position+Vector2(7,14),3,ArenaVisuals.RED if tag.team==0 else ArenaVisuals.BLUE)
-		text(rect.position+Vector2(13,20),value,fs,Color('#ffda16') if tag.self else Color.WHITE)
-
-func robot_mark(center: Vector2, rid: int):
-	var ink=Color('#20243e')
-	draw_rect(Rect2(center-Vector2(12,9),Vector2(24,18)),ink,false,2)
-	for side in [-1,1]:
-		draw_rect(Rect2(center+Vector2(side*15-3,-6),Vector2(6,12)),ink)
-	if rid%2==0:
-		for side in [-1,1]:draw_line(center+Vector2(side*7,-7),center+Vector2(side*7,-18),ink,3)
-	else:draw_polyline(PackedVector2Array([center+Vector2(-10,5),center+Vector2(-10,-17),center+Vector2(10,-17),center+Vector2(10,5)]),ink,3)
+		used.append(rect);node.position=rect.position;node.visible=true

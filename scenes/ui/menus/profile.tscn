@@ -1,0 +1,68 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[node name="ProfileMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+text = "NAME"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Nickname" type="LineEdit" parent="."]
+layout_mode = 2
+max_length = 16
+custom_minimum_size = Vector2(320, 44)
+
+[node name="Random" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "RANDOM"
+
+[node name="Music" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Music"]
+layout_mode = 2
+text = "BGM"
+custom_minimum_size = Vector2(55, 0)
+
+[node name="Volume" type="HSlider" parent="Music"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+custom_minimum_size = Vector2(245, 32)
+size_flags_horizontal = 3
+
+[node name="Effects" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Caption" type="Label" parent="Effects"]
+layout_mode = 2
+text = "SE"
+custom_minimum_size = Vector2(55, 0)
+
+[node name="Volume" type="HSlider" parent="Effects"]
+layout_mode = 2
+min_value = 0.0
+max_value = 1.0
+step = 0.05
+custom_minimum_size = Vector2(245, 32)
+size_flags_horizontal = 3
+
+[node name="Save" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "OK"
+theme_type_variation = &"Accent"

@@ -1,5 +1,17 @@
 # Validation
 
+## Inspector and scene migration — 2026-10-15
+
+- Competition checks: 62/62, including CPU matches and saved CAD mesh normals.
+- Audio checks: scene-authored cues, bounded playback, event deduplication, focus restoration after completed fades.
+- Scene/editor checks: saved audio stream/volume/pitch readback and playback, disabled/empty cues, all menu layouts, desktop/mobile HUD, touch hit areas following edited nodes, native particles and Input Map.
+- Native rendered title, profile, pause and match screens inspected at desktop and landscape-mobile sizes.
+- Chromium touch harness: simultaneous move/look, pickup, switch, overview, portrait blocking and fullscreen passed without console errors.
+- Chromium profile/audio harness: Japanese nickname persistence, CPU nameplates, BGM start, switch/retry cues, pause and visibility restoration passed without console errors.
+- Virtual Gamepad API harness: movement and robot switch passed; physical hardware was not tested.
+- Web export passed. No production deployment performed for this change.
+
+
 Run date: 2026-10-15. Godot 4.7.2 Compatibility Web export, single-threaded. Linux desktop with Intel Arc MTL graphics, Mesa 25.2.8. Chrome for Testing 153.0.8010.12 (Playwright Chromium build 1243) and Firefox 157.0. Browser viewport: 1280 × 720.
 
 ## Competition logic

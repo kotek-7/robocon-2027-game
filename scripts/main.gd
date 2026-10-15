@@ -1,4 +1,17 @@
 extends Node3D
+
+@export_group("Menu scenes")
+@export var title_menu: PackedScene
+@export var notes_menu: PackedScene
+@export var profile_menu: PackedScene
+@export var online_menu: PackedScene
+@export var search_menu: PackedScene
+@export var found_menu: PackedScene
+@export var error_menu: PackedScene
+@export var pause_screen: PackedScene
+@export var results_menu: PackedScene
+@export var panel_scene: PackedScene
+
 var field: ArenaField
 var game: MatchState
 var drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()]
@@ -6,7 +19,7 @@ var previous_human=-1
 var online_format='1v1'
 var art=ArenaVisuals.new()
 var net: ArenaNetwork
-var camera: Camera3D
+var camera
 var robots: Array=[]
 var items: Array=[]
 var hud: ArenaHUD
@@ -16,6 +29,11 @@ var overlay: Control
 var info: Label
 var team=0
 var mode='title'
+@export_group("Input sensitivity")
+@export var mouse_look = Vector2(0.003, 0.002)
+@export var touch_look = Vector2(0.005, 0.004)
+@export var gamepad_look_speed = Vector2(2.5, 1.5)
+
 var yaw=0.0
 var pitch=.55
 var overview=false
@@ -34,12 +52,9 @@ var browser_focus_callback
 var last_overview=false
 var last_states=[]
 var action_ring: MeshInstance3D
-var font: Font
-var previous_buttons={}
 var title_clock=0.0
 var qa_clock=0.0
 var qa_enabled=false
-var camera_target=Vector3.ZERO
 var result_shown=false
 var stadium: ArenaStadium
 var shadows: Array=[]
@@ -52,40 +67,30 @@ var fullscreen_button: Button
 
 func _ready():
 	field=ArenaField.new();game=MatchState.new(field);game.reset('cpu')
-	net=ArenaNetwork.new();add_child(net)
+	net=$Network
 	if '--server' in OS.get_cmdline_user_args(): net.host(field);set_process(false);set_physics_process(false);return
 	touch_mode=DisplayServer.is_touchscreen_available()
 	if OS.has_feature('web'):touch_mode=bool(JavaScriptBridge.eval('navigator.maxTouchPoints > 0'))
 	if touch_mode:resize_mobile()
-	font=load('res://assets/Fredoka-Semibold.ttf')
-	font.fallbacks=[load('res://assets/MPLUS1p-Regular.ttf')]
-	profile.read();audio=ArenaAudio.new();add_child(audio);audio.levels(profile.music_volume,profile.sfx_volume);net.nickname=profile.nickname
+	profile.read();audio=$Audio;audio.levels(profile.music_volume,profile.sfx_volume);net.nickname=profile.nickname
 	if OS.has_feature('web'):qa_enabled=bool(JavaScriptBridge.eval("location.search.includes('qa=1')"))
 	if OS.has_feature('web'):
 		net.endpoint=str(JavaScriptBridge.eval("location.hostname==='localhost'||location.hostname==='127.0.0.1'?'ws://127.0.0.1:9080':`wss://${location.host}/ws`"))
-	field.build(self)
-	stadium=ArenaStadium.new();add_child(stadium)
-	art.box(self,Vector3(11.35,.35,11.35),Color('#6028c7'),Vector3(0,-.22,0))
-	var env=WorldEnvironment.new();var e=Environment.new();e.background_mode=Environment.BG_COLOR;e.background_color=Color('#12bfe7');e.ambient_light_source=Environment.AMBIENT_SOURCE_COLOR;e.ambient_light_color=Color.WHITE;e.ambient_light_energy=.38;env.environment=e;add_child(env)
-	var light=DirectionalLight3D.new();light.rotation_degrees=Vector3(-38,-38,0);light.light_energy=.85;light.shadow_opacity=.65;light.shadow_enabled=true;light.directional_shadow_max_distance=28;add_child(light)
-	camera=Camera3D.new();camera.fov=62;camera.near=.08;camera.far=80;add_child(camera)
-	for i in range(4):
-		var r=art.robot(i);add_child(r);robots.append(r)
-		var disc=CylinderMesh.new();disc.top_radius=.3;disc.bottom_radius=.3;disc.height=.002;disc.radial_segments=24
-		var shadow=art.mesh(self,disc,Color(0.1,.07,.2,.22),Vector3.ZERO)
-		var shadow_material=shadow.material_override.duplicate();shadow_material.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA;shadow_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
-		shadow.material_override=shadow_material;shadow.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF;shadows.append(shadow)
-	for o in game.objects:
-		var n=art.object(o.kind,o.owner);add_child(n);items.append(n);last_states.append('')
-	var torus=TorusMesh.new();torus.inner_radius=.24;torus.outer_radius=.27;torus.rings=28;torus.ring_segments=8
-	action_ring=art.mesh(self,torus,Color.WHITE,Vector3.ZERO)
-	var ring_edge=TorusMesh.new();ring_edge.inner_radius=.269;ring_edge.outer_radius=.287;ring_edge.rings=28;ring_edge.ring_segments=8
-	art.mesh(action_ring,ring_edge,Color('#20243e'),Vector3.ZERO)
-	var canvas=CanvasLayer.new();add_child(canvas)
-	ui=Control.new();ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);canvas.add_child(ui);ui.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	hud=ArenaHUD.new();hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(hud);hud.match_state=game;hud.touch_mode=touch_mode
-	touch=ArenaTouchControls.new();touch.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(touch);touch.visible=false;touch.z_index=100
-	touch.look.connect(func(delta):audio.look();yaw-=delta.x*.005;pitch=clampf(pitch+delta.y*.004,.22,1.15))
+	stadium=$Stadium
+	camera=$Camera
+	robots=$Robots.get_children()
+	shadows=$RobotShadows.get_children()
+	items=$Objects.get_children()
+	for item in items:last_states.append('')
+	action_ring=$ActionRing
+	ui=$Interface/UI
+	hud=$Interface/UI/HUD
+	hud.match_state=game;hud.touch_mode=touch_mode
+	touch=$Interface/UI/TouchControls
+	fullscreen_button=$Interface/UI/Fullscreen
+	profile_button=$Interface/UI/Profile
+	profile_button.text=profile.nickname
+	touch.look.connect(func(delta):audio.look();yaw-=delta.x*touch_look.x;pitch=clampf(pitch+delta.y*touch_look.y,.22,1.15))
 	touch.action.connect(func(key):
 		match key:
 			'act':pending.act=true
@@ -95,28 +100,10 @@ func _ready():
 			'menu':pause_menu()
 			'fullscreen':toggle_fullscreen()
 	)
-	fullscreen_button=Button.new();fullscreen_button.icon=load('res://assets/fullscreen.svg');fullscreen_button.tooltip_text='Fullscreen'
-	fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60
-	fullscreen_button.add_theme_constant_override('icon_max_width',24);fullscreen_button.z_index=90
-	var fullscreen_style=StyleBoxFlat.new();fullscreen_style.bg_color=Color('#fffaf0');fullscreen_style.set_corner_radius_all(12);fullscreen_style.border_color=Color('#20243e');fullscreen_style.set_border_width_all(2)
-	for state in ['normal','hover','pressed','disabled','focus']:
-		var style=fullscreen_style.duplicate()
-		if state=='hover':style.bg_color=Color('#ffda16')
-		if state=='pressed':style.bg_color=Color('#12bfe7')
-		if state=='disabled':style.bg_color=Color('#c6cee8')
-		if state=='focus':style.bg_color=Color.TRANSPARENT;style.border_color=Color('#0078dd')
-		fullscreen_button.add_theme_stylebox_override(state,style)
-	fullscreen_button.expand_icon=true;fullscreen_button.icon_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	for state in ['normal','hover','pressed','focus','disabled']:
-		fullscreen_button.add_theme_color_override('icon_'+state+'_color',Color.WHITE)
-	fullscreen_button.custom_minimum_size=Vector2(44,44)
 	if OS.has_feature('web'):
 		fullscreen_button.disabled=not bool(JavaScriptBridge.eval('!!document.fullscreenEnabled && !!document.documentElement.requestFullscreen'))
 		touch.fullscreen_supported=not fullscreen_button.disabled
-	ui.add_child(fullscreen_button);fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60;fullscreen_button.pressed.connect(toggle_fullscreen)
-	profile_button=Button.new();profile_button.text=profile.nickname;profile_button.add_theme_font_override('font',font);profile_button.add_theme_font_size_override('font_size',18);profile_button.custom_minimum_size=Vector2(200,44);ui.add_child(profile_button);profile_button.position=Vector2(16,16);profile_button.icon=load('res://assets/edit.svg');profile_button.add_theme_constant_override('icon_max_width',20);profile_button.add_theme_color_override('font_color',Color('#20243e'));profile_button.add_theme_color_override('font_hover_color',Color('#20243e'));
-	for state in ['normal','hover','pressed','focus']:
-		var style=fullscreen_style.duplicate();style.content_margin_left=12;style.content_margin_right=12;style.bg_color=Color('#ffda16') if state=='hover' else Color('#fffaf0');profile_button.add_theme_stylebox_override(state,style)
+	fullscreen_button.pressed.connect(toggle_fullscreen)
 	profile_button.pressed.connect(func():audio.play('confirm');show_profile())
 	net.message.connect(network_message)
 	show_title()
@@ -144,67 +131,52 @@ func resize_mobile():
 	mobile_size=next_size;landscape_required=next_size.y>next_size.x;get_window().content_scale_size=next_size
 	if is_instance_valid(touch):touch.reset();pending.clear();overview=false
 
-func panel():
+func panel(content: PackedScene):
 	editing_profile=false
 	if OS.has_feature('web'):JavaScriptBridge.eval("document.getElementById('arena-name')?.remove();window.arenaNameSubmit=false")
 	pending.clear();overview=false
 	if is_instance_valid(touch):touch.reset();touch.visible=false
 	if is_instance_valid(overlay): overlay.queue_free()
-	overlay=Control.new();overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(overlay)
+	overlay=panel_scene.instantiate();ui.add_child(overlay)
 	ui.move_child(fullscreen_button,ui.get_child_count()-1)
 	ui.move_child(profile_button,ui.get_child_count()-1)
-	var shade=ColorRect.new();shade.color=Color(.14,.1,.24,.18);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;overlay.add_child(shade)
-	var center=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);overlay.add_child(center)
-	menu=VBoxContainer.new();menu.add_theme_constant_override('separation',8 if touch_mode else 14);menu.custom_minimum_size=Vector2(320,0);center.add_child(menu)
+	menu=content.instantiate()
+	overlay.get_node('Center').add_child(menu)
+	menu.configure(touch_mode)
 	ui_open=true;Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
 
-func label(s: String, size=28) -> Label:
-	var l=Label.new();l.text=s;l.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;l.add_theme_font_override('font',font);l.add_theme_font_size_override('font_size',mini(size,34) if touch_mode else size);l.add_theme_color_override('font_color',Color('#20243e'));menu.add_child(l);return l
-
-func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
-	var b=Button.new();b.text=s;b.custom_minimum_size=Vector2(300,44 if touch_mode else 58);b.add_theme_font_override('font',font);b.add_theme_font_size_override('font_size',22 if touch_mode else 26);b.add_theme_color_override('font_color',Color('#20243e'));b.add_theme_color_override('font_hover_color',Color('#20243e'));b.add_theme_color_override('font_focus_color',Color('#20243e'));b.add_theme_color_override('font_pressed_color',Color('#20243e'))
-	for state in ['normal','hover','pressed','focus']:
-		var style=StyleBoxFlat.new();style.bg_color=color.lightened(.12) if state=='hover' else color;style.set_corner_radius_all(18);style.content_margin_left=24;style.content_margin_right=24
-		if state=='focus': style.bg_color=Color.TRANSPARENT;style.border_color=Color('#20243e');style.set_border_width_all(3)
-		if state=='normal':style.shadow_color=Color(.17,.1,.3,.16);style.shadow_size=8;style.shadow_offset=Vector2(0,4)
-		b.add_theme_stylebox_override(state,style)
-	b.pressed.connect(func():audio.play('back' if s in ['BACK','CANCEL','EXIT'] else 'confirm');call.call());menu.add_child(b);return b
+func bind_button(path: String, callback: Callable, cue='confirm') -> Button:
+	var node: Button=menu.get_node(path)
+	node.pressed.connect(func():audio.play(cue);callback.call())
+	return node
 
 func show_title():
-	mode='title';net.leave();game.reset('cpu');panel();hud.title=true;result_shown=false
-	var logo=ArenaTitle.new();logo.compact=touch_mode;logo.custom_minimum_size=Vector2(370 if touch_mode else 540,132 if touch_mode else 260);menu.add_child(logo)
-	button('VS CPU',func(): start('cpu'),Color('#ffda16')).grab_focus()
-	button('ONLINE',show_online)
-	button('FREE',func(): start('free'))
-	var note=button('',show_notes);menu.remove_child(note)
-	var holder=CenterContainer.new();menu.add_child(holder);holder.add_child(note)
-	note.custom_minimum_size=Vector2(48,40);note.icon=load('res://assets/info.svg');note.add_theme_constant_override('icon_max_width',22)
+	mode='title';net.leave();game.reset('cpu');panel(title_menu);hud.title=true;result_shown=false
+	bind_button('CPU',func():start('cpu')).grab_focus()
+	bind_button('Online',show_online)
+	bind_button('Free',func():start('free'))
+	bind_button('Footer/Notes',show_notes)
 
 func show_notes():
-	panel();label('ROBOTS',30);label('VS CPU: partner on autopilot.',16)
-	label('ABU 2027 / v1.1',16)
-	label('Music / SE: MaouDamashii',18)
-	label('Koichi Morita · CC BY 4.0',16)
-	button('maou.audio',func():OS.shell_open('https://maou.audio/'))
-	button('BACK',show_title)
+	panel(notes_menu)
+	bind_button('Website',func():OS.shell_open('https://maou.audio/'))
+	bind_button('Back',show_title,'back')
 
 func show_profile():
-	panel();label('NAME',28)
-	nickname_edit=LineEdit.new();nickname_edit.text=profile.nickname;nickname_edit.max_length=16;nickname_edit.custom_minimum_size=Vector2(320,44);nickname_edit.add_theme_font_override('font',font);nickname_edit.add_theme_font_size_override('font_size',22);menu.add_child(nickname_edit)
-	var field_style=StyleBoxFlat.new();field_style.bg_color=Color('#fffaf0');field_style.set_corner_radius_all(12);field_style.content_margin_left=12;nickname_edit.add_theme_stylebox_override('normal',field_style);nickname_edit.add_theme_color_override('font_color',Color('#20243e'))
+	panel(profile_menu)
+	nickname_edit=menu.get_node('Nickname');nickname_edit.text=profile.nickname
 	nickname_edit.text_changed.connect(func(_value):audio.play('hover',-6,.08))
-	button('RANDOM',func():
+	bind_button('Random',func():
 		nickname_edit.text=ArenaProfile.random_name()
 		if OS.has_feature('web'):JavaScriptBridge.eval("document.getElementById('arena-name').value="+JSON.stringify(nickname_edit.text)))
-	for kind in ['BGM','SE']:
-		var row=HBoxContainer.new();menu.add_child(row)
-		var caption=Label.new();caption.text=kind;caption.custom_minimum_size.x=55;caption.add_theme_font_override('font',font);row.add_child(caption)
-		var slider=HSlider.new();slider.min_value=0;slider.max_value=1;slider.step=.05;slider.value=profile.music_volume if kind=='BGM' else profile.sfx_volume;slider.custom_minimum_size=Vector2(245,32);slider.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(slider)
+	for kind in ['Music','Effects']:
+		var slider: HSlider=menu.get_node(kind+'/Volume')
+		slider.value=profile.music_volume if kind=='Music' else profile.sfx_volume
 		slider.value_changed.connect(func(value):
-			if kind=='BGM':profile.music_volume=value
+			if kind=='Music':profile.music_volume=value
 			else:profile.sfx_volume=value
 			audio.levels(profile.music_volume,profile.sfx_volume);audio.play('select');profile.save())
-	button('OK',save_profile,Color('#ffda16'))
+	bind_button('Save',save_profile)
 	nickname_edit.text_submitted.connect(func(_value):save_profile())
 	nickname_edit.grab_focus();nickname_edit.select_all();editing_profile=true
 	if OS.has_feature('web'):
@@ -218,17 +190,20 @@ func save_profile():
 	profile.nickname=ArenaProfile.clean_name(value);profile.save();net.nickname=profile.nickname;profile_button.text=profile.nickname;audio.play('confirm');show_title()
 
 func _input(event):
+	if event is InputEventJoypadMotion and abs(event.axis_value)>.18 and is_instance_valid(hud):hud.using_pad=true
 	if is_instance_valid(audio) and ((event is InputEventMouseButton and event.pressed) or (event is InputEventScreenTouch and event.pressed) or (event is InputEventKey and event.pressed) or (event is InputEventJoypadButton and event.pressed)):audio.unlock()
 
 func show_online():
-	mode='title';hud.title=true;net.leave();panel();label('ONLINE',42)
-	button('1 vs 1',func():search_online('1v1'),Color('#ffda16')).grab_focus()
-	button('2 vs 2',func():search_online('2v2'))
-	button('BACK',show_title)
+	mode='title';hud.title=true;net.leave();panel(online_menu)
+	bind_button('Solo',func():search_online('1v1')).grab_focus()
+	bind_button('Teams',func():search_online('2v2'))
+	bind_button('Back',show_title,'back')
 
 func search_online(format: String):
-	online_format=format;panel();label('1 vs 1' if format=='1v1' else '2 vs 2',42);info=label('CONNECTING',22)
-	button('CANCEL',show_online).grab_focus();net.connect_to(net.endpoint)
+	online_format=format;panel(search_menu)
+	menu.get_node('Heading').text='1 vs 1' if format=='1v1' else '2 vs 2'
+	info=menu.get_node('Info')
+	bind_button('Cancel',show_online,'back').grab_focus();net.connect_to(net.endpoint)
 
 func network_message(d: Dictionary):
 	match d.type:
@@ -239,7 +214,7 @@ func network_message(d: Dictionary):
 			audio.play('reconnected' if mode=='online' else 'found');awaiting_audio_baseline=true
 			team=int(d.team)
 			if mode!='online':
-				panel();label('MATCH FOUND',40);info=label(profile.nickname,18);net.send({'type':'ready'})
+				panel(found_menu);info=menu.get_node('Info');info.text=profile.nickname;net.send({'type':'ready'})
 			hud.disconnected=false
 		'ready':
 			if d.started: start('online')
@@ -252,7 +227,8 @@ func network_message(d: Dictionary):
 		'lost': hud.disconnected=true;audio.play('lost')
 		'error':
 			audio.play('deny')
-			net.leave();panel();label(str(d.text),24);button('RETRY',show_online);button('BACK',show_title)
+			net.leave();panel(error_menu);menu.get_node('Info').text=str(d.text)
+			bind_button('Retry',show_online);bind_button('Back',show_title,'back')
 
 func start(which: String):
 	mode=which;game.reset(which);drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];previous_human=-1;pending.clear();result_shown=false
@@ -262,7 +238,7 @@ func start(which: String):
 	hud.partner_cpu=which=='cpu'
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
-	camera_target=game.robots[game.active[team]].p+Vector3(0,.4,0)
+	camera.follow_target=game.robots[game.active[team]].p+Vector3(0,.4,0)
 	# Network start arrives outside a browser gesture; capture only on RESUME.
 	if which=='online':pause_menu()
 	else:close_menu()
@@ -280,39 +256,42 @@ func close_menu():
 func pause_menu():
 	if mode=='title':return
 	audio.play('pause')
-	panel();label('PAUSED' if mode!='online' else 'MENU',40)
-	button('RESUME',close_menu).grab_focus()
-	button('RETRY',func(): pending.retry=true;close_menu();pending.retry=true)
-	if mode!='online':button('RESET',func():start(mode))
-	button('EXIT',show_title)
+	panel(pause_screen)
+	menu.get_node('Heading').text='PAUSED' if mode!='online' else 'MENU'
+	bind_button('Resume',close_menu).grab_focus()
+	bind_button('Retry',func():pending.retry=true;close_menu();pending.retry=true)
+	menu.get_node('Reset').visible=mode!='online'
+	bind_button('Reset',func():start(mode))
+	bind_button('Exit',show_title,'back')
 
 func results():
 	audio.play('draw' if game.winner<0 else 'win' if game.winner==team else 'lose')
-	result_shown=true;panel()
-	label('DRAW' if game.winner<0 else ('YOU WIN' if game.winner==team else 'CPU WINS' if mode=='cpu' else 'YOU LOSE'),48)
-	label('%d : %d'%[game.scores[0],game.scores[1]],38)
-	if mode!='online':button('AGAIN',func():start(mode),Color('#ffda16')).grab_focus()
-	else:button('AGAIN',func():net.send({'type':'rematch'}),Color('#ffda16')).grab_focus()
-	button('BACK',show_title)
+	result_shown=true;panel(results_menu)
+	menu.get_node('Heading').text='DRAW' if game.winner<0 else ('YOU WIN' if game.winner==team else 'CPU WINS' if mode=='cpu' else 'YOU LOSE')
+	menu.get_node('Score').text='%d : %d'%[game.scores[0],game.scores[1]]
+	bind_button('Again',func():
+		if mode=='online':net.send({'type':'rematch'})
+		else:start(mode)).grab_focus()
+	bind_button('Back',show_title,'back')
 
 func _unhandled_input(event):
 	if landscape_required:return
-	if event is InputEventKey and event.pressed and not event.echo:
-		hud.using_pad=false
-		if event.keycode==KEY_ESCAPE:
+	if (event is InputEventKey or event is InputEventJoypadButton or event is InputEventMouseButton) and event.is_pressed() and not event.is_echo():
+		hud.using_pad=event is InputEventJoypadButton
+		if event.is_action_pressed("pause"):
 			if mode!='title' and not game.finished:
 				if ui_open:close_menu()
 				else:pause_menu()
 		if ui_open:return
-		if event.keycode==KEY_E: pending.act=true
-		if event.keycode==KEY_Q: pending.switch=true
+		if event.is_action_pressed("interact"):pending.act=true
+		if event.is_action_pressed("switch_robot"):pending.switch=true
+		if event.is_action_pressed("previous_cargo"):pending.select=-1
+		if event.is_action_pressed("next_cargo"):pending.select=1
 	if event is InputEventMouseMotion and not ui_open and not touch_mode and (Input.mouse_mode==Input.MOUSE_MODE_CAPTURED or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
 		hud.using_pad=false
-		audio.look();yaw-=event.relative.x*.003;pitch=clampf(pitch+event.relative.y*.002,.22,1.15)
+		audio.look();yaw-=event.relative.x*mouse_look.x;pitch=clampf(pitch+event.relative.y*mouse_look.y,.22,1.15)
 	if event is InputEventMouseButton and event.pressed and not ui_open:
 		if event.button_index==MOUSE_BUTTON_LEFT and not touch_mode:Input.mouse_mode=Input.MOUSE_MODE_CAPTURED;capture_confirmed=false;capture_grace=.5
-		if event.button_index==MOUSE_BUTTON_WHEEL_UP:pending.select=1
-		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN:pending.select=-1
 
 func _notification(what):
 	if is_instance_valid(audio):
@@ -327,36 +306,21 @@ func _notification(what):
 		if is_instance_valid(touch):touch.reset()
 		if mode!='title' and not ui_open and not game.finished:pause_menu()
 
-func gamepad_pressed(button_id: int) -> bool:
-	var down=Input.is_joy_button_pressed(0,button_id)
-	var edge=down and not previous_buttons.get(button_id,false)
-	if edge:hud.using_pad=true
-	previous_buttons[button_id]=down
-	return edge
-
 func _physics_process(dt):
 	if not is_instance_valid(hud) or mode=='title':return
 	if game.finished:
 		if not result_shown:results()
 		return
-	if gamepad_pressed(JOY_BUTTON_START):
-		if ui_open:close_menu()
-		else:pause_menu()
 	var cmd={}
 	if not ui_open and not landscape_required:
-		var axes=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
+		var axes=Input.get_vector('move_left','move_right','move_forward','move_back')
 		if touch_mode and touch.movement.length()>.01:axes=touch.movement
-		var stick=Vector2(Input.get_joy_axis(0,JOY_AXIS_LEFT_X),Input.get_joy_axis(0,JOY_AXIS_LEFT_Y))
-		if stick.length()>.18:axes=stick;hud.using_pad=true
-		var look=Vector2(Input.get_joy_axis(0,JOY_AXIS_RIGHT_X),Input.get_joy_axis(0,JOY_AXIS_RIGHT_Y))
-		if look.length()>.18:audio.look();yaw-=look.x*dt*2.5;pitch=clampf(pitch+look.y*dt*1.5,.22,1.15)
+		var look=Input.get_vector('look_left','look_right','look_up','look_down')
+		if look.length()>.01:
+			audio.look();yaw-=look.x*dt*gamepad_look_speed.x;pitch=clampf(pitch+look.y*dt*gamepad_look_speed.y,.22,1.15)
 		var dir=Vector3(axes.x,0,axes.y).rotated(Vector3.UP,yaw).limit_length(1)
 		cmd=pending.duplicate();cmd.x=dir.x;cmd.z=dir.z;pending.clear()
-		if gamepad_pressed(JOY_BUTTON_A):cmd.act=true
-		if gamepad_pressed(JOY_BUTTON_Y):cmd.switch=true
-		if gamepad_pressed(JOY_BUTTON_LEFT_SHOULDER):cmd.select=-1
-		if gamepad_pressed(JOY_BUTTON_RIGHT_SHOULDER):cmd.select=1
-		overview=touch.overview if touch_mode else (Input.is_physical_key_pressed(KEY_TAB) or Input.get_joy_axis(0,JOY_AXIS_TRIGGER_LEFT)>.5)
+		overview=touch.overview if touch_mode else Input.is_action_pressed('overview')
 	if not hud.can_switch:cmd.erase('switch')
 	if mode=='online':
 		net.input(cmd)
@@ -382,7 +346,7 @@ func _process(dt):
 			audio.play('hover',-6,.08);JavaScriptBridge.eval('window.arenaNameChanged=false')
 		if bool(JavaScriptBridge.eval('window.arenaNameSubmit===true')):save_profile()
 	if touch_mode:
-		resize_mobile();touch.landscape_required=landscape_required;touch.visible=landscape_required or not ui_open;touch.queue_redraw()
+		resize_mobile();touch.landscape_required=landscape_required;touch.visible=landscape_required or not ui_open;touch.update_view()
 	profile_button.visible=mode=='title' and ui_open and hud.title and not landscape_required and is_instance_valid(menu) and menu.get_child(0) is ArenaTitle
 	fullscreen_button.visible=not landscape_required and ui_open
 	if overview!=last_overview:audio.play('overview');last_overview=overview
@@ -400,46 +364,25 @@ func _process(dt):
 	for i in range(robots.size()):
 		var r=game.robots[i];var node: Node3D=robots[i]
 		node.visible=not (mode=='free' and i>=2)
-		node.position=node.position.lerp(r.p,1-exp(-22*dt));node.rotation.y=lerp_angle(node.rotation.y,r.yaw,1-exp(-15*dt))
-		var body=node.get_child(0)
-		body.rotation.x=lerpf(body.rotation.x,-r.v.length()*.035,1-exp(-12*dt))
-		body.position.y=sin(title_clock*12)*.012*r.v.length()
+		node.update_pose(r,dt,title_clock,mode=='title',i)
 		var climbing=r.job.get('type','')=='climb'
-		if climbing:
-			body.rotation.x=-.13 if r.job.to.y>r.job.from.y else .10
-			body.position.y=abs(sin(title_clock*10))*.035
 		if last_jobs[i] and not climbing and mode!='title':
 			stadium.burst(r.p+Vector3(0,.12,0),Color('#fffaf0'),8)
 		last_jobs[i]=climbing
 		shadows[i].position=Vector3(node.position.x,field.height(node.position)+.012,node.position.z);shadows[i].visible=node.visible
-		if mode=='title':body.position.y=sin(title_clock*2+i)*.035
 	for i in range(items.size()):
 		var o=game.objects[i];var node: Node3D=items[i]
 		var pos: Vector3=o.p
 		if o.where=='held':
 			var rid=int(o.holder);var index=game.robots[rid].carry.find(i)
 			pos=robots[rid].position+Vector3((index%2)*.2-.1,.75+int(index/2)*.28,.18).rotated(Vector3.UP,robots[rid].rotation.y)
-		node.position=node.position.lerp(pos,1-exp(-20*dt))
-		if o.kind=='S':node.quaternion=node.quaternion.slerp(Quaternion.from_euler(art.sky_rotation(o)),1-exp(-12*dt))
-		if last_states[i]!=o.where:
+		var changed=last_states[i]!=o.where
+		if changed:
 			if mode!='title' and last_states[i]!='':
 				if o.where in ['tower','pillar','buffer']:stadium.burst(pos+Vector3(0,.15,0),ArenaVisuals.RED if o.owner==0 else ArenaVisuals.BLUE,24 if o.where=='pillar' else 12)
-			node.scale=Vector3(1.14,.86,1.14);last_states[i]=o.where
-		node.scale=node.scale.lerp(Vector3.ONE,1-exp(-12*dt))
-	var target: Vector3=game.robots[game.active[team]].p+Vector3(0,.45,0)
-	var desired: Vector3
-	if mode=='title':
-		target=Vector3(0,.2,0);desired=Vector3(10*sin(.65+title_clock*.025),10,10*cos(.65+title_clock*.025))
-	elif overview:target=Vector3.ZERO;desired=Vector3(0,14,6)
-	else:
-		camera_target=camera_target.lerp(target,1-exp(-12*dt));target=camera_target
-		var offset=Vector3(0,sin(pitch)*4,cos(pitch)*4).rotated(Vector3.UP,yaw)
-		desired=target+offset
-		# Lift the boom over the CAD platforms instead of allowing the camera inside them.
-		for n in range(1,9):
-			var q=target.lerp(desired,n/8.0)
-			if abs(q.x)<5.4 and abs(q.z)<5.4:desired.y=max(desired.y,field.height(q)+.45)
-	camera.position=camera.position.lerp(desired,1-exp(-8*dt));camera.look_at(target)
+			last_states[i]=o.where
+		node.update_pose(pos,art.sky_rotation(o),o.kind=='S',changed,dt)
+	camera.update_view(dt,game.robots[game.active[team]].p,field,mode=='title',overview,yaw,pitch)
 	var ctx=game.context(game.active[team]) if mode!='title' and not ui_open else {}
 	hud.action=ctx
 	if not ctx.is_empty():
@@ -457,7 +400,7 @@ func _process(dt):
 			if mode=='cpu' and rid!=game.active[team]:name='CPU'
 			elif mode=='online':name=net.robot_names[rid]
 			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.unproject_position(point)})
-	hud.queue_redraw()
+	hud.update_view()
 	if qa_enabled:
 		qa_clock+=dt
 		if qa_clock>.5:

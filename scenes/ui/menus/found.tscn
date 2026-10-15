@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[node name="FoundMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Heading" type="Label" parent="."]
+layout_mode = 2
+text = "MATCH FOUND"
+theme_type_variation = "Heading"
+horizontal_alignment = 1
+
+[node name="Info" type="Label" parent="."]
+layout_mode = 2
+text = "Player"
+theme_type_variation = "BodyText"
+horizontal_alignment = 1

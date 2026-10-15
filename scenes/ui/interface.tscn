@@ -1,0 +1,193 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="1_w3v0r"]
+[ext_resource type="PackedScene" path="res://scenes/ui/touch_controls.tscn" id="2_ivwlv"]
+[ext_resource type="Texture2D" path="res://assets/fullscreen.svg" id="3_erumi"]
+[ext_resource type="FontFile" path="res://assets/Fredoka-Semibold.ttf" id="4_7q06a"]
+[ext_resource type="Texture2D" path="res://assets/edit.svg" id="5_gt0ke"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uypp3"]
+bg_color = Color(1, 0.98039216, 0.9411765, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_blkrb"]
+bg_color = Color(0.07058824, 0.7490196, 0.90588236, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_abqjc"]
+bg_color = Color(1, 0.85490197, 0.08627451, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6iyjs"]
+bg_color = Color(0.7764706, 0.80784315, 0.9098039, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4w656"]
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0, 0.47058824, 0.8666667, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e71vb"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 0.98039216, 0.9411765, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rnkwl"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 0.98039216, 0.9411765, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vke2r"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 0.85490197, 0.08627451, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uit24"]
+content_margin_left = 12.0
+content_margin_right = 12.0
+bg_color = Color(1, 0.98039216, 0.9411765, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="Interface" type="CanvasLayer" unique_id=1250575707]
+
+[node name="UI" type="Control" parent="." unique_id=64618486]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HUD" parent="UI" instance=ExtResource("1_w3v0r")]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="TouchControls" parent="UI" instance=ExtResource("2_ivwlv")]
+visible = false
+z_index = 100
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Fullscreen" type="Button" parent="UI" unique_id=345316153]
+z_index = 90
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -62.0
+offset_top = 16.0
+offset_right = -18.0
+offset_bottom = 60.0
+tooltip_text = "Fullscreen"
+theme_override_styles/normal = SubResource("StyleBoxFlat_uypp3")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_blkrb")
+theme_override_styles/hover = SubResource("StyleBoxFlat_abqjc")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_6iyjs")
+theme_override_styles/focus = SubResource("StyleBoxFlat_4w656")
+theme_override_colors/icon_normal_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_focus_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/icon_disabled_color = Color(1, 1, 1, 1)
+theme_override_constants/icon_max_width = 24
+icon = ExtResource("3_erumi")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Profile" type="Button" parent="UI" unique_id=793060638]
+custom_minimum_size = Vector2(200, 44)
+layout_mode = 0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 216.0
+offset_bottom = 60.0
+theme_override_styles/normal = SubResource("StyleBoxFlat_e71vb")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_rnkwl")
+theme_override_styles/hover = SubResource("StyleBoxFlat_vke2r")
+theme_override_styles/focus = SubResource("StyleBoxFlat_uit24")
+theme_override_colors/font_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+theme_override_colors/font_hover_color = Color(0.1254902, 0.14117648, 0.24313726, 1)
+theme_override_fonts/font = ExtResource("4_7q06a")
+theme_override_font_sizes/font_size = 18
+theme_override_constants/icon_max_width = 20
+text = "Player"
+icon = ExtResource("5_gt0ke")

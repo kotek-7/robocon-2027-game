@@ -111,35 +111,3 @@ func transfer(team: int) -> Vector3:
 
 func spot_pos(i: int) -> Vector3:
 	return Vector3(spots[i][0],spots[i][1],spots[i][2])
-
-func build(parent: Node3D):
-	var m = raw.meshes[0]
-	var surface = SurfaceTool.new()
-	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	surface.set_smooth_group(-1)
-	for face in m.faces:
-		var rgb = face.color
-		var color = Color(rgb[0],rgb[1],rgb[2])
-		if rgb[1]>0.1 and rgb[0]<0.1 and rgb[2]<0.1: color=Color('#20db93')
-		elif rgb[0]>0.65 and rgb[1]<0.15: color=Color('#ed174c')
-		elif rgb[2]>0.8 and rgb[0]<0.15: color=Color('#0078dd')
-		elif rgb[0]>0.8 and rgb[1]>0.7: color=Color('#ffda16')
-		elif rgb[0]<0.2 and rgb[1]<0.1: color=Color('#4b20a5')
-		else: color=Color('#ff9d19') if rgb[0]>.5 else Color('#6030c9')
-		for t in range(int(face.first),int(face.last)+1):
-			var a=vec(m.positions,m.indices[t*3]);var b=vec(m.positions,m.indices[t*3+1]);var c=vec(m.positions,m.indices[t*3+2])
-			var normal=(b-a).cross(c-a).normalized()
-			# CAD faces have hard edges: keep risers and walls visually distinct.
-			var shade=color if normal.y>.8 else color.darkened(.28)
-			for j in [2,1,0]:
-				surface.set_color(shade)
-				surface.add_vertex(vec(m.positions,m.indices[t*3+j]))
-	surface.generate_normals()
-	var instance = MeshInstance3D.new()
-	instance.mesh=surface.commit()
-	var mat=StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo=true
-	mat.cull_mode=BaseMaterial3D.CULL_DISABLED
-	mat.roughness=0.82
-	instance.material_override=mat
-	parent.add_child(instance)

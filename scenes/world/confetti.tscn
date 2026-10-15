@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="material"]
+vertex_color_use_as_albedo = true
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="mesh"]
+material = SubResource("material")
+size = Vector3(0.045, 0.018, 0.08)
+
+[sub_resource type="Curve" id="scale"]
+_data = [Vector2(0, 1), 0.0, -0.7, 0, 0, Vector2(1, 0.2), -0.7, 0.0, 0, 0]
+point_count = 2
+
+[node name="Confetti" type="CPUParticles3D"]
+emitting = false
+amount = 24
+lifetime = 1.1
+one_shot = true
+explosiveness = 1.0
+local_coords = false
+mesh = SubResource("mesh")
+direction = Vector3(0, 1, 0)
+spread = 45.0
+gravity = Vector3(0, -3.5, 0)
+initial_velocity_min = 1.2
+initial_velocity_max = 2.5
+angular_velocity_min = -280.0
+angular_velocity_max = 280.0
+scale_amount_curve = SubResource("scale")

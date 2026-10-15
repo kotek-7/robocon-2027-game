@@ -1,0 +1,13 @@
+[gd_resource type="AudioBusLayout" load_steps=2 format=3]
+
+[sub_resource type="AudioEffectLimiter" id="limiter"]
+resource_name = "Limiter"
+
+[resource]
+bus/0/name = &"Master"
+bus/0/effect/0/effect = SubResource("limiter")
+bus/0/effect/0/enabled = true
+bus/1/name = &"Music"
+bus/1/send = &"Master"
+bus/2/name = &"SFX"
+bus/2/send = &"Master"

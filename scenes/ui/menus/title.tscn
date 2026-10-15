@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
+
+[ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/title.tscn" id="title"]
+
+[ext_resource type="Texture2D" path="res://assets/info.svg" id="info"]
+
+[node name="TitleMenu" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+theme = ExtResource("desktop")
+script = ExtResource("layout")
+desktop_theme = ExtResource("desktop")
+mobile_theme = ExtResource("mobile")
+
+[node name="Logo" parent="." instance=ExtResource("title")]
+layout_mode = 2
+
+[node name="CPU" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "VS CPU"
+theme_type_variation = &"Accent"
+
+[node name="Online" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "ONLINE"
+
+[node name="Free" type="Button" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 58)
+text = "FREE"
+
+[node name="Footer" type="CenterContainer" parent="."]
+layout_mode = 2
+
+[node name="Notes" type="Button" parent="Footer"]
+layout_mode = 2
+custom_minimum_size = Vector2(48, 40)
+icon = ExtResource("info")
+theme_override_constants/icon_max_width = 22

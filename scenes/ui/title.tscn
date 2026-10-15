@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/title.gd" id="script"]
+
+[ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="theme"]
+
+[ext_resource type="Texture2D" path="res://assets/ui/emblem.svg" id="emblem"]
+
+[node name="Title" type="VBoxContainer"]
+custom_minimum_size = Vector2(540, 260)
+script = ExtResource("script")
+theme = ExtResource("theme")
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Emblem" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+texture = ExtResource("emblem")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+
+[node name="Primary" type="Label" parent="."]
+layout_mode = 2
+text = "Robocon 2027"
+theme_type_variation = "TitlePrimary"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Secondary" type="Label" parent="."]
+layout_mode = 2
+text = "The Pursuit of"
+theme_type_variation = "TitleSecondary"
+horizontal_alignment = 1
+mouse_filter = 2
+
+[node name="Accent" type="Label" parent="."]
+layout_mode = 2
+text = "Mustika Nusantara"
+theme_type_variation = "TitleAccent"
+horizontal_alignment = 1
+mouse_filter = 2
