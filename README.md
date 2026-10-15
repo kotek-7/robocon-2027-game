@@ -1,6 +1,6 @@
 # Robocon 2027 Game
 
-A three-minute robot match for PC browsers. Drive TR and BR, carry blocks, build towers and contest Mustika.
+A three-minute robot match for desktop and landscape mobile browsers. Drive TR and BR, carry blocks, build towers and contest Mustika.
 
 ## Run locally
 
@@ -17,6 +17,8 @@ Alternatively, open `project.godot` in Godot and run the main scene. Use `godot 
 ## Controls
 
 WASD moves relative to the camera. Mouse orbits. E interacts, Q switches robots, mouse wheel selects cargo, Tab shows the field, Esc opens the menu. Gamepad: left stick moves, right stick orbits, lower face button interacts, upper face button switches, bumpers select cargo, left trigger shows the field, Start opens the menu.
+
+Touch: left thumb moves; drag the rest of the field to orbit. ACT interacts, TR/BR switches robots, < and > select cargo. The field icon toggles overview, II opens the menu, and the four-corner icon toggles fullscreen. Portrait orientation blocks gameplay behind a rotate-device pictogram. Fullscreen requests landscape lock where supported; unsupported fullscreen controls are disabled. Online match clocks continue while the phone is vertical or the menu is open.
 
 VS CPU uses the same fixed robot performance and one active driver per team. FREE has no opponent or time limit. ONLINE searches for another player automatically. Compatible clients are paired in arrival order; CANCEL leaves the queue. Search times out after two minutes. Both players can request a rematch after the result.
 
@@ -44,6 +46,7 @@ python tests/network_browser.py
 python tests/network_rematch.py
 python tests/gamepad_browser.py
 python tests/firefox_browser.py
+python tests/touch_browser.py
 ```
 
 The browser harness uses `?qa=1` for read-only state and UI bounds. It sends keyboard/mouse inputs; it cannot alter match state through that interface. Browser evidence is written under `build/qa`. Run browser checks sequentially because changing the foreground window pauses local play. The harness currently uses the local Playwright Chromium path; adjust it for another machine. The gamepad check injects Gamepad API inputs, not match state.

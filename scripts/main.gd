@@ -35,11 +35,19 @@ var result_shown=false
 var stadium: ArenaStadium
 var shadows: Array=[]
 var last_jobs=[false,false,false,false]
+var touch_mode=false
+var touch: ArenaTouchControls
+var mobile_size=Vector2i.ZERO
+var landscape_required=false
+var fullscreen_button: Button
 
 func _ready():
 	field=ArenaField.new();game=MatchState.new(field);game.reset('cpu')
 	net=ArenaNetwork.new();add_child(net)
 	if '--server' in OS.get_cmdline_user_args(): net.host(field);set_process(false);set_physics_process(false);return
+	touch_mode=DisplayServer.is_touchscreen_available()
+	if OS.has_feature('web'):touch_mode=bool(JavaScriptBridge.eval('navigator.maxTouchPoints > 0'))
+	if touch_mode:resize_mobile()
 	font=load('res://assets/Fredoka-Semibold.ttf')
 	if OS.has_feature('web'):qa_enabled=bool(JavaScriptBridge.eval("location.search.includes('qa=1')"))
 	if OS.has_feature('web'):
@@ -64,24 +72,64 @@ func _ready():
 	art.mesh(action_ring,ring_edge,Color('#20243e'),Vector3.ZERO)
 	var canvas=CanvasLayer.new();add_child(canvas)
 	ui=Control.new();ui.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);canvas.add_child(ui);ui.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	hud=ArenaHUD.new();hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(hud);hud.match_state=game
+	hud=ArenaHUD.new();hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(hud);hud.match_state=game;hud.touch_mode=touch_mode
+	touch=ArenaTouchControls.new();touch.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(touch);touch.visible=false;touch.z_index=100
+	touch.look.connect(func(delta):yaw-=delta.x*.005;pitch=clampf(pitch+delta.y*.004,.22,1.15))
+	touch.action.connect(func(key):
+		match key:
+			'act':pending.act=true
+			'switch':pending.switch=true
+			'previous':pending.select=-1
+			'next':pending.select=1
+			'menu':pause_menu()
+			'fullscreen':toggle_fullscreen()
+	)
+	fullscreen_button=Button.new();fullscreen_button.icon=load('res://assets/fullscreen.svg');fullscreen_button.tooltip_text='Fullscreen'
+	fullscreen_button.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT);fullscreen_button.offset_left=-62;fullscreen_button.offset_right=-18;fullscreen_button.offset_top=16;fullscreen_button.offset_bottom=60
+	fullscreen_button.add_theme_constant_override('icon_max_width',24);fullscreen_button.z_index=90
+	var fullscreen_style=StyleBoxFlat.new();fullscreen_style.bg_color=Color('#fffaf0');fullscreen_style.set_corner_radius_all(12);fullscreen_style.border_color=Color('#20243e');fullscreen_style.set_border_width_all(2)
+	fullscreen_button.add_theme_stylebox_override('normal',fullscreen_style)
+	if OS.has_feature('web'):
+		fullscreen_button.disabled=not bool(JavaScriptBridge.eval('!!document.fullscreenEnabled && !!document.documentElement.requestFullscreen'))
+		touch.fullscreen_supported=not fullscreen_button.disabled
+	ui.add_child(fullscreen_button);fullscreen_button.pressed.connect(toggle_fullscreen)
 	sound=AudioStreamPlayer.new();sound.max_polyphony=4;add_child(sound)
 	net.message.connect(network_message)
 	show_title()
 
+func toggle_fullscreen():
+	if OS.has_feature('web'):
+		JavaScriptBridge.eval("""(() => {
+		const lock = () => { if (navigator.maxTouchPoints > 0 && screen.orientation?.lock) screen.orientation.lock('landscape').catch(() => {}); };
+		if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+		else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().then(lock).catch(() => {});
+		})()""")
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode()==DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+func resize_mobile():
+	if not OS.has_feature('web'):return
+	var dims=JSON.parse_string(str(JavaScriptBridge.eval('JSON.stringify([innerWidth,innerHeight])')))
+	var next_size=Vector2i(int(dims[0]),int(dims[1]))
+	if next_size==mobile_size:return
+	mobile_size=next_size;landscape_required=next_size.y>next_size.x;get_window().content_scale_size=next_size
+	if is_instance_valid(touch):touch.reset();pending.clear();overview=false
+
 func panel():
+	pending.clear();overview=false
+	if is_instance_valid(touch):touch.reset();touch.visible=false
 	if is_instance_valid(overlay): overlay.queue_free()
 	overlay=Control.new();overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);ui.add_child(overlay)
 	var shade=ColorRect.new();shade.color=Color(.14,.1,.24,.18);shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);shade.mouse_filter=Control.MOUSE_FILTER_IGNORE;overlay.add_child(shade)
 	var center=CenterContainer.new();center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT);overlay.add_child(center)
-	menu=VBoxContainer.new();menu.add_theme_constant_override('separation',14);menu.custom_minimum_size=Vector2(320,0);center.add_child(menu)
+	menu=VBoxContainer.new();menu.add_theme_constant_override('separation',8 if touch_mode else 14);menu.custom_minimum_size=Vector2(320,0);center.add_child(menu)
 	ui_open=true;Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
 
 func label(s: String, size=28) -> Label:
-	var l=Label.new();l.text=s;l.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;l.add_theme_font_override('font',font);l.add_theme_font_size_override('font_size',size);l.add_theme_color_override('font_color',Color('#20243e'));menu.add_child(l);return l
+	var l=Label.new();l.text=s;l.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;l.add_theme_font_override('font',font);l.add_theme_font_size_override('font_size',mini(size,34) if touch_mode else size);l.add_theme_color_override('font_color',Color('#20243e'));menu.add_child(l);return l
 
 func button(s: String, call: Callable, color=Color('#fffaf0')) -> Button:
-	var b=Button.new();b.text=s;b.custom_minimum_size=Vector2(320,58);b.add_theme_font_override('font',font);b.add_theme_font_size_override('font_size',26);b.add_theme_color_override('font_color',Color('#20243e'));b.add_theme_color_override('font_hover_color',Color('#20243e'));b.add_theme_color_override('font_focus_color',Color('#20243e'));b.add_theme_color_override('font_pressed_color',Color('#20243e'))
+	var b=Button.new();b.text=s;b.custom_minimum_size=Vector2(300,44 if touch_mode else 58);b.add_theme_font_override('font',font);b.add_theme_font_size_override('font_size',22 if touch_mode else 26);b.add_theme_color_override('font_color',Color('#20243e'));b.add_theme_color_override('font_hover_color',Color('#20243e'));b.add_theme_color_override('font_focus_color',Color('#20243e'));b.add_theme_color_override('font_pressed_color',Color('#20243e'))
 	for state in ['normal','hover','pressed','focus']:
 		var style=StyleBoxFlat.new();style.bg_color=color.lightened(.12) if state=='hover' else color;style.set_corner_radius_all(18);style.content_margin_left=24;style.content_margin_right=24
 		if state=='focus': style.bg_color=Color.TRANSPARENT;style.border_color=Color('#20243e');style.set_border_width_all(3)
@@ -143,7 +191,9 @@ func close_menu():
 	if OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
 		pause_menu();return
 	if is_instance_valid(overlay):overlay.queue_free()
-	ui_open=false;pending.clear();capture_grace=.5;Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+	ui_open=false;pending.clear();capture_grace=.5
+	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if touch_mode else Input.MOUSE_MODE_CAPTURED
+	touch.reset();touch.visible=touch_mode
 
 func pause_menu():
 	if mode=='title':return
@@ -162,6 +212,7 @@ func results():
 	button('BACK',show_title)
 
 func _unhandled_input(event):
+	if landscape_required:return
 	if event is InputEventKey and event.pressed and not event.echo:
 		hud.using_pad=false
 		if event.keycode==KEY_ESCAPE:
@@ -171,7 +222,7 @@ func _unhandled_input(event):
 		if ui_open:return
 		if event.keycode==KEY_E: pending.act=true
 		if event.keycode==KEY_Q: pending.switch=true
-	if event is InputEventMouseMotion and not ui_open:
+	if event is InputEventMouseMotion and not ui_open and not touch_mode:
 		hud.using_pad=false
 		yaw-=event.relative.x*.003;pitch=clampf(pitch+event.relative.y*.002,.22,1.15)
 	if event is InputEventMouseButton and event.pressed and not ui_open:
@@ -181,6 +232,7 @@ func _unhandled_input(event):
 func _notification(what):
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and is_instance_valid(hud):
 		pending.clear()
+		if is_instance_valid(touch):touch.reset()
 		if mode!='title' and not ui_open and not game.finished:pause_menu()
 
 func gamepad_pressed(button_id: int) -> bool:
@@ -199,8 +251,9 @@ func _physics_process(dt):
 		if ui_open:close_menu()
 		else:pause_menu()
 	var cmd={}
-	if not ui_open:
+	if not ui_open and not landscape_required:
 		var axes=Vector2(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
+		if touch_mode and touch.movement.length()>.01:axes=touch.movement
 		var stick=Vector2(Input.get_joy_axis(0,JOY_AXIS_LEFT_X),Input.get_joy_axis(0,JOY_AXIS_LEFT_Y))
 		if stick.length()>.18:axes=stick;hud.using_pad=true
 		var look=Vector2(Input.get_joy_axis(0,JOY_AXIS_RIGHT_X),Input.get_joy_axis(0,JOY_AXIS_RIGHT_Y))
@@ -211,22 +264,27 @@ func _physics_process(dt):
 		if gamepad_pressed(JOY_BUTTON_Y):cmd.switch=true
 		if gamepad_pressed(JOY_BUTTON_LEFT_SHOULDER):cmd.select=-1
 		if gamepad_pressed(JOY_BUTTON_RIGHT_SHOULDER):cmd.select=1
-		overview=Input.is_physical_key_pressed(KEY_TAB) or Input.get_joy_axis(0,JOY_AXIS_TRIGGER_LEFT)>.5
+		overview=touch.overview if touch_mode else (Input.is_physical_key_pressed(KEY_TAB) or Input.get_joy_axis(0,JOY_AXIS_TRIGGER_LEFT)>.5)
 	if mode=='online':
 		net.input(cmd)
-		if not ui_open and net.connected:
+		if not ui_open and not landscape_required and net.connected:
 			# Predict locomotion only. Object operations always await authority.
 			game.command(team,{'x':cmd.get('x',0),'z':cmd.get('z',0)},dt)
-	elif not ui_open:
+	elif not ui_open and not landscape_required:
 		game.command(team,cmd,dt)
 		if mode=='cpu':game.command(1,cpu.command(game,1,dt),dt)
 		game.step(dt)
 
 func _process(dt):
 	if not camera:return
+	if touch_mode:
+		resize_mobile();touch.landscape_required=landscape_required;touch.visible=landscape_required or not ui_open;touch.queue_redraw()
+	fullscreen_button.visible=not landscape_required and ui_open
+	fullscreen_button.offset_top=16 if mode=='title' else 100
+	fullscreen_button.offset_bottom=fullscreen_button.offset_top+44
 	title_clock+=dt
 	capture_grace=maxf(0,capture_grace-dt)
-	if mode!='title' and not ui_open and not game.finished and capture_grace<=0 and Input.mouse_mode!=Input.MOUSE_MODE_CAPTURED:
+	if not touch_mode and mode!='title' and not ui_open and not game.finished and capture_grace<=0 and Input.mouse_mode!=Input.MOUSE_MODE_CAPTURED:
 		pause_menu()
 	for i in range(robots.size()):
 		var r=game.robots[i];var node: Node3D=robots[i]
@@ -284,7 +342,7 @@ func _process(dt):
 		qa_clock+=dt
 		if qa_clock>.5:
 			qa_clock=0
-			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'buttons':qa_buttons()}))
+			JavaScriptBridge.eval('window.__arenaQA='+JSON.stringify({'mode':mode,'state':game.snapshot(),'fps':Engine.get_frames_per_second(),'menu':ui_open,'room':net.room_code,'team':team,'buttons':qa_buttons(),'touch':touch_mode,'landscape_required':landscape_required,'touch_buttons':touch.qa_buttons(),'move':[touch.movement.x,touch.movement.y],'yaw':yaw,'pitch':pitch,'overview':overview}))
 
 func tone(frequency: float, length: float):
 	if tones.has(frequency):sound.stream=tones[frequency];sound.play();return

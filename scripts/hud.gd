@@ -5,6 +5,7 @@ var team=0
 var action={}
 var action_screen=Vector2.ZERO
 var title=false
+var touch_mode=false
 var using_pad=false
 var disconnected=false
 var font: Font
@@ -21,6 +22,7 @@ func tile(rect: Rect2,color: Color,radius=18):
 
 func _draw():
 	if title or not match_state: return
+	if touch_mode:draw_touch_hud();return
 	var m=match_state;var w=size.x;var h=size.y
 	for t in range(2):
 		var x=28 if t==0 else w-158
@@ -91,3 +93,31 @@ func control_legend(origin: Vector2):
 				draw_rect(Rect2(p-Vector2(11,9),Vector2(22,18)),ink,false,2)
 				draw_rect(Rect2(p-Vector2(5,4),Vector2(10,8)),ink,false,2)
 		text(p+Vector2(18,5),keys[i],13,ink)
+
+func draw_touch_hud():
+	var m=match_state;var w=size.x
+	for t in range(2):
+		var x=16 if t==0 else w-98
+		tile(Rect2(x,12,82,46),ArenaVisuals.RED if t==0 else ArenaVisuals.BLUE,14)
+		text(Vector2(x+12,44),str(m.scores[t]),25,Color.WHITE)
+		for j in range(1 if t==0 else 2):draw_circle(Vector2(x+62+j*10,23),3,Color.WHITE)
+	var seconds=maxi(0,ceili(m.duration-m.elapsed))
+	var clock='%d:%02d'%[seconds/60,seconds%60] if m.mode!='free' else 'FREE'
+	tile(Rect2(w/2-48,12,96,46),Color('#fffaf0'),14);text(Vector2(w/2-34,43),clock,24)
+	var rid=int(m.active[team]);var r=m.robots[rid]
+	text(Vector2(18,84),'TR' if rid%2==0 else 'BR',20)
+	for i in range(m.capacity(rid)):
+		var p=Vector2(62+i*25,78);draw_circle(p,10,Color('#c6cee8'))
+		if i<r.carry.size():
+			var o=m.objects[r.carry[i]];var c=Color('#ffda16') if o.kind=='M' else (ArenaVisuals.RED if o.owner==0 else ArenaVisuals.BLUE)
+			draw_rect(Rect2(p-Vector2(7,7),Vector2(14,14)),c)
+			if i==posmod(r.selected,maxi(1,r.carry.size())):draw_arc(p,12,0,TAU,20,Color('#20243e'),2,true)
+	if not action.is_empty() and action_screen.x>0:
+		draw_arc(action_screen,18,0,TAU,24,Color('#20243e'),5,true)
+		draw_arc(action_screen,18,0,TAU,24,Color.WHITE,2,true)
+		if action.type=='climb':text(action_screen+Vector2(-10,-27),'%ds'%int(action.seconds),18)
+	if not r.job.is_empty():
+		var duration=r.job.seconds if r.job.type=='climb' else .65 if r.job.type in ['pick','drop','give'] else 1.1
+		draw_arc(Vector2(w-56,size.y-68),40,-PI/2,-PI/2+TAU*(1-r.left/duration),32,Color('#20243e'),5,true)
+	if m.mandate[team]:draw_circle(Vector2(154,78),8,Color('#ffda16'))
+	if disconnected:text(Vector2(w/2-68,83),'RECONNECTING',16)
