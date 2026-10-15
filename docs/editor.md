@@ -33,7 +33,7 @@
 | `found` | マッチ成立 | `lost` | 接続切れ |
 | `reconnected` | 再接続 | | |
 
-`MenuMusic` と `MatchMusic` はBGM、`Motors` の4ノードは各ロボットの走行音です。こちらもStreamを差し替えます。BGMと走行音は、音声ファイルのImport設定でLoopを有効にしてください。Audioルートにはフェード時間、遠隔音の減衰、速度による走行音ピッチ変化の設定があります。`Voices` はSE再生用の12個のプレイヤーで、音の割り当てには使いません。
+`MenuMusic` と `MatchMusic` はBGM、`Motors` の4ノードは各ロボットの走行音です。こちらもStreamを差し替えます。BGMと走行音は、音声ファイルのImport設定でLoopを有効にしてください。Audioルートにはフェードアウト時間、遠隔音の減衰、速度による走行音ピッチ変化の設定があります。フェードインはありません。試合開始・RESET後のBGMは1秒後に開始し、待ち時間は `MatchStartDelay` のWait Timeで変更できます。`Voices` はSE再生用の12個のプレイヤーで、音の割り当てには使いません。
 
 バスとリミッターは、下部の **Audio** パネルで編集します。設定は `default_bus_layout.tres` に保存されます。素材を変更したときは、タイトルのクレジットと `assets/audio/sources.json` も実際の素材に合わせて更新してください。
 

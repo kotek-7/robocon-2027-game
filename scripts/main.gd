@@ -56,6 +56,7 @@ var title_clock=0.0
 var qa_clock=0.0
 var qa_enabled=false
 var result_shown=false
+var finish_remaining=0.0
 var stadium: ArenaStadium
 var shadows: Array=[]
 var last_jobs=[false,false,false,false]
@@ -151,6 +152,7 @@ func bind_button(path: String, callback: Callable, cue='confirm') -> Button:
 	return node
 
 func show_title():
+	finish_remaining=0.0;hud.hide_finish()
 	mode='title';net.leave();game.reset('cpu');panel(title_menu);hud.title=true;result_shown=false
 	bind_button('CPU',func():start('cpu')).grab_focus()
 	bind_button('Online',show_online)
@@ -231,6 +233,7 @@ func network_message(d: Dictionary):
 			bind_button('Retry',show_online);bind_button('Back',show_title,'back')
 
 func start(which: String):
+	finish_remaining=0.0;hud.hide_finish()
 	mode=which;game.reset(which);drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];previous_human=-1;pending.clear();result_shown=false
 	if which!='online':team=0
 	elif net.robot_id>=0:game.active[team]=net.robot_id
@@ -242,7 +245,7 @@ func start(which: String):
 	# Network start arrives outside a browser gesture; capture only on RESUME.
 	if which=='online':pause_menu()
 	else:close_menu()
-	audio.prime(game);audio.play('start')
+	audio.prime(game);audio.start_match();audio.play('start')
 
 func close_menu():
 	audio.play('resume')
@@ -282,7 +285,7 @@ func _unhandled_input(event):
 			if mode!='title' and not game.finished:
 				if ui_open:close_menu()
 				else:pause_menu()
-		if ui_open:return
+		if ui_open or game.finished:return
 		if event.is_action_pressed("interact"):pending.act=true
 		if event.is_action_pressed("switch_robot"):pending.switch=true
 		if event.is_action_pressed("previous_cargo"):pending.select=-1
@@ -309,7 +312,20 @@ func _notification(what):
 func _physics_process(dt):
 	if not is_instance_valid(hud) or mode=='title':return
 	if game.finished:
-		if not result_shown:results()
+		if result_shown:return
+		if finish_remaining<=0:
+			if not audio.focused:return
+			# Consume the final snapshot before opening any overlay.
+			audio.observe(game,int(game.active[team]),false,dt)
+			finish_remaining=audio.finish_match()
+			pending.clear();touch.reset();hud.show_finish()
+			if is_instance_valid(overlay):overlay.queue_free()
+			ui_open=true
+			Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
+		elif audio.focused:
+			finish_remaining=maxf(0,finish_remaining-dt)
+			if finish_remaining<=0:
+				hud.hide_finish();results()
 		return
 	var cmd={}
 	if not ui_open and not landscape_required:

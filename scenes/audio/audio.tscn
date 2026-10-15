@@ -1,407 +1,306 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bgdfjqstjs8l6"]
 
-[ext_resource type="Script" path="res://scripts/audio.gd" id="audio"]
+[ext_resource type="AudioStream" uid="uid://bx4kxcf3f84ki" path="res://assets/audio/キャンセル9.mp3" id="5_h8whh"]
+[ext_resource type="AudioStream" uid="uid://bi68javdxbepw" path="res://assets/audio/決定ボタンを押す3.mp3" id="6_f2klo"]
+[ext_resource type="AudioStream" uid="uid://cqfatl1dpccdd" path="res://assets/audio/決定ボタンを押す27.mp3" id="7_xtvt5"]
+[ext_resource type="AudioStream" uid="uid://dsnuk2hl8186b" path="res://assets/audio/カーソル移動1.mp3" id="9_e7jea"]
+[ext_resource type="AudioStream" uid="uid://cq8oirujygws1" path="res://assets/audio/カーソル移動2.mp3" id="10_kn55u"]
+[ext_resource type="AudioStream" uid="uid://bxu1i66d1st0f" path="res://assets/audio/Mustika.mp3" id="12_ml7ru"]
+[ext_resource type="AudioStream" uid="uid://clr3gbvpswn10" path="res://assets/audio/Mandate.mp3" id="13_8fj74"]
+[ext_resource type="AudioStream" uid="uid://u6fv4pj4i4ga" path="res://assets/audio/決定ボタンを押す42.mp3" id="17_ml7ru"]
+[ext_resource type="AudioStream" uid="uid://dud7ppe6mj8ak" path="res://assets/audio/Retry.mp3" id="19_ml7ru"]
+[ext_resource type="AudioStream" uid="uid://d3dy6yoy24ypf" path="res://assets/audio/maou_se_sound_whistle01.ogg" id="20_ml7ru"]
+[ext_resource type="AudioStream" uid="uid://2hoj8j2imuct" path="res://assets/audio/maou_game_jingle01.ogg" id="21_8fj74"]
+[ext_resource type="AudioStream" uid="uid://dseotccdr0rp0" path="res://assets/audio/「負けました…」.mp3" id="22_heupt"]
+[ext_resource type="Script" uid="uid://cyyeiacknovlr" path="res://scripts/audio.gd" id="audio"]
+[ext_resource type="Script" uid="uid://wwaalfrc7xuf" path="res://scripts/audio_cue.gd" id="cue"]
+[ext_resource type="AudioStream" uid="uid://d0thnaydvp3i6" path="res://assets/audio/maou_loop_bgm_neorock82.mp3" id="match"]
+[ext_resource type="AudioStream" uid="uid://cp0a5y44hdh6c" path="res://assets/audio/maou_loop_bgm_neorock44.mp3" id="menu"]
+[ext_resource type="AudioStream" uid="uid://dto73bbirsgbb" path="res://assets/audio/maou_se_onepoint15.ogg" id="onepoint15"]
+[ext_resource type="AudioStream" uid="uid://cfuuoqd3jgfwq" path="res://assets/audio/maou_se_onepoint24.ogg" id="onepoint24"]
+[ext_resource type="Script" uid="uid://cmonn30gelis5" path="res://scripts/audio_preview.gd" id="preview"]
+[ext_resource type="AudioStream" uid="uid://b4g2tqcqgckui" path="res://assets/audio/maou_se_sound05.ogg" id="sound05"]
+[ext_resource type="AudioStream" uid="uid://bh4sps1rwuc2p" path="res://assets/audio/maou_se_sound19.ogg" id="sound19"]
+[ext_resource type="AudioStream" uid="uid://buuh5vx2v6atk" path="res://assets/audio/maou_se_sound20.ogg" id="sound20"]
+[ext_resource type="AudioStream" uid="uid://dqr361xf65q1j" path="res://assets/audio/maou_se_system10.ogg" id="system10"]
+[ext_resource type="AudioStream" uid="uid://b37dlqqh3dml6" path="res://assets/audio/maou_se_system17.ogg" id="system17"]
+[ext_resource type="AudioStream" uid="uid://c8lqh5hspeypn" path="res://assets/audio/maou_se_system18.ogg" id="system18"]
+[ext_resource type="AudioStream" uid="uid://ofkbowprf2qi" path="res://assets/audio/maou_se_system49.ogg" id="system49"]
 
-[ext_resource type="Script" path="res://scripts/audio_cue.gd" id="cue"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system08.ogg" id="system08"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system49.ogg" id="system49"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system18.ogg" id="system18"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system17.ogg" id="system17"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system03.ogg" id="system03"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_system10.ogg" id="system10"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_sound19.ogg" id="sound19"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_sound20.ogg" id="sound20"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_onepoint24.ogg" id="onepoint24"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_onepoint20.ogg" id="onepoint20"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_onepoint15.ogg" id="onepoint15"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_sound05.ogg" id="sound05"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_onepoint14.ogg" id="onepoint14"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_se_sound23.ogg" id="sound23"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_loop_bgm_neorock44.mp3" id="menu"]
-
-[ext_resource type="AudioStream" path="res://assets/audio/maou_loop_bgm_neorock82.mp3" id="match"]
-
-[ext_resource type="Script" path="res://scripts/audio_preview.gd" id="preview"]
-
-[node name="Audio" type="Node"]
+[node name="Audio" type="Node" unique_id=28156165]
 script = ExtResource("audio")
 
-[node name="Cues" type="Node" parent="."]
+[node name="Cues" type="Node" parent="." unique_id=1270352166]
 
-[node name="hover" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system08")
-volume_db = -17.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="hover" type="AudioStreamPlayer" parent="Cues" unique_id=1703769443]
 script = ExtResource("cue")
 event = &"hover"
 
-[node name="confirm" type="AudioStreamPlayer" parent="Cues"]
+[node name="confirm" type="AudioStreamPlayer" parent="Cues" unique_id=213162366]
 stream = ExtResource("system49")
-volume_db = -9.0
-pitch_scale = 1.0
-bus = &"SFX"
+volume_db = -5.0
 script = ExtResource("cue")
 event = &"confirm"
 
-[node name="back" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system18")
-volume_db = -12.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="back" type="AudioStreamPlayer" parent="Cues" unique_id=43223365]
+stream = ExtResource("5_h8whh")
+volume_db = 5.0
 script = ExtResource("cue")
 event = &"back"
 
-[node name="pause" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system18")
-volume_db = -14.0
+[node name="pause" type="AudioStreamPlayer" parent="Cues" unique_id=292102398]
+stream = ExtResource("6_f2klo")
 pitch_scale = 0.9
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"pause"
 
-[node name="resume" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system17")
+[node name="resume" type="AudioStreamPlayer" parent="Cues" unique_id=794110577]
 volume_db = -13.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"resume"
 
-[node name="start" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system03")
+[node name="start" type="AudioStreamPlayer" parent="Cues" unique_id=1354760022]
+stream = ExtResource("7_xtvt5")
 volume_db = -12.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"start"
 
-[node name="switch" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system17")
-volume_db = -13.0
-pitch_scale = 1.15
-bus = &"SFX"
+[node name="switch" type="AudioStreamPlayer" parent="Cues" unique_id=90508581]
+stream = ExtResource("9_e7jea")
 script = ExtResource("cue")
 event = &"switch"
 
-[node name="select" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system10")
-volume_db = -15.0
+[node name="select" type="AudioStreamPlayer" parent="Cues" unique_id=2049514355]
+stream = ExtResource("10_kn55u")
 pitch_scale = 1.2
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"select"
 
-[node name="deny" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system18")
-volume_db = -14.0
-pitch_scale = 0.7
-bus = &"SFX"
+[node name="deny" type="AudioStreamPlayer" parent="Cues" unique_id=1371790540]
+volume_db = -5.0
+pitch_scale = 0.2
 script = ExtResource("cue")
 event = &"deny"
 
-[node name="work" type="AudioStreamPlayer" parent="Cues"]
+[node name="work" type="AudioStreamPlayer" parent="Cues" unique_id=1220731051]
 stream = ExtResource("sound19")
 volume_db = -9.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"work"
 
-[node name="pick" type="AudioStreamPlayer" parent="Cues"]
+[node name="pick" type="AudioStreamPlayer" parent="Cues" unique_id=879551402]
 stream = ExtResource("sound20")
 volume_db = -8.0
 pitch_scale = 1.2
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"pick"
 
-[node name="drop" type="AudioStreamPlayer" parent="Cues"]
+[node name="drop" type="AudioStreamPlayer" parent="Cues" unique_id=2033516362]
 stream = ExtResource("sound20")
 volume_db = -7.0
 pitch_scale = 0.85
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"drop"
 
-[node name="give" type="AudioStreamPlayer" parent="Cues"]
+[node name="give" type="AudioStreamPlayer" parent="Cues" unique_id=492421986]
 stream = ExtResource("onepoint24")
 volume_db = -14.0
 pitch_scale = 1.2
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"give"
 
-[node name="place" type="AudioStreamPlayer" parent="Cues"]
+[node name="place" type="AudioStreamPlayer" parent="Cues" unique_id=1180378977]
 stream = ExtResource("sound20")
 volume_db = -6.0
 pitch_scale = 0.7
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"place"
 
-[node name="flip" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint20")
-volume_db = -13.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="flip" type="AudioStreamPlayer" parent="Cues" unique_id=1029476174]
+stream = ExtResource("sound20")
+volume_db = -6.0
+pitch_scale = 1.4
 script = ExtResource("cue")
 event = &"flip"
 
-[node name="mustika" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint15")
-volume_db = -9.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="mustika" type="AudioStreamPlayer" parent="Cues" unique_id=459569224]
+stream = ExtResource("12_ml7ru")
+volume_db = -6.0
 script = ExtResource("cue")
 event = &"mustika"
 
-[node name="mandate" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint20")
-volume_db = -11.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="mandate" type="AudioStreamPlayer" parent="Cues" unique_id=54046704]
+stream = ExtResource("13_8fj74")
 script = ExtResource("cue")
 event = &"mandate"
 
-[node name="score" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system10")
-volume_db = -21.0
-pitch_scale = 1.4
-bus = &"SFX"
+[node name="score" type="AudioStreamPlayer" parent="Cues" unique_id=1921628856]
+stream = ExtResource("17_ml7ru")
+pitch_scale = 2.0
 script = ExtResource("cue")
 event = &"score"
 
-[node name="climb" type="AudioStreamPlayer" parent="Cues"]
+[node name="climb" type="AudioStreamPlayer" parent="Cues" unique_id=1303182964]
 stream = ExtResource("sound05")
 volume_db = -12.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"climb"
 
-[node name="land" type="AudioStreamPlayer" parent="Cues"]
+[node name="land" type="AudioStreamPlayer" parent="Cues" unique_id=913851758]
 stream = ExtResource("sound20")
 volume_db = -8.0
 pitch_scale = 0.8
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"land"
 
-[node name="retry" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system03")
-volume_db = -16.0
-pitch_scale = 1.4
-bus = &"SFX"
+[node name="retry" type="AudioStreamPlayer" parent="Cues" unique_id=1581748991]
+stream = ExtResource("19_ml7ru")
+pitch_scale = 1.5
 script = ExtResource("cue")
 event = &"retry"
 
-[node name="bump" type="AudioStreamPlayer" parent="Cues"]
+[node name="bump" type="AudioStreamPlayer" parent="Cues" unique_id=2108366637]
 stream = ExtResource("sound20")
 volume_db = -20.0
 pitch_scale = 0.65
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"bump"
 
-[node name="brake" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("sound19")
+[node name="brake" type="AudioStreamPlayer" parent="Cues" unique_id=589971322]
 volume_db = -22.0
 pitch_scale = 0.8
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"brake"
 
-[node name="camera" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system08")
+[node name="camera" type="AudioStreamPlayer" parent="Cues" unique_id=2056995515]
 volume_db = -28.0
 pitch_scale = 0.85
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"camera"
 
-[node name="overview" type="AudioStreamPlayer" parent="Cues"]
+[node name="overview" type="AudioStreamPlayer" parent="Cues" unique_id=1220088177]
 stream = ExtResource("system17")
 volume_db = -16.0
 pitch_scale = 0.8
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"overview"
 
-[node name="fullscreen" type="AudioStreamPlayer" parent="Cues"]
+[node name="fullscreen" type="AudioStreamPlayer" parent="Cues" unique_id=281995843]
 stream = ExtResource("system10")
 volume_db = -16.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"fullscreen"
 
-[node name="tick" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system08")
-volume_db = -12.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="tick" type="AudioStreamPlayer" parent="Cues" unique_id=560970695]
+pitch_scale = 1.8
 script = ExtResource("cue")
 event = &"tick"
 
-[node name="warning" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint24")
+[node name="warning" type="AudioStreamPlayer" parent="Cues" unique_id=1281785167]
 volume_db = -14.0
 pitch_scale = 0.8
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"warning"
 
-[node name="finish" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("system18")
-volume_db = -10.0
-pitch_scale = 0.5
-bus = &"SFX"
+[node name="finish" type="AudioStreamPlayer" parent="Cues" unique_id=1287364922]
+stream = ExtResource("20_ml7ru")
 script = ExtResource("cue")
 event = &"finish"
 
-[node name="win" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint15")
-volume_db = -9.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="win" type="AudioStreamPlayer" parent="Cues" unique_id=1700865950]
+stream = ExtResource("21_8fj74")
 script = ExtResource("cue")
 event = &"win"
 
-[node name="lose" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint14")
-volume_db = -13.0
-pitch_scale = 1.0
-bus = &"SFX"
+[node name="lose" type="AudioStreamPlayer" parent="Cues" unique_id=1572831849]
+stream = ExtResource("22_heupt")
 script = ExtResource("cue")
 event = &"lose"
 
-[node name="draw" type="AudioStreamPlayer" parent="Cues"]
-stream = ExtResource("onepoint24")
+[node name="draw" type="AudioStreamPlayer" parent="Cues" unique_id=2112956589]
 volume_db = -12.0
-pitch_scale = 1.0
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"draw"
 
-[node name="found" type="AudioStreamPlayer" parent="Cues"]
+[node name="found" type="AudioStreamPlayer" parent="Cues" unique_id=1265122368]
 stream = ExtResource("onepoint15")
-volume_db = -15.0
 pitch_scale = 1.3
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"found"
 
-[node name="lost" type="AudioStreamPlayer" parent="Cues"]
+[node name="lost" type="AudioStreamPlayer" parent="Cues" unique_id=449564343]
 stream = ExtResource("system18")
-volume_db = -12.0
+volume_db = -6.0
 pitch_scale = 0.8
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"lost"
 
-[node name="reconnected" type="AudioStreamPlayer" parent="Cues"]
+[node name="reconnected" type="AudioStreamPlayer" parent="Cues" unique_id=392481227]
 stream = ExtResource("system49")
-volume_db = -12.0
+volume_db = -6.0
 pitch_scale = 1.2
-bus = &"SFX"
 script = ExtResource("cue")
 event = &"reconnected"
 
-[node name="Voices" type="Node" parent="."]
+[node name="Voices" type="Node" parent="." unique_id=1312775850]
 
-[node name="Voice01" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice01" type="AudioStreamPlayer" parent="Voices" unique_id=418285991]
 
-[node name="Voice02" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice02" type="AudioStreamPlayer" parent="Voices" unique_id=1333421656]
 
-[node name="Voice03" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice03" type="AudioStreamPlayer" parent="Voices" unique_id=994226502]
 
-[node name="Voice04" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice04" type="AudioStreamPlayer" parent="Voices" unique_id=1140738055]
 
-[node name="Voice05" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice05" type="AudioStreamPlayer" parent="Voices" unique_id=1138000675]
 
-[node name="Voice06" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice06" type="AudioStreamPlayer" parent="Voices" unique_id=105006389]
 
-[node name="Voice07" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice07" type="AudioStreamPlayer" parent="Voices" unique_id=896716013]
 
-[node name="Voice08" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice08" type="AudioStreamPlayer" parent="Voices" unique_id=1281824927]
 
-[node name="Voice09" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice09" type="AudioStreamPlayer" parent="Voices" unique_id=358999592]
 
-[node name="Voice10" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice10" type="AudioStreamPlayer" parent="Voices" unique_id=239888265]
 
-[node name="Voice11" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice11" type="AudioStreamPlayer" parent="Voices" unique_id=1574104874]
 
-[node name="Voice12" type="AudioStreamPlayer" parent="Voices"]
-bus = &"SFX"
+[node name="Voice12" type="AudioStreamPlayer" parent="Voices" unique_id=1920534702]
 
-[node name="Motors" type="Node3D" parent="."]
+[node name="Motors" type="Node3D" parent="." unique_id=1656986817]
 
-[node name="RedTR" type="AudioStreamPlayer3D" parent="Motors"]
-stream = ExtResource("sound23")
-bus = &"SFX"
+[node name="RedTR" type="AudioStreamPlayer3D" parent="Motors" unique_id=1406385084]
+volume_db = -24.0
 unit_size = 2.0
 max_distance = 16.0
-volume_db = -24.0
 
-[node name="RedBR" type="AudioStreamPlayer3D" parent="Motors"]
-stream = ExtResource("sound23")
-bus = &"SFX"
+[node name="RedBR" type="AudioStreamPlayer3D" parent="Motors" unique_id=1968733748]
+volume_db = -24.0
 unit_size = 2.0
 max_distance = 16.0
-volume_db = -24.0
 
-[node name="BlueTR" type="AudioStreamPlayer3D" parent="Motors"]
-stream = ExtResource("sound23")
-bus = &"SFX"
+[node name="BlueTR" type="AudioStreamPlayer3D" parent="Motors" unique_id=1317247196]
+volume_db = -24.0
 unit_size = 2.0
 max_distance = 16.0
-volume_db = -24.0
 
-[node name="BlueBR" type="AudioStreamPlayer3D" parent="Motors"]
-stream = ExtResource("sound23")
-bus = &"SFX"
+[node name="BlueBR" type="AudioStreamPlayer3D" parent="Motors" unique_id=1205078130]
+volume_db = -24.0
 unit_size = 2.0
 max_distance = 16.0
-volume_db = -24.0
 
-[node name="MenuMusic" type="AudioStreamPlayer" parent="."]
+[node name="MenuMusic" type="AudioStreamPlayer" parent="." unique_id=1862021889]
 stream = ExtResource("menu")
 volume_db = -10.0
-bus = &"Music"
 script = ExtResource("preview")
 
-[node name="MatchMusic" type="AudioStreamPlayer" parent="."]
+[node name="MatchMusic" type="AudioStreamPlayer" parent="." unique_id=383184867]
 stream = ExtResource("match")
 volume_db = -10.0
-bus = &"Music"
 script = ExtResource("preview")
 
-[node name="Music" type="AudioStreamPlayer" parent="."]
-bus = &"Music"
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=555528163]
+
+[node name="MatchStartDelay" type="Timer" parent="." unique_id=1283901796]
+one_shot = true

@@ -87,3 +87,16 @@ func update_names():
 			if rect.intersects(other):rect.position.y=other.position.y-rect.size.y-2
 		if rect.position.x<0 or rect.end.x>size.x or rect.position.y<65:continue
 		used.append(rect);node.position=rect.position;node.visible=true
+
+var finish_tween: Tween
+
+func show_finish():
+	if is_instance_valid(finish_tween):finish_tween.kill()
+	$Finish.visible=true
+	$Finish.modulate.a=0.0
+	finish_tween=create_tween()
+	finish_tween.tween_property($Finish,"modulate:a",1.0,0.2)
+
+func hide_finish():
+	if is_instance_valid(finish_tween):finish_tween.kill()
+	$Finish.visible=false
