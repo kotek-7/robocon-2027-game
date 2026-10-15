@@ -11,6 +11,7 @@ var effects: Array=[]
 
 func prime(m: MatchState):
 	last_event=m.event_seq
+	get_parent().get_node('ObjectiveEffects').reset()
 	for effect in effects:effect.node.queue_free()
 	effects.clear()
 
@@ -22,6 +23,8 @@ func observe(m: MatchState, camera: Camera3D, hud: Control, silent: bool, dt: fl
 		if int(event.id)<=last_event:continue
 		last_event=int(event.id)
 		var kind=str(event.type)
+		if kind in ['mandate','mustika'] and int(event.rid)>=0:
+			hud.get_node('ObjectiveEffects').celebrate(kind,int(event.rid)/2)
 		if CALLOUTS.has(kind) and int(event.rid)>=0:
 			add_effect(bubble_scene,CALLOUTS[kind],int(event.rid),-1)
 		elif kind=='score' and int(event.get('delta',0))>0:

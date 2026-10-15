@@ -69,17 +69,27 @@ func run():
 	check(m.return_context(1).is_empty(),'full buffer blocks return')
 	# Real event boundaries: retry, mandate completion, offering and both teams' scores.
 	m.reset('free')
-	var hud=load('res://scenes/ui/hud.tscn').instantiate();root.add_child(hud);hud.match_state=m
+	var hud=load('res://scenes/ui/hud.tscn').instantiate();root.add_child(hud);hud.match_state=m;hud.menu_open=false
 	var camera=Camera3D.new();root.add_child(camera);camera.position=Vector3(0,9,12);camera.look_at(Vector3.ZERO)
 	var feedback=hud.get_node('Feedback');feedback.prime(m)
 	m.retry(0)
 	for entry in [[0,0],[1,0],[40,0],[2,4],[3,4],[41,4]]:
 		var o=m.objects[entry[0]];o.where='tower';o.spot=entry[1];o.owner=0;o.face=0;m.towers[entry[1]].append(entry[0])
 	m.update_score(1)
+	hud.update_view()
+	check(m.mandate[0] and not m.mustika_offered(0),'mandate unlock does not imply offering')
+	for layout in ['Desktop','Mobile']:
+		hud.touch_mode=layout=='Mobile';hud.update_view()
+		check(hud.get_node(layout+'/RedObjective/Mustika').modulate==hud.inactive_color,'unoffered circle stays dark on '+layout)
 	hold(m,1,[52]);m.robots[1].p=Vector3(.65,.9,0);m.begin(1,m.context(1));m.step(1.2)
 	m.transfer_points[1]=5;m.update_score(2)
 	var copy=MatchState.new(f);copy.restore(JSON.parse_string(JSON.stringify(m.snapshot())))
 	feedback.observe(copy,camera,hud,false,.016)
+	var objective_fx=hud.get_node('ObjectiveEffects')
+	check(objective_fx.bursts.size()==2 and objective_fx.bursts[0].kind=='mandate' and objective_fx.bursts[1].kind=='mustika','mandate and offering trigger distinct HUD bursts')
+	for layout in ['Desktop','Mobile']:
+		hud.touch_mode=layout=='Mobile';hud.update_view()
+		check(hud.get_node(layout+'/RedObjective/Mustika').modulate==Color.WHITE and hud.get_node(layout+'/BlueObjective/Mustika').modulate==hud.inactive_color,'only offering team circle turns yellow on '+layout)
 	var texts=feedback.effects.map(func(e):return e.node.get_node('Label').text)
 	check(texts.has('リトライ！') and texts.has('マンデート！') and texts.has('奉納！'),'actual match events produce all three Japanese bubbles')
 	check(feedback.effects.any(func(e):return e.rid==1 and e.node.get_node('Label').text=='マンデート！'),'mandate identifies the achieving BR through JSON snapshots')
@@ -87,10 +97,13 @@ func run():
 	check(feedback.effects.filter(func(e):return e.team>=0).all(func(e):return e.node.get_node('Particles').emitting),'score popups emit particles')
 	var count=feedback.effects.size();feedback.observe(copy,camera,hud,false,.016)
 	check(feedback.effects.size()==count,'repeated snapshot does not duplicate feedback')
+	check(objective_fx.bursts.size()==2,'repeated snapshot does not duplicate HUD bursts')
+	objective_fx._process(1.3)
+	check(objective_fx.bursts.is_empty(),'HUD bursts expire')
 	feedback.observe(copy,camera,hud,false,3)
 	check(feedback.effects.is_empty(),'transient feedback expires')
 	feedback.prime(copy);feedback.observe(copy,camera,hud,false,.016)
-	check(feedback.effects.is_empty(),'reconnect baseline skips historical feedback')
+	check(feedback.effects.is_empty() and objective_fx.bursts.is_empty(),'reconnect baseline skips historical feedback')
 	copy.emit_event('retry',2);feedback.observe(copy,camera,hud,true,.016);feedback.observe(copy,camera,hud,false,.016)
 	check(feedback.effects.is_empty(),'paused events do not replay')
 	hud.queue_free();camera.queue_free();await process_frame

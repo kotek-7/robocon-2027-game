@@ -313,6 +313,11 @@ func retry(rid: int):
 	r.p=Vector3(-4.8 if rid<2 else 4.8,0,4.9)
 	r.upper=false
 
+func mustika_offered(team: int) -> bool:
+	for object in objects:
+		if object.kind=='M' and object.where=='pillar' and int(object.owner)==team:return true
+	return false
+
 # Reserve one completed shared tower; the other may be in any area.
 func mandate_progress(team: int) -> Array[bool]:
 	if mandate[team]:return [true,true]

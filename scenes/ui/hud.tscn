@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="script"]
+[ext_resource type="Script" path="res://scripts/objective_effects.gd" id="objective_effects"]
 
 [ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="theme"]
 
@@ -1061,6 +1062,16 @@ text = "Player"
 theme_override_font_sizes/font_size = 18
 theme_override_colors/font_color = Color(1.0, 1.0, 1.0, 1)
 mouse_filter = 2
+
+[node name="ObjectiveEffects" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("objective_effects")
 
 [node name="Finish" type="ColorRect" parent="."]
 visible = false
