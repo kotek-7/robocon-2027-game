@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "robocon-2027-game",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-15",
+  "account_id": "769b391d51df077598b7d91579605fe2",
+  "routes": [{"pattern": "robocon2027.kotek7.com", "custom_domain": true}],
+  "assets": {"directory": "build/cdn", "binding": "ASSETS", "run_worker_first": ["/ws", "/health", "/index.wasm"]},
+  "containers": [{"class_name": "ArenaServer", "image": "./Dockerfile", "instance_type": "basic", "max_instances": 1}],
+  "durable_objects": {"bindings": [{"name": "ARENA", "class_name": "ArenaServer"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["ArenaServer"]}],
+  "observability": {"enabled": true}
+}

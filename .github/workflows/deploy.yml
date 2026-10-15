@@ -1,0 +1,80 @@
+name: Test and deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/cache@v4
+        id: godot
+        with:
+          path: |
+            ~/.local/bin/godot
+            ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-4.7.2-linux-web
+      - name: Install pinned Godot and Web templates
+        if: steps.godot.outputs.cache-hit != 'true'
+        run: |
+          curl -fL --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip -o /tmp/godot.zip
+          echo 'cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  /tmp/godot.zip' | sha256sum -c -
+          unzip /tmp/godot.zip -d /tmp/godot
+          mkdir -p ~/.local/bin ~/.local/share/godot/export_templates/4.7.2.stable
+          install /tmp/godot/Godot_v4.7.2-stable_linux.x86_64 ~/.local/bin/godot
+          curl -fL --retry 3 https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz -o /tmp/templates.zip
+          echo 'f298490b8d44d934be425a5a65a51bf15f422428b229a06a6e11d9ffea248011  /tmp/templates.zip' | sha256sum -c -
+          unzip -j /tmp/templates.zip 'templates/web_*' -d ~/.local/share/godot/export_templates/4.7.2.stable
+      - name: Install dependencies
+        run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          npm ci
+          python3 -m pip install websockets==15.0.1
+      - name: Validate competition and matchmaking
+        run: |
+          godot --headless --path . --import
+          godot --headless --path . --script tests/run.gd
+          godot --headless --path . -- --server > /tmp/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          sleep 3
+          python3 tests/matchmaking.py
+          python3 tests/network.py
+      - name: Export Web game
+        run: |
+          mkdir -p build/web
+          godot --headless --path . --export-release Web build/web/index.html
+          python3 tools/prepare_cdn.py
+          npm run check:worker
+      - name: Validate server container
+        run: |
+          docker build -t arena-ci .
+          docker run -d --name arena-ci -p 9080:8080 arena-ci
+          trap 'docker logs arena-ci; docker rm -f arena-ci' EXIT
+          curl --fail --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:9080/health
+          python3 tests/matchmaking.py
+      - name: Deploy through CD
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo '::error::CLOUDFLARE_API_TOKEN must be configured in repository secrets.'
+            exit 1
+          fi
+          npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Verify public deployment
+        run: |
+          curl --fail --retry 12 --retry-all-errors --retry-delay 10 https://robocon2027.kotek7.com/health
+          curl --fail --compressed https://robocon2027.kotek7.com/index.wasm -o /tmp/public.wasm
+          cmp build/web/index.wasm /tmp/public.wasm

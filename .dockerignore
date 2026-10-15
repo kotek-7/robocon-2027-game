@@ -1,0 +1,11 @@
+**
+!project.godot
+!main.tscn
+!icon.svg
+!scripts/
+!scripts/**
+!assets/
+!assets/**
+!Dockerfile
+!cloudflare/
+!cloudflare/server.py

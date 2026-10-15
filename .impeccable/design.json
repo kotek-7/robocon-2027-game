@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T03:00:07.195839+00:00",
+  "title": "Design System: Robocon 2027 Game",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#1a1d32",
+          "#2b3154",
+          "#3d4476",
+          "#4e5897",
+          "#7881ba",
+          "#a1a7ce",
+          "#c9cde3",
+          "#eeeff6"
+        ]
+      },
+      "cream": {
+        "role": "neutral",
+        "displayName": "Cream",
+        "tonalRamp": [
+          "#4c3400",
+          "#805600",
+          "#b27900",
+          "#e69b00",
+          "#ffbd33",
+          "#ffd170",
+          "#ffe5ad",
+          "#fff7e5"
+        ]
+      },
+      "coral": {
+        "role": "primary",
+        "displayName": "Coral",
+        "tonalRamp": [
+          "#460613",
+          "#750a1f",
+          "#a40e2c",
+          "#d31238",
+          "#ef4365",
+          "#f47c93",
+          "#f8b4c1",
+          "#fde8ec"
+        ]
+      },
+      "pool-blue": {
+        "role": "primary",
+        "displayName": "Pool blue",
+        "tonalRamp": [
+          "#073145",
+          "#0c5273",
+          "#1173a1",
+          "#1694d0",
+          "#46b6ec",
+          "#7eccf1",
+          "#b5e2f7",
+          "#e8f6fd"
+        ]
+      },
+      "mint": {
+        "role": "secondary",
+        "displayName": "Mint",
+        "tonalRamp": [
+          "#103c2b",
+          "#1b6448",
+          "#268c65",
+          "#31b482",
+          "#5fd3a6",
+          "#8fe0c1",
+          "#bfeddc",
+          "#ebfaf4"
+        ]
+      },
+      "gold": {
+        "role": "primary",
+        "displayName": "Gold",
+        "tonalRamp": [
+          "#4c3800",
+          "#805d00",
+          "#b28300",
+          "#e6a800",
+          "#ffc933",
+          "#ffd970",
+          "#ffe9ad",
+          "#fff8e5"
+        ]
+      },
+      "lilac": {
+        "role": "secondary",
+        "displayName": "Lilac",
+        "tonalRamp": [
+          "#15123a",
+          "#231e61",
+          "#312a88",
+          "#3f36af",
+          "#6b63cf",
+          "#9892dd",
+          "#c4c1ec",
+          "#edecf9"
+        ]
+      },
+      "plinth": {
+        "role": "secondary",
+        "displayName": "Plinth",
+        "tonalRamp": [
+          "#211a32",
+          "#382b54",
+          "#4e3d76",
+          "#644e97",
+          "#8c78ba",
+          "#afa1ce",
+          "#d1c9e3",
+          "#f1eef6"
+        ]
+      },
+      "barrier": {
+        "role": "secondary",
+        "displayName": "Barrier",
+        "tonalRamp": [
+          "#251d2f",
+          "#3e314f",
+          "#57456e",
+          "#70588d",
+          "#9681b1",
+          "#b6a7c8",
+          "#d5cde0",
+          "#f2eff5"
+        ]
+      },
+      "cargo-empty": {
+        "role": "neutral",
+        "displayName": "Cargo empty",
+        "tonalRamp": [
+          "#28222a",
+          "#433947",
+          "#5e4f63",
+          "#796680",
+          "#9f8ea4",
+          "#bcb0c0",
+          "#d8d2db",
+          "#f3f1f4"
+        ]
+      },
+      "objective-inactive": {
+        "role": "neutral",
+        "displayName": "Objective inactive",
+        "tonalRamp": [
+          "#24202c",
+          "#3b364a",
+          "#534b67",
+          "#6b6185",
+          "#9289a9",
+          "#b2acc3",
+          "#d3d0dd",
+          "#f1f0f4"
+        ]
+      },
+      "control-ink": {
+        "role": "neutral",
+        "displayName": "Control ink",
+        "tonalRamp": [
+          "#211f2e",
+          "#38344c",
+          "#4e486a",
+          "#645d89",
+          "#8c86ac",
+          "#afaac5",
+          "#d1cede",
+          "#f1f0f5"
+        ]
+      },
+      "hint-ink": {
+        "role": "neutral",
+        "displayName": "Hint ink",
+        "tonalRamp": [
+          "#25202c",
+          "#3d364a",
+          "#554c67",
+          "#6e6184",
+          "#9589a9",
+          "#b5adc3",
+          "#d4d0dc",
+          "#f2f0f4"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "hud-soft",
+        "value": "0 3px 8px rgba(31,26,51,0.15)",
+        "purpose": "Translation of Godot HUD shadow size and offset."
+      },
+      {
+        "name": "button-soft",
+        "value": "0 4px 8px rgba(43,26,77,0.16)",
+        "purpose": "Normal button state."
+      }
+    ],
+    "motion": [
+      {
+        "name": "item-settle",
+        "value": "1 - exp(-12 * dt)",
+        "purpose": "Item scale recovery and Sky Block visual rotation."
+      },
+      {
+        "name": "camera-follow",
+        "value": "1 - exp(-8 * dt)",
+        "purpose": "Camera position interpolation."
+      },
+      {
+        "name": "robot-position",
+        "value": "1 - exp(-22 * dt)",
+        "purpose": "Robot presentation interpolation."
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Default button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Canvas button translated for preview. Fredoka must be available to match the game.",
+      "html": "<button class=\"ds-button\">FREE</button>",
+      "css": ".ds-button{font-family:Fredoka,sans-serif;font-weight:600;border:0;border-radius:18px;color:#20243e;background:#fffaf0;min-width:320px;height:58px;padding:0 24px;font-size:26px;box-shadow:0 4px 8px rgba(43,26,77,.16);}.ds-button:hover{background:#fff5e1;box-shadow:none}.ds-button:focus-visible{outline:3px solid #20243e;outline-offset:-3px}.ds-button:active{background:#fffaf0;box-shadow:none}"
+    },
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Canvas button translated for preview. Fredoka must be available to match the game.",
+      "html": "<button class=\"ds-button\">VS CPU</button>",
+      "css": ".ds-button{font-family:Fredoka,sans-serif;font-weight:600;border:0;border-radius:18px;color:#20243e;background:#ffda16;min-width:320px;height:58px;padding:0 24px;font-size:26px;box-shadow:0 4px 8px rgba(43,26,77,.16);}.ds-button:hover{background:#ffd971;box-shadow:none}.ds-button:focus-visible{outline:3px solid #20243e;outline-offset:-3px}.ds-button:active{background:#ffda16;box-shadow:none}"
+    },
+    {
+      "name": "Red score",
+      "kind": "custom",
+      "refersTo": "score-red",
+      "description": "Team score with a redundant pip marker.",
+      "html": "<div class=\"ds-score\">120<span><i></i></span></div>",
+      "css": ".ds-score{font-family:Fredoka,sans-serif;font-weight:600;border:0;border-radius:18px;color:#20243e;position:relative;width:130px;height:70px;background:#ed174c;color:white;font-size:40px;display:flex;align-items:center;padding-left:22px;box-sizing:border-box;box-shadow:0 3px 8px rgba(31,26,51,.15)}.ds-score span{position:absolute;top:12px;right:9px;display:flex;gap:4px}.ds-score i{width:8px;height:8px;border-radius:50%;background:white}"
+    },
+    {
+      "name": "Blue score",
+      "kind": "custom",
+      "refersTo": "score-blue",
+      "description": "Team score with a redundant pip marker.",
+      "html": "<div class=\"ds-score\">120<span><i></i><i></i></span></div>",
+      "css": ".ds-score{font-family:Fredoka,sans-serif;font-weight:600;border:0;border-radius:18px;color:#20243e;position:relative;width:130px;height:70px;background:#0078dd;color:white;font-size:40px;display:flex;align-items:center;padding-left:22px;box-sizing:border-box;box-shadow:0 3px 8px rgba(31,26,51,.15)}.ds-score span{position:absolute;top:12px;right:9px;display:flex;gap:4px}.ds-score i{width:8px;height:8px;border-radius:50%;background:white}"
+    },
+    {
+      "name": "Clock",
+      "kind": "custom",
+      "refersTo": "clock",
+      "description": "Centered match time.",
+      "html": "<div class=\"ds-clock\">2:48</div>",
+      "css": ".ds-clock{font-family:Fredoka,sans-serif;font-weight:600;border:0;border-radius:18px;color:#20243e;width:140px;height:62px;display:flex;align-items:center;justify-content:center;background:#fffaf0;font-size:32px;box-shadow:0 3px 8px rgba(31,26,51,.15)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Floating toy arena",
+    "overview": "A floating competition arena with golden-yellow platforms, vivid red and blue robots, emerald building pads and a cyan environment. Rounded shells and dark faceplates give the machines a friendly toy character while block shapes and the field retain their competitive meaning.\n\nThe arena occupies the viewport. Compact score tiles, a clock and pictorial cargo indicators leave room for driving. Menu labels are short; motion belongs to the robots and objects.",
+    "keyCharacteristics": [
+      "Distinct robot silhouettes and team pips accompany color.",
+      "Fredoka Semibold carries short labels and large numerals.",
+      "Soft UI shadows and matte 3D materials give gentle depth."
+    ],
+    "rules": [
+      {
+        "name": "The Team Identity Rule",
+        "body": "Team color is accompanied by one or two pips; TR and BR retain different silhouettes.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do preserve the field geometry when changing surface color or lighting.",
+      "Do pair team color with pips and role silhouettes.",
+      "Do keep shell lean, bounce and squash separate from gameplay position.",
+      "Do use short labels and drawn pictograms for immediate actions."
+    ],
+    "donts": [
+      "Don't introduce a dashboard or prose panels into the play HUD.",
+      "Don't replace block identity or team signals with decorative color.",
+      "Don't treat room-code fields as a reusable visual style."
+    ]
+  }
+}
