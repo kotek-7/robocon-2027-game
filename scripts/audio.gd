@@ -21,6 +21,8 @@ var music: AudioStreamPlayer
 var menu_music: AudioStream
 var match_music: AudioStream
 var in_menu=true
+var music_fade: Tween
+const MUSIC_GAIN = 0.316227766
 var next_voice=0
 var unlocked=false
 var focused=true
@@ -52,10 +54,18 @@ func _ready():
 func set_menu(value: bool):
 	if in_menu==value:return
 	in_menu=value
-	music.stop()
-	music.stream=menu_music if in_menu else match_music
-	if unlocked and music.stream:
-		music.play();music.stream_paused=not focused
+	var target=menu_music if in_menu else match_music
+	if is_instance_valid(music_fade):music_fade.kill()
+	if not unlocked:
+		music.stream=target
+		return
+	music_fade=create_tween()
+	if music.stream!=target or not music.playing:
+		music_fade.tween_property(music,'volume_linear',0.0,.35)
+		music_fade.tween_callback(func():
+			music.stop();music.stream=target;music.play();music.stream_paused=not focused)
+	music_fade.tween_property(music,'volume_linear',MUSIC_GAIN,.5)
+	if not focused:music_fade.pause()
 
 func levels(bgm: float, sfx: float):
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index('Music'),linear_to_db(maxf(.0001,bgm)))
@@ -64,7 +74,11 @@ func levels(bgm: float, sfx: float):
 func unlock():
 	if unlocked:return
 	unlocked=true
-	if music.stream:music.play()
+	if music.stream:
+		music.volume_linear=0;music.play();music.stream_paused=not focused
+		music_fade=create_tween()
+		music_fade.tween_property(music,'volume_linear',MUSIC_GAIN,.5)
+		if not focused:music_fade.pause()
 
 func play(cue: String, gain=0.0, cooldown=.08):
 	if not unlocked or not focused or not CUES.has(cue):return
@@ -77,6 +91,9 @@ func play(cue: String, gain=0.0, cooldown=.08):
 
 func focus(value: bool):
 	focused=value;music.stream_paused=not value
+	if is_instance_valid(music_fade):
+		if value:music_fade.play()
+		else:music_fade.pause()
 	if not value:
 		for player in voices:player.stop()
 		for player in motors:player.stop()

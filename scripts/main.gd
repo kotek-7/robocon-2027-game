@@ -386,7 +386,7 @@ func _process(dt):
 	profile_button.visible=mode=='title' and ui_open and hud.title and not landscape_required and is_instance_valid(menu) and menu.get_child(0) is ArenaTitle
 	fullscreen_button.visible=not landscape_required and ui_open
 	if overview!=last_overview:audio.play('overview');last_overview=overview
-	audio.set_menu(mode=='title' or ui_open)
+	audio.set_menu(mode=='title' or result_shown)
 	audio.observe(game,int(game.active[team]),mode=='title' or ui_open or landscape_required or hud.disconnected,dt)
 	fullscreen_button.offset_top=16 if mode=='title' else 100
 	fullscreen_button.offset_bottom=fullscreen_button.offset_top+44
