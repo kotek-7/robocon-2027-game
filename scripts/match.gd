@@ -313,10 +313,21 @@ func retry(rid: int):
 	r.p=Vector3(-4.8 if rid<2 else 4.8,0,4.9)
 	r.upper=false
 
+# Reserve one completed shared tower; the other may be in any area.
+func mandate_progress(team: int) -> Array[bool]:
+	if mandate[team]:return [true,true]
+	var count=0
+	var shared=0
+	for s in range(towers.size()):
+		if towers[s].size()!=3:continue
+		if int(objects[towers[s][2]].face)!=team:continue
+		count+=1
+		if field.spots[s][4]==-1:shared+=1
+	return [shared>0,count-mini(shared,1)>0]
+
 func update_score(actor: int = -1):
 	var prior=scores.duplicate()
 	scores=transfer_points.duplicate()
-	var count=[0,0];var shared=[0,0]
 	for s in range(towers.size()):
 		var level=int(field.spots[s][3])
 		for n in range(towers[s].size()):
@@ -324,11 +335,9 @@ func update_score(actor: int = -1):
 			if o.where!='tower': continue
 			var t=int(o.face if o.kind=='S' else o.owner)
 			scores[t]+=level*([10,20,40][n])
-		if towers[s].size()==3:
-			var t=int(objects[towers[s][2]].face);count[t]+=1
-			if field.spots[s][4]==-1: shared[t]+=1
 	for t in range(2):
-		if count[t]>=2 and shared[t]>=1 and not mandate[t]:mandate[t]=true;emit_event('mandate',t*2+1)
+		var progress=mandate_progress(t)
+		if progress[0] and progress[1] and not mandate[t]:mandate[t]=true;emit_event('mandate',t*2+1)
 	for o in objects:
 		if o.where=='pillar': scores[o.owner]+=250
 	for t in range(2):

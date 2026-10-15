@@ -6,6 +6,8 @@ extends Control
 @export var br_icon: Texture2D
 @export var earth_icon: Texture2D
 @export var mustika_icon: Texture2D
+@export var tower_icon: Texture2D
+@export var completed_tower_icon: Texture2D
 @export_group("Colors")
 @export var red_color = Color('#ed174c')
 @export var blue_color = Color('#0078dd')
@@ -53,8 +55,14 @@ func update_view():
 			var icon=slot.get_node('Icon')
 			icon.texture=mustika_icon if o.kind=='M' else earth_icon
 			icon.self_modulate=Color.WHITE if o.kind=='M' else red_color if (o.face if o.kind=='S' else o.owner)==0 else blue_color
-	layout.get_node('Objective').modulate=Color.WHITE if m.mandate[team] else inactive_color
-	layout.get_node('Objective').visible=not touch_mode or m.mandate[team]
+	for t in range(2):
+		var objective=layout.get_node('RedObjective' if t==0 else 'BlueObjective')
+		var progress=m.mandate_progress(t)
+		for i in range(2):
+			var icon=objective.get_node('Tower%d'%(i+1))
+			icon.texture=completed_tower_icon if progress[i] else tower_icon
+			icon.self_modulate=(red_color if t==0 else blue_color) if progress[i] else Color(1,1,1,0.4)
+		objective.get_node('Mustika').modulate=Color.WHITE if m.mandate[t] else inactive_color
 	var legend='LS  MOVE    A  ACT    %sLT  FIELD' if using_pad else 'WASD  MOVE    E  ACT    %sTAB  FIELD'
 	layout.get_node('Legend').text=legend%(('Y  SWITCH    ' if using_pad else 'Q  SWITCH    ') if can_switch else '')
 	layout.get_node('Connection').visible=disconnected

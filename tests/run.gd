@@ -25,6 +25,18 @@ func _initialize():
 	m.begin(0,m.context(0));m.step(.7)
 	check(m.scores[0]==5,'same block cannot score delivery twice')
 	m.reset('cpu')
+	check(m.mandate_progress(0)==[false,false],'empty field has no mandate progress')
+	m.towers[0]=[0,1,40];m.objects[40].face=0
+	check(m.mandate_progress(0)==[false,true],'own tower fills only unrestricted requirement')
+	m.towers[1]=[2,3,41];m.objects[41].face=0
+	check(m.mandate_progress(0)==[false,true],'two own towers still need a shared tower')
+	m.towers[0]=[];m.towers[1]=[];m.towers[4]=[0,1,40]
+	check(m.mandate_progress(0)==[true,false],'one shared tower cannot fill both requirements')
+	m.objects[40].face=1
+	check(m.mandate_progress(0)==[false,false] and m.mandate_progress(1)==[true,false],'flip transfers progress before mandate')
+	m.objects[40].face=0;m.towers[5]=[2,3,41]
+	check(m.mandate_progress(0)==[true,true],'two shared towers fill both requirements')
+	m.reset('cpu')
 	for entry in [[0,0,0],[1,0,0],[40,0,0],[2,4,0],[3,4,0],[41,4,0]]:
 		var o=m.objects[entry[0]];o.where='tower';o.spot=entry[1];o.owner=entry[2];o.face=entry[2];m.towers[entry[1]].append(entry[0])
 	m.update_score()
@@ -33,6 +45,7 @@ func _initialize():
 	m.objects[41].face=1;m.update_score()
 	check(m.scores==[100,40],'flip preserves Earth ownership')
 	check(m.mandate[0],'mandate retained after flip')
+	check(m.mandate_progress(0)==[true,true],'completed mandate keeps both icons filled after flip')
 	m.robots[3].p=Vector3(.5,.6,-2.75)
 	m.begin(3,{'type':'flip','object':41,'spot':4,'p':f.spot_pos(4)})
 	m.update_score()

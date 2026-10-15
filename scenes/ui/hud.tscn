@@ -10,6 +10,8 @@
 
 [ext_resource type="Texture2D" path="res://assets/ui/tower.svg" id="tower"]
 
+[ext_resource type="Texture2D" path="res://assets/ui/tower_complete.svg" id="tower_complete"]
+
 [ext_resource type="Texture2D" path="res://assets/ui/earth.svg" id="earth"]
 
 [ext_resource type="Texture2D" path="res://assets/ui/mustika.svg" id="mustika"]
@@ -50,6 +52,8 @@ tr_icon = ExtResource("robot_tr")
 br_icon = ExtResource("robot_br")
 earth_icon = ExtResource("earth")
 mustika_icon = ExtResource("mustika")
+tower_icon = ExtResource("tower")
+completed_tower_icon = ExtResource("tower_complete")
 
 [node name="Desktop" type="Control" parent="."]
 layout_mode = 1
@@ -303,20 +307,22 @@ offset_bottom = 36.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("selection")
 
-[node name="Objective" type="HBoxContainer" parent="Desktop"]
+[node name="RedObjective" type="HBoxContainer" parent="Desktop"]
 layout_mode = 0
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -140.0
-offset_top = -100.0
-offset_right = 0.0
-offset_bottom = -60.0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = -190.0
+offset_top = 39.0
+offset_right = -94.0
+offset_bottom = 79.0
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="Tower1" type="TextureRect" parent="Desktop/Objective"]
+alignment = 1
+
+[node name="Tower1" type="TextureRect" parent="Desktop/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("tower")
@@ -325,7 +331,7 @@ stretch_mode = 5
 mouse_filter = 2
 visible = true
 
-[node name="Tower2" type="TextureRect" parent="Desktop/Objective"]
+[node name="Tower2" type="TextureRect" parent="Desktop/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("tower")
@@ -334,10 +340,52 @@ stretch_mode = 5
 mouse_filter = 2
 visible = true
 
-[node name="Mustika" type="TextureRect" parent="Desktop/Objective"]
+[node name="Mustika" type="TextureRect" parent="Desktop/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="BlueObjective" type="HBoxContainer" parent="Desktop"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 94.0
+offset_top = 39.0
+offset_right = 190.0
+offset_bottom = 79.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+alignment = 1
+
+[node name="Mustika" type="TextureRect" parent="Desktop/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Tower2" type="TextureRect" parent="Desktop/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Tower1" type="TextureRect" parent="Desktop/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
@@ -734,41 +782,85 @@ offset_bottom = 22.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("selection")
 
-[node name="Objective" type="HBoxContainer" parent="Mobile"]
+[node name="RedObjective" type="HBoxContainer" parent="Mobile"]
 layout_mode = 0
-anchor_left = 0.0
-anchor_right = 0.0
+anchor_left = 0.5
+anchor_right = 0.5
 anchor_top = 0.0
 anchor_bottom = 0.0
-offset_left = 140.0
-offset_top = 70.0
-offset_right = 280.0
-offset_bottom = 110.0
+offset_left = -144.0
+offset_top = 19.0
+offset_right = -60.0
+offset_bottom = 51.0
 mouse_filter = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 6
 
-[node name="Tower1" type="TextureRect" parent="Mobile/Objective"]
+alignment = 1
+
+[node name="Tower1" type="TextureRect" parent="Mobile/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("tower")
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
-visible = false
+visible = true
 
-[node name="Tower2" type="TextureRect" parent="Mobile/Objective"]
+[node name="Tower2" type="TextureRect" parent="Mobile/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("tower")
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
-visible = false
+visible = true
 
-[node name="Mustika" type="TextureRect" parent="Mobile/Objective"]
+[node name="Mustika" type="TextureRect" parent="Mobile/RedObjective"]
 layout_mode = 2
 custom_minimum_size = Vector2(24, 32)
 texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="BlueObjective" type="HBoxContainer" parent="Mobile"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 60.0
+offset_top = 19.0
+offset_right = 144.0
+offset_bottom = 51.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+alignment = 1
+
+[node name="Mustika" type="TextureRect" parent="Mobile/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("mustika")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Tower2" type="TextureRect" parent="Mobile/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2
+visible = true
+
+[node name="Tower1" type="TextureRect" parent="Mobile/BlueObjective"]
+layout_mode = 2
+custom_minimum_size = Vector2(24, 32)
+texture = ExtResource("tower")
 expand_mode = 1
 stretch_mode = 5
 mouse_filter = 2
