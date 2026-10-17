@@ -51,7 +51,9 @@ var audio: ArenaAudio
 var profile=ArenaProfile.new()
 var profile_button: Button
 var nickname_edit: LineEdit
-var editing_profile=false
+var browser_edit: LineEdit
+var browser_submit: Callable
+var browser_input_id=""
 var awaiting_audio_baseline=false
 var browser_focus_callback
 var last_overview=false
@@ -136,8 +138,8 @@ func resize_mobile():
 	if is_instance_valid(touch):touch.reset();pending.clear();overview=false
 
 func panel(content: PackedScene):
-	editing_profile=false
-	if OS.has_feature('web'):JavaScriptBridge.eval("document.getElementById('arena-name')?.remove();window.arenaNameSubmit=false")
+	browser_edit=null;browser_submit=Callable();browser_input_id=""
+	if OS.has_feature('web'):JavaScriptBridge.eval("document.querySelector('[data-arena-input]')?.remove();window.arenaNameSubmit=false")
 	pending.clear();overview=false
 	if is_instance_valid(touch):touch.reset();touch.visible=false
 	if is_instance_valid(overlay): overlay.queue_free()
@@ -183,15 +185,34 @@ func show_profile():
 			audio.levels(profile.music_volume,profile.sfx_volume);audio.play('select');profile.save())
 	bind_button('Save',save_profile)
 	nickname_edit.text_submitted.connect(func(_value):save_profile())
-	nickname_edit.grab_focus();nickname_edit.select_all();editing_profile=true
-	if OS.has_feature('web'):
-		nickname_edit.modulate.a=0
-		JavaScriptBridge.eval("""(()=>{const input=document.createElement('input');input.id='arena-name';input.type='text';input.maxLength=16;input.autocomplete='nickname';input.setAttribute('aria-label','Nickname');input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:22px ArenaJapanese,sans-serif;';input.addEventListener('input',()=>window.arenaNameChanged=true);input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;input.blur();}});document.body.append(input);input.value="""+JSON.stringify(profile.nickname)+";input.focus();input.select();})()")
+	setup_text_input(nickname_edit,'arena-name','Nickname',save_profile)
+
+func setup_text_input(edit: LineEdit, id: String, label: String, submit: Callable):
+	if not OS.has_feature('web'):
+		edit.grab_focus();edit.select_all();return
+	# The browser owns text/IME input. A focused hidden LineEdit steals focus every 100 ms.
+	edit.release_focus();edit.focus_mode=Control.FOCUS_NONE;edit.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	edit.modulate.a=0
+	browser_edit=edit;browser_submit=submit;browser_input_id=id
+	JavaScriptBridge.eval("""(()=>{
+	const input=document.createElement('input');input.id="""+JSON.stringify(id)+""";
+	input.dataset.arenaInput='';input.type='text';input.maxLength="""+str(edit.max_length)+""";
+	input.autocomplete='off';input.spellcheck=false;input.setAttribute('aria-label',"""+JSON.stringify(label)+""");
+	input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:22px ArenaJapanese,sans-serif;touch-action:manipulation;';
+	input.addEventListener('input',()=>window.arenaNameChanged=true);
+	input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;}});
+	input.addEventListener('keyup',e=>e.stopPropagation());
+	document.body.append(input);input.value="""+JSON.stringify(edit.text)+""";input.placeholder="""+JSON.stringify(edit.placeholder_text)+""";
+	input.focus();input.select();})()""")
+
+func text_input_value(edit: LineEdit) -> String:
+	if OS.has_feature('web') and edit==browser_edit:
+		return str(JavaScriptBridge.eval("document.getElementById("+JSON.stringify(browser_input_id)+")?.value||''"))
+	return edit.text
 
 
 func save_profile():
-	var value=nickname_edit.text
-	if OS.has_feature('web'):value=str(JavaScriptBridge.eval("document.getElementById('arena-name')?.value||''"))
+	var value=text_input_value(nickname_edit)
 	profile.nickname=ArenaProfile.clean_name(value);profile.save();net.nickname=profile.nickname;profile_button.text=profile.nickname;audio.play('confirm');show_title()
 
 func _input(event):
@@ -220,10 +241,11 @@ func show_room_options():
 	bind_button('Create',func():connect_room('')).grab_focus()
 	bind_button('Join',join_room_code)
 	menu.get_node('Code').text_submitted.connect(func(_value):join_room_code())
+	setup_text_input(menu.get_node('Code'),'arena-room','Room code',join_room_code)
 	bind_button('Back',show_online,'back')
 
 func join_room_code():
-	var code=menu.get_node('Code').text.strip_edges().to_upper()
+	var code=text_input_value(menu.get_node('Code')).strip_edges().to_upper()
 	if code.length()!=6 or not code.is_valid_hex_number():
 		menu.get_node('Info').visible=true
 		menu.get_node('Info').text='INVALID CODE';return
@@ -402,12 +424,13 @@ func _physics_process(dt):
 
 func _process(dt):
 	if not camera:return
-	if editing_profile and OS.has_feature('web'):
-		var rect=nickname_edit.get_global_rect();var viewport_size=get_viewport().get_visible_rect().size
-		JavaScriptBridge.eval("(()=>{const e=document.getElementById('arena-name');if(!e)return;const c=document.getElementById('canvas').getBoundingClientRect();e.style.left=(c.left+"+str(rect.position.x/viewport_size.x)+"*c.width)+'px';e.style.top=Math.max(8,c.top+"+str(rect.position.y/viewport_size.y)+"*c.height)+'px';e.style.width=("+str(rect.size.x/viewport_size.x)+"*c.width)+'px';e.style.height=("+str(rect.size.y/viewport_size.y)+"*c.height)+'px';e.style.visibility="+JSON.stringify('hidden' if landscape_required else 'visible')+";})()")
+	if is_instance_valid(browser_edit) and OS.has_feature('web'):
+		var rect=browser_edit.get_global_rect();var viewport_size=get_viewport().get_visible_rect().size
+		JavaScriptBridge.eval("(()=>{const e=document.querySelector('[data-arena-input]');if(!e)return;const c=document.getElementById('canvas').getBoundingClientRect();e.style.left=(c.left+"+str(rect.position.x/viewport_size.x)+"*c.width)+'px';e.style.top=Math.max(8,c.top+"+str(rect.position.y/viewport_size.y)+"*c.height)+'px';e.style.width=("+str(rect.size.x/viewport_size.x)+"*c.width)+'px';e.style.height=("+str(rect.size.y/viewport_size.y)+"*c.height)+'px';e.style.visibility="+JSON.stringify('hidden' if landscape_required else 'visible')+";})()")
 		if bool(JavaScriptBridge.eval('window.arenaNameChanged===true')):
 			audio.play('hover',-6,.08);JavaScriptBridge.eval('window.arenaNameChanged=false')
-		if bool(JavaScriptBridge.eval('window.arenaNameSubmit===true')):save_profile()
+		if bool(JavaScriptBridge.eval('window.arenaNameSubmit===true')):
+			JavaScriptBridge.eval('window.arenaNameSubmit=false');browser_submit.call()
 	if touch_mode:
 		resize_mobile();touch.landscape_required=landscape_required;touch.visible=landscape_required or not ui_open;touch.update_view()
 	profile_button.visible=mode=='title' and ui_open and hud.title and not landscape_required and is_instance_valid(menu) and menu.get_child(0) is ArenaTitle
