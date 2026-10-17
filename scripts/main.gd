@@ -288,7 +288,7 @@ func start(which: String):
 	if which!='online':team=0
 	elif net.robot_id>=0:game.active[team]=net.robot_id
 	hud.can_switch=which!='online' or net.robot_id<0;touch.can_switch=hud.can_switch
-	hud.partner_cpu=which=='cpu' or (which=='online' and (online_format=='1v1' or net.robot_names[team*2+(1-net.robot_id%2)]=='CPU'))
+	hud.partner_cpu=which=='cpu' or (which=='online' and (net.robot_id<0 or net.robot_names[team*2+(1-net.robot_id%2)]=='CPU'))
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
 	camera.follow_target=game.robots[game.active[team]].p+Vector3(0,.4,0)

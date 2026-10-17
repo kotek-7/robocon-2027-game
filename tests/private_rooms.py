@@ -61,6 +61,13 @@ async def main():
                 await send(players[1], type='ready')
                 assert not (await receive(players[1], 'ready'))['started']
             await send(host, type='start_room')
+            expected_controls = {1: [-1], 2: [-1, -1], 3: [0, -1, 1], 4: [0, 2, 1, 3]}[humans]
+            for ws, control in zip(players, expected_controls):
+                while True:
+                    ready = await receive(ws, 'ready')
+                    if ready['started']:
+                        assert ready['robot_id'] == control
+                        break
             states = await asyncio.gather(*(receive(ws, 'state') for ws in players))
             assert all(s['state']['mode'] == 'online' for s in states)
             if humans < 4:
@@ -69,6 +76,15 @@ async def main():
                     later = (await receive(host, 'state'))['state']
                 missing = [0, 2, 1, 3][humans:]
                 assert any(later['robots'][rid]['p'] != initial['robots'][rid]['p'] for rid in missing)
+            for ws in players:
+                await send(ws, type='input', seq=1, cmd={'switch': True})
+            while True:
+                switched = await receive(host, 'state')
+                if switched['state']['elapsed'] > states[0]['state']['elapsed'] + 1.5:
+                    break
+            assert switched['state']['active'] == {1: [1, 2], 2: [1, 3], 3: [0, 3], 4: [0, 2]}[humans]
+            if humans <= 2:
+                assert switched['robot_names'][1] == 'Host' and switched['robot_names'][0] == 'CPU'
             await request(bad, 'join_room', format, code)
             assert 'in progress' in (await receive(bad, 'error'))['text']
             # Resume uses the private room token, not the publicly shareable code alone.
@@ -76,7 +92,8 @@ async def main():
             await asyncio.sleep(.15)
             resumed = await connect()
             await send(resumed, type='resume', room=code, token=joins[-1]['token'])
-            assert (await receive(resumed, 'joined'))['seat'] == humans - 1
+            rejoined = await receive(resumed, 'joined')
+            assert rejoined['seat'] == humans - 1 and rejoined['robot_id'] == expected_controls[-1]
             await receive(resumed, 'state')
             await asyncio.gather(*(ws.close() for ws in players + public + [bad, resumed]))
             print(f'PASS: {humans} humans + {4-humans} CPUs, host-only start, code, public isolation, exit and resume')

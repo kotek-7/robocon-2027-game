@@ -23,5 +23,13 @@ func _initialize():
 			network.handle(2,{'type':'start_room'})
 			assert(room.started)
 		network.rooms.erase(code);network.peers.clear()
+	# A lone player may occupy the BR seat after the earlier TR player leaves.
+	var code=network.create_room('2v2',true)
+	var room=network.rooms[code]
+	room.ids[2]=3;room.cpu_seats=[true,true,false,true];room.names=['CPU','Pilot','CPU','CPU']
+	assert(network.control_robot(room,2)==-1)
+	assert(network.room_robot_names(room)==['Pilot','CPU','CPU','CPU'])
+	room.match.switch_robot(0)
+	assert(network.room_robot_names(room)==['CPU','Pilot','CPU','CPU'])
 	print('PASS: 1-4 human rooms fill CPU seats, rematch without CPU votes, transfer host')
 	network.free();quit()

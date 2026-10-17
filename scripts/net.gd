@@ -88,7 +88,8 @@ func _process(dt):
 				var data=JSON.parse_string(client.get_packet().get_string_from_utf8())
 				if not data is Dictionary: continue
 				if data.get('type')=='joined': room_code=data.room;token=data.token;team=int(data.team);robot_id=int(data.robot_id);robot_names=data.robot_names;reconnect_until=0
-				if data.get('type')=='lobby':robot_names=data.robot_names
+				if data.has('robot_names'):robot_names=data.robot_names
+				if data.has('robot_id'):robot_id=int(data.robot_id)
 				message.emit(data)
 		elif client.get_ready_state()==WebSocketPeer.STATE_CLOSED:
 			if connected:
@@ -122,12 +123,14 @@ func _physics_process(dt):
 				m.finished=true;m.winner=1-t; room.reason='disconnect'
 			var cmd=inputs.get(id,{}).duplicate()
 			if now-cmd.get('at',0)>0.25: cmd={}
+			var switchable=team_can_switch(room,t)
+			if room.cpu_seats[seat] and switchable:continue
 			if room.cpu_seats[seat]:
 				var rid=t*2+int(seat/2)
 				m.command_robot(rid,room.drivers[rid].command(m,t,dt,rid),dt)
-			elif room.format=='2v2':m.command_robot(t*2+int(seat/2),cmd,dt)
+			elif not switchable:m.command_robot(t*2+int(seat/2),cmd,dt)
 			else:m.command(t,cmd,dt)
-			if room.format=='1v1':
+			if switchable:
 				var human=int(m.active[t])
 				var partner=t*2+(1-human%2)
 				if room.previous_human[t]!=human:
@@ -137,7 +140,7 @@ func _physics_process(dt):
 				for key in ['act','switch','retry']: inputs[id].erase(key)
 		m.step(dt)
 		if broadcast:
-			var packet={'type':'state','state':m.snapshot(),'reason':room.reason}
+			var packet={'type':'state','state':m.snapshot(),'reason':room.reason,'robot_names':room_robot_names(room)}
 			for id in room.ids:
 				if peers.has(id): emit_to(id,packet)
 
@@ -208,7 +211,7 @@ func handle(id: int, d: Dictionary):
 			if room.started: return
 			room.ready[p.seat]=true
 			if not room.get('private',false) and room.ready.all(func(value):return value) and not room.ids.has(0): room.started=true
-			for pid in room.ids: emit_to(pid,{'type':'ready','ready':room.ready,'started':room.started})
+			send_ready(room)
 		'start_room':
 			if not rooms.has(p.room):return
 			var room=rooms[p.room]
@@ -221,7 +224,7 @@ func handle(id: int, d: Dictionary):
 					room.tokens[seat]=Crypto.new().generate_random_bytes(16).hex_encode()
 			room.started=true
 			broadcast_lobby(p.room)
-			for pid in room.ids:emit_to(pid,{'type':'ready','ready':room.ready,'started':true})
+			send_ready(room)
 		'rematch':
 			if not rooms.has(p.room):return
 			var room=rooms[p.room]
@@ -238,7 +241,7 @@ func handle(id: int, d: Dictionary):
 				room.drivers=[ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new(),ArenaCPU.new()];room.previous_human=[-1,-1]
 				for pid in room.ids:
 					inputs.erase(pid)
-					emit_to(pid,{'type':'ready','ready':room.ready,'started':true})
+				send_ready(room)
 		'input':
 			if not rooms.has(p.room) or not rooms[p.room].started or not d.get('cmd') is Dictionary: return
 			if not d.get('seq',0) is float and not d.get('seq',0) is int:return
@@ -260,10 +263,31 @@ func handle(id: int, d: Dictionary):
 				broadcast_lobby(p.room)
 			p.ws.close()
 
+func team_can_switch(room: Dictionary, team: int) -> bool:
+	return room.format=='1v1' or (room.get('private',false) and room.cpu_seats[team]!=room.cpu_seats[team+2])
+
+func control_robot(room: Dictionary, seat: int) -> int:
+	return -1 if team_can_switch(room,seat%2) else (seat%2)*2+int(seat/2)
+
+func room_robot_names(room: Dictionary) -> Array:
+	var names=room.names.duplicate()
+	if not room.get('private',false):return names
+	for team in range(2):
+		if not team_can_switch(room,team):continue
+		var seat=team if not room.cpu_seats[team] else team+2
+		var name=room.names[team*2+int(seat/2)]
+		var active=int(room.match.active[team])
+		names[active]=name;names[team*2+(1-active%2)]='CPU'
+	return names
+
+func send_ready(room: Dictionary):
+	for seat in range(room.ids.size()):
+		emit_to(room.ids[seat],{'type':'ready','ready':room.ready,'started':room.started,'robot_id':control_robot(room,seat),'robot_names':room_robot_names(room)})
+
 func join(id: int, code: String, seat: int):
 	var room=rooms[code];var t=seat%2
 	peers[id].room=code;peers[id].team=t;peers[id].seat=seat
-	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':t*2+int(seat/2) if room.format=='2v2' else -1,'token':room.tokens[seat],'robot_names':room.names,'private':room.get('private',false)})
+	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':control_robot(room,seat),'token':room.tokens[seat],'robot_names':room_robot_names(room),'private':room.get('private',false)})
 
 func broadcast_lobby(code: String):
 	var room=rooms[code]
