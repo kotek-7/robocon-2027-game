@@ -101,10 +101,21 @@ func can_move(a: Vector3, b: Vector3, rid: int) -> bool:
 		if not valid(b+v,rid) or height(b+v)-height(b)>0.17: return false
 	return true
 
-func route(from: Vector3, to: Vector3, rid: int) -> PackedVector3Array:
+func route(from: Vector3, to: Vector3, rid: int, blockers: Array[Vector3] = []) -> PackedVector3Array:
 	var g: AStar3D = graphs[rid]
 	if g.get_point_count()==0: return PackedVector3Array()
-	return g.get_point_path(g.get_closest_point(from),g.get_closest_point(to))
+	var start=g.get_closest_point(from)
+	var end=g.get_closest_point(to)
+	var disabled=[]
+	for blocker in blockers:
+		for id in g.get_point_ids():
+			var p=g.get_point_position(id)
+			if id!=start and abs(p.y-blocker.y)<.3 and Vector2(p.x-blocker.x,p.z-blocker.z).length()<.6:
+				if not g.is_point_disabled(id):
+					g.set_point_disabled(id,true);disabled.append(id)
+	var result=g.get_point_path(start,end)
+	for id in disabled:g.set_point_disabled(id,false)
+	return result
 
 func transfer(team: int) -> Vector3:
 	return Vector3(-3.5 if team==0 else 3.5,0.6,1.3)

@@ -18,6 +18,30 @@ func run():
 	m.objects[0].where='buffer';m.objects[0].holder=0;m.objects[0].p=f.transfer(0)
 	for i in range(90):m.command_robot(1,ai.command(m,0,1.0/60,1),1.0/60);m.step(1.0/60)
 	check(m.robots[1].carry.has(0) or m.objects[0].where=='tower','waiting BR resumes when cargo arrives')
+	# Opposing CPU partners can meet head-on while returning empty from L2.
+	m.reset('online')
+	var partners=[ArenaCPU.new(),ArenaCPU.new()]
+	m.robots[1].p=Vector3(.8,.9,-.8);m.robots[3].p=Vector3(-.8,.9,-.8)
+	var recovered=[false,false]
+	for frame in range(1800):
+		for team in range(2):
+			var rid=team*2+1
+			var cmd=partners[team].command(m,team,1.0/60,rid)
+			if cmd.get('retry',false):recovered[team]=true
+			m.command_robot(rid,cmd,1.0/60)
+		m.step(1.0/60)
+	check(not recovered.has(true),'head-on L2 return avoids robots without retrying')
+	for team in range(2):
+		check(m.robots[team*2+1].p.distance_to(f.transfer(team))<1.0,'CPU partner returns from blocked L2 for team '+str(team))
+	var settled_retries=0
+	for frame in range(600):
+		for team in range(2):
+			var rid=team*2+1
+			var cmd=partners[team].command(m,team,1.0/60,rid)
+			if cmd.get('retry',false):settled_retries+=1
+			m.command_robot(rid,cmd,1.0/60)
+		m.step(1.0/60)
+	check(settled_retries==0,'both returned partners wait without repeated retries')
 	m.reset('free');ai=ArenaCPU.new();hold(m,1,[0]);var recovers=false
 	for i in range(240):
 		# A real destination, but deliberately prevent locomotion.

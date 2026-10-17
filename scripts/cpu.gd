@@ -6,6 +6,7 @@ var last_rid=-1
 var stuck=0.0
 var previous=Vector3.ZERO
 var next_flip=0.0
+var next_detour=0.0
 
 func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictionary:
 	var tr=team*2;var br=tr+1
@@ -97,9 +98,20 @@ func command(m: MatchState, team: int, dt: float, fixed_rid: int = -1) -> Dictio
 				if waypoint.distance_to(r.p)>2:break
 		var d: Vector3=(path[0]-r.p);d.y=0
 		if d.length()>.06: d=d.normalized();cmd.x=d.x;cmd.z=d.z
-	if not waiting and Vector2(cmd.x,cmd.z).length()>.1 and r.p.distance_to(previous)<.002: stuck+=dt
+	# Waiting is safe only after reaching the transfer area, not while returning from L2.
+	var idle_at_transfer=waiting and r.p.distance_to(target)<.3
+	if not idle_at_transfer and Vector2(cmd.x,cmd.z).length()>.1 and r.p.distance_to(previous)<.002: stuck+=dt
 	else: stuck=0
 	previous=r.p
+	if stuck>.5 and m.elapsed>=next_detour:
+		var blockers: Array[Vector3]=[]
+		# Stable priority prevents both CPUs from choosing the same side repeatedly.
+		for other in range(m.robots.size()):
+			if other<rid:blockers.append(m.robots[other].p)
+		var detour=m.field.route(r.p,target,rid,blockers)
+		if not detour.is_empty() and detour!=path:
+			path=detour
+		next_detour=m.elapsed+1.0
 	if stuck>2.5:
 		path.clear();stuck=0;cmd.retry=true
 	return cmd
