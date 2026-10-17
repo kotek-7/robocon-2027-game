@@ -18,5 +18,17 @@ func run():
 		assert(scene.online_method=='auto' and scene.menu.has_node('Solo'))
 		scene.menu.get_node('Back').pressed.emit()
 		assert(scene.menu.has_node('Room'))
-	print('PASS: desktop/mobile room directly / automatic -> format, validation and back navigation')
+	for mobile in [false,true]:
+		scene.touch_mode=mobile;scene.net.robot_id=-1
+		scene.network_message({'type':'ready','started':true})
+		assert(scene.mode=='online' and not scene.ui_open and not scene.hud.menu_open)
+		# Exercise the no-gesture browser path without requiring pointer lock.
+		scene.pause_menu();scene.close_menu(false)
+		assert(not scene.ui_open and Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
+		scene._process(.6)
+		assert(not scene.ui_open and not scene.capture_confirmed)
+		scene.pause_menu()
+		assert(scene.ui_open)
+		scene.show_title()
+	print('PASS: desktop/mobile room directly / automatic -> format, validation, back navigation and unpaused online start')
 	scene.queue_free();await process_frame;quit()

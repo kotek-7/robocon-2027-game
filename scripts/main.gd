@@ -292,18 +292,17 @@ func start(which: String):
 	hud.title=false;hud.team=team;hud.disconnected=false
 	yaw=0;pitch=.58
 	camera.follow_target=game.robots[game.active[team]].p+Vector3(0,.4,0)
-	# Network start arrives outside a browser gesture; capture only on RESUME.
-	if which=='online':pause_menu()
-	else:close_menu()
+	# Web matches start asynchronously; acquire pointer lock on the next click.
+	close_menu(which!='online' or not OS.has_feature('web'))
 	audio.prime(game);hud.get_node('Feedback').prime(game);audio.start_match();audio.play('start')
 
-func close_menu():
+func close_menu(capture_mouse: bool = true):
 	audio.play('resume')
-	if OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
+	if capture_mouse and OS.has_feature('web') and not bool(JavaScriptBridge.eval('document.hasFocus()')):
 		pause_menu();return
 	if is_instance_valid(overlay):overlay.queue_free()
 	ui_open=false;hud.menu_open=false;pending.clear();capture_grace=.5;capture_confirmed=false
-	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if touch_mode else Input.MOUSE_MODE_CAPTURED
+	Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if touch_mode or not capture_mouse else Input.MOUSE_MODE_CAPTURED
 	touch.reset();touch.visible=touch_mode
 
 func pause_menu():

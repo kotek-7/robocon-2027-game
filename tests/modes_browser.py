@@ -33,7 +33,8 @@ async def main():
   assert [s['robot_id'] for s in states]==[-1,-1],states
   assert len({s['room'] for s in states})==1
   for p in pages:
-   await click(p,'RESUME')
+   await p.bring_to_front()
+   if (await state(p))['menu']:await click(p,'RESUME')
    await p.keyboard.press('q');await p.wait_for_timeout(1400)
    s=await state(p);assert s['state']['active'][s['team']]==s['team']*2+1
    assert s['names'].count('CPU')==2,s['names']
