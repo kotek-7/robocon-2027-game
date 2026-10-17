@@ -198,7 +198,7 @@ func setup_text_input(edit: LineEdit, id: String, label: String, submit: Callabl
 	const input=document.createElement('input');input.id="""+JSON.stringify(id)+""";
 	input.dataset.arenaInput='';input.type='text';input.maxLength="""+str(edit.max_length)+""";
 	input.autocomplete='off';input.spellcheck=false;input.setAttribute('aria-label',"""+JSON.stringify(label)+""");
-	input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:22px ArenaJapanese,sans-serif;touch-action:manipulation;';
+	input.style.cssText='position:fixed;z-index:200;box-sizing:border-box;border:2px solid #20243e;border-radius:12px;background:#fffaf0;color:#20243e;padding:0 12px;font:600 22px ArenaLatin,ArenaJapanese,sans-serif;touch-action:manipulation;';
 	input.addEventListener('input',()=>window.arenaNameChanged=true);
 	input.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'&&!e.isComposing){window.arenaNameSubmit=true;}});
 	input.addEventListener('keyup',e=>e.stopPropagation());
