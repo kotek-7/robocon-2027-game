@@ -1,8 +1,15 @@
 {
-  "name": "robocon-2027-game",
-  "private": true,
-  "type": "module",
-  "scripts": {"check:worker": "wrangler deploy --dry-run --containers-rollout=none --outdir build/worker", "deploy": "wrangler deploy"},
-  "dependencies": {"@cloudflare/containers": "0.3.7"},
-  "devDependencies": {"wrangler": "4.151.0"}
+	"name": "robocon-2027-game",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"check:worker": "wrangler deploy --dry-run --containers-rollout=none --outdir build/worker",
+		"deploy": "wrangler deploy"
+	},
+	"dependencies": {
+		"@cloudflare/containers": "0.3.7"
+	},
+	"devDependencies": {
+		"wrangler": "4.151.0"
+	}
 }
