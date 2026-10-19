@@ -1,45 +1,128 @@
 # Deployment
 
 Host: `robocon2027.kotek7.com`. GitHub repository: `kotek-7/robocon-2027-game` (private).
+Release through `.github/workflows/deploy.yml` on `main` or manual dispatch. Godot
+and npm dependencies are pinned; Godot archives are SHA-256 verified. Local checks
+and dry-runs do not deploy production.
 
-The `Test and deploy` GitHub Actions workflow is the deployment entry point. Pushes to `main` and manual workflow dispatch run the same checks and build. No application release is uploaded directly from the workstation. Godot downloads are version-pinned and verified against SHA-256 digests. npm dependencies use a committed lockfile.
+## Architecture and API choice
 
-## Cloudflare
+Browser → Worker `/ws` → `ArenaServer` Durable Object → Container port 8080 →
+Python gateway → authoritative Godot server. Static files use Workers Static Assets.
+CPU/free play runs entirely in the browser.
 
-Worker `robocon-2027-game` serves static Web assets. `/index.wasm` returns the compressed binary with `Content-Encoding: gzip`; the browser receives the original WebAssembly bytes. The custom domain supplies HTTPS and the client automatically connects to `/ws` on the same host.
+`ArenaServer` extends `DurableObject` from `cloudflare:workers` and uses
+`ctx.container` directly. There is no `@cloudflare/containers` dependency or custom
+WebSocket message relay in the Worker. This follows the recommendation for new
+applications in the [Durable Object Container API reference](https://developers.cloudflare.com/containers/api/durable-object-container/).
 
-Durable Object `ArenaServer` routes to one `basic` Cloudflare Container. The container runs the unchanged GDScript competition model. A small HTTP/WebSocket gateway provides readiness checks and forwards WebSocket bytes to Godot. Outbound Internet access is disabled at runtime. Idle containers sleep after ten minutes. Workers and Container usage follow the account's Cloudflare billing plan; this configuration does not create a new subscription.
+API and scheduling policy are separate choices. Evaluated as a new service:
 
-The initial service has a single shared matchmaking pool, up to 32 concurrent matches and 128 connected peers. There is no skill ranking or geographic pool splitting. Container replacement interrupts current matches; match persistence and draining across deployments are not implemented.
+| Choice | Reason |
+| --- | --- |
+| Direct Durable Object Container API | Explicit readiness and lifecycle using the platform API |
+| `default` scheduling policy | All game servers use the same image and size; Cloudflare manages image rollouts |
+| Single named DO (`casual-v2`), `max_instances: 1` | Public matchmaking and private rooms share one authoritative process |
+| `basic` instance | Current configured capacity; load-tested sizing is still outstanding |
+| SQLite class export | Supported DO namespace backend; not a persistence layer for Godot matches |
 
-`wrangler.jsonc` explicitly disables `workers.dev` and version URLs so releases use the custom domain. Version URLs are currently unsupported for Workers that implement Durable Objects/Containers; `preview_urls: false` also records the intended policy. Source-map uploads are enabled for readable Worker exception stacks. The `default` Container scheduling policy is explicit. The compatibility date is `2026-10-19` with `nodejs_compat`, following the current [Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/).
+The official [policy selection guide](https://developers.cloudflare.com/containers/configuration/scheduling-policy/)
+assigns `default` to same-image/same-size services. The beta `durable_object` policy
+is for per-instance image/size selection, such as sandboxes. It removes managed
+application rollouts and `max_instances`; this game does not need those per-instance
+choices. `default` is selected for the workload, not to avoid migration.
 
-References: [workers.dev routing](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [source maps](https://developers.cloudflare.com/workers/observability/source-maps/).
+## Startup, sockets and shutdown
 
-## Authentication
+- Concurrent requests share one startup/readiness promise. Allocation and HTTP
+  readiness failures retry within a 30-second loop, with 1-second probe timeouts.
+  The gateway must return a successful `/health` response; an open port alone is
+  insufficient. Probe bodies are cancelled. A failed attempt releases the promise
+  so a later request can recover.
+- Requests are forwarded with an internal HTTP host and preserved path/query and
+  Origin. The port's response is returned directly, retaining the WebSocket upgrade,
+  following the [official forwarding example](https://developers.cloudflare.com/containers/examples/websocket/).
+  Forwarding failures return non-cacheable 503 responses and are not automatically
+  replayed. Startup is shared independently of one caller's cancellation.
+- `start({ enableInternet: false })` uses the image/size in Wrangler. There is no
+  outbound Internet requirement for the game server.
+- `setInactivityTimeout(600000)` is set during startup and restored in the constructor
+  if a Container survives DO reconstruction. The timer applies after the DO becomes
+  inactive; an open WebSocket can keep it active. It is not a ten-minute match limit.
+  No recurring polling alarm or lifetime `monitor()` promise is installed.
+- The previous helper's persisted sleep alarm is deleted in the constructor. No
+  application data is deleted. This implementation does not schedule DO alarms.
+- The Python gateway listens only after Godot is accepting connections. It parses
+  bounded HTTP headers, serves `/health`, accepts `/ws` (`/` for local test clients),
+  and closes both relay directions when either side ends. It handles SIGTERM even
+  during startup, reaps the child on failure, and kills it if termination exceeds
+  five seconds. Unexpected child exit fails the supervisor.
 
-GitHub Actions uses the repository secret `CLOUDFLARE_API_TOKEN`. The token needs deployment permissions for Workers Scripts, Workers Routes/custom domains, Containers/Cloudchamber and the target account, plus zone read for `kotek7.com`. Keep token values out of Git, workflow output and build artifacts. Account and zone identifiers are not secrets. HTTPS keys are managed by Cloudflare.
+The platform sends SIGTERM during shutdown/rollout; see
+[Container lifecycle](https://developers.cloudflare.com/containers/concepts/architecture/).
+This is bounded cleanup, **not match draining**. There are at most 128 peers and
+32 rooms; matches, queues, room codes and reconnect tokens reside in Godot memory.
+Container replacement loses them. No DO storage, filesystem snapshot or R2 write
+currently persists them. Profile preferences remain local to the browser.
 
-## Verification
+## Assets and HTTP boundaries
 
-`npm run check:worker` generates binding/runtime types with `wrangler types`, type-checks the JavaScript handlers against them, then bundles a dry-run deployment. The generated declaration is ignored by Git and regenerated in CI; after changing bindings, run `npm run typecheck:worker`. Local `.dev.vars*` and `.env*` secrets are ignored.
+Only `/ws`, `/health` and `/index.wasm` run Worker code before asset lookup. The
+packager clears its output and validates the 25 MiB individual asset limit.
+Wasm is stored gzip-compressed; the Worker sets the representation headers and
+`encodeBody: "manual"`. Conditional requests retain their status/ETag, while byte
+ranges are removed so partial gzip files are never presented as complete Wasm.
+Workers negotiates response encoding with the client.
 
-CD runs rule boundary tests and real WebSocket matching/reconnection checks before export. After deployment it checks `/health` and compares the publicly served, decompressed WebAssembly with the built file. `/health` reports Worker availability; two-client matching separately verifies the container backend.
+Worker `/health` is non-cacheable liveness, not backend readiness. HEAD returns
+no body. Unsupported methods are rejected before touching bindings. Browser
+WebSocket requests with a foreign Origin are rejected. Origin checking does not
+provide authentication; native clients can omit it. Static HTML/JS/PCK revalidate.
 
-Infrastructure references: [Cloudflare Containers](https://developers.cloudflare.com/containers/get-started/), [WebSocket forwarding](https://developers.cloudflare.com/containers/examples/websocket/), [static asset limits](https://developers.cloudflare.com/workers/platform/limits/).
+References: [asset routing](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/),
+[headers](https://developers.cloudflare.com/workers/static-assets/headers/),
+[asset limits](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/),
+[Response API](https://developers.cloudflare.com/workers/runtime-apis/response/).
 
-## Configuration review — 2026-10-19
+## Configuration and release
 
-Reviewed the Worker, Containers binding/lifecycle, Docker build inputs, static asset packaging and CD against current official documentation.
+`wrangler.jsonc` is the deployment source of truth. The compatibility date is
+`2026-10-19`; source maps and observability are enabled. Only the custom domain is
+published (`workers_dev` and `preview_urls` disabled). Generated runtime/binding
+types are ignored and regenerated for strict JS typechecking. Secrets belong in
+GitHub's `CLOUDFLARE_API_TOKEN` secret or ignored local `.dev.vars`, never source.
+The deployment token needs account/container/Worker and custom-domain permissions.
 
-- `ArenaServer` is declared in `exports` with SQLite storage, replacing the historical `v1` / `new_sqlite_classes` declaration. Class name, storage backend, binding and `casual-v2` object name stay the same, so the documented migration adopts the existing namespace. Do not add `migrations` alongside `exports`. After the first deployment with `exports`, future deploys cannot use the old migration-array configuration; a source rollback must retain `exports`. See [class export migration](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/#migrate-from-the-legacy-migrations-flow).
-- Keep the `default` Container scheduling policy: the official [selection guide](https://developers.cloudflare.com/containers/configuration/scheduling-policy/) assigns it to services sharing one image and instance size. The beta `durable_object` policy is intended for per-instance configuration, and adopting it requires a replacement application/namespace. It is not a routine upgrade for this matchmaking service.
-- `sleepAfter` is inactivity time, not a maximum match duration. The pinned helper tracks active WebSockets and renews activity. Keep the shared instance limit of one to preserve the single matchmaking pool.
-- Docker must copy `scenes/`, `resources/` and `default_bus_layout.tres` as well as scripts/assets: even headless startup loads the main scene and its resources before entering server mode.
-- CDN packaging rebuilds its output directory and checks the 25 MiB per-file limit explicitly. HTML revalidates at both `/` and `/index.html`. CI clears the Web export before packaging. See [asset limits](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/) and [asset headers](https://developers.cloudflare.com/workers/static-assets/headers/).
-- `/index.wasm` ignores byte ranges of the stored gzip file and returns a complete gzip representation. It preserves conditional GET/HEAD status and validators; `encodeBody: "manual"` prevents double compression. See [Response API](https://developers.cloudflare.com/workers/runtime-apis/response/).
-- Slow receivers do not accumulate additional state snapshots while the Godot WebSocket has pending outbound data. The next broadcast supplies current state; control messages retain ordered delivery.
-- Worker HTTP regression tests run with `npm run test:worker`. CD tests private rooms through the built container and probes the public WebSocket with an unsupported protocol, verifying Godot responds without entering a public matchmaking queue.
-- `/health` is Worker liveness only. The public WebSocket probe verifies backend reachability, not the deployed image revision. `wrangler deploy` starts a rollout; it does not prove all instances have finished replacing. Worker activation and image rollout are not atomic. Matches remain in memory and are interrupted on replacement. See [rollouts](https://developers.cloudflare.com/containers/configuration/rollouts/).
+The `ArenaServer` class, namespace and binding stay stable. Changing its base class
+does not require a DO migration; see the [API replacement guide](https://developers.cloudflare.com/containers/guides/migrate-to-durable-object-container-api/).
+SQLite is declared through `exports`; do not mix it with legacy `migrations`.
+See [class exports](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/).
 
-Local review validation passed: 7 Worker HTTP tests, Wrangler 4.151.1 dry-run, workerd gzip/HEAD check, stale-file removal and gzip byte equality, and 69 Godot rule checks. Import/startup from the Docker file set and gateway readiness/shutdown passed. Matchmaking, private rooms, network reconnect/forfeit, 2v2 and CPU-partner suites plus the deployment probe passed through the local gateway; after the snapshot change, the outbound-buffer overflow no longer appeared in those suites. Docker itself could not run locally (Desktop socket unavailable; system socket permission denied). The CI Docker build and production rollout remain unverified; no deployment was performed during this review.
+CI validates Worker and gateway behavior, game rules and networking, exports the
+Web game, checks Worker types/bundling, builds/runs the Docker image, and runs
+`wrangler dev` with `tests/container_runtime.py`. The latter exercises concurrent
+cold upgrades and a private game through the actual Worker → DO → Container path.
+Only then does CD deploy. Post-deploy checks compare decompressed public Wasm bytes
+and exercise the Godot protocol over the public WebSocket without joining a queue.
+
+[Deployment](https://developers.cloudflare.com/containers/guides/deploy/) activates
+Worker code before processing the image and is not transactional. Successful deploy
+means a rollout started, not that every instance replaced. The [rollout grace period](https://developers.cloudflare.com/containers/configuration/rollouts/)
+is based on Container/DO connection age, not game age; it cannot guarantee ongoing
+matches finish. The current smoke test proves backend reachability, not the image
+revision. Keep Worker/container protocol changes compatible across that interval.
+
+## Validation status — 2026-10-19
+
+Passed locally: 19 Worker/direct-API tests using mocked platform bindings, generated
+types and strict JS checking, and Wrangler dry-run (4.64 KiB Worker bundle).
+The preceding gateway changes passed five real TCP/process tests and real Godot
+matchmaking/private-room/reconnection/2v2/CPU-partner suites. Wasm gzip/identity,
+HEAD, Range and conditional responses were checked with local workerd. The new
+integration script also passed against the local Python gateway and real Godot;
+that run validates the script/game interaction, not the direct API runtime.
+
+The replacement direct API's actual Container integration and platform inactivity
+behavior are **not yet verified**: Docker Desktop's socket is absent and the system
+Docker socket is inaccessible to this user. The new Wrangler integration step is
+configured in CI but has not been run here. No production deployment was performed.

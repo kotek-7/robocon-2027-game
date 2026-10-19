@@ -77,6 +77,13 @@ jobs:
           curl --fail --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:9080/health
           python3 tests/matchmaking.py
           python3 tests/private_rooms.py
+      - name: Validate Worker and Container together
+        run: |
+          ./node_modules/.bin/wrangler dev --local --port 8787 > /tmp/wrangler.log 2>&1 &
+          wrangler_pid=$!
+          trap 'kill "$wrangler_pid" 2>/dev/null || true; cat /tmp/wrangler.log' EXIT
+          curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:8787/health
+          python3 tests/container_runtime.py ws://127.0.0.1:8787/ws
       - name: Deploy through CD
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then

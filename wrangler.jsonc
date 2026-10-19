@@ -20,7 +20,7 @@
 		{
 			"class_name": "ArenaServer",
 			"image": "./Dockerfile",
-			// The Container helper requires the default scheduling policy.
+			// One service image/size with platform-managed rollouts (direct DO API).
 			"scheduling_policy": "default",
 			"instance_type": "basic",
 			// All players share the casual-v2 matchmaking pool.

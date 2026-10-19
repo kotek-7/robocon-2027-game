@@ -50,7 +50,7 @@ Production target: `https://robocon2027.kotek7.com`.
 
 Push to `main` to run `.github/workflows/deploy.yml`: competition and matchmaking checks, pinned Godot Web export, asset packaging, Cloudflare deployment and public artifact verification. The repository secret `CLOUDFLARE_API_TOKEN` authenticates deployment. Application deployment is performed by CD.
 
-Cloudflare Workers serves the game and forwards `/ws` to one Godot container. The same host supplies HTTPS and WSS; players do not enter an endpoint. The container has a bounded casual queue and 32 simultaneous matches. In-memory matches are lost when the server process is replaced. Browser WebAssembly is served with gzip encoding to stay below the individual static asset limit.
+Cloudflare Workers serves the game and forwards `/ws` through the direct Durable Object Container API to one Godot container. Startup waits for HTTP readiness; WebSocket responses pass through directly. The `default` scheduling policy manages the shared service image and its rollouts. The same host supplies HTTPS and WSS; players do not enter an endpoint. The container has a bounded casual queue and 32 simultaneous matches. In-memory matches are lost when the server process is replaced. Browser WebAssembly is served with gzip encoding to stay below the individual static asset limit.
 
 See [deployment configuration](docs/deployment.md) for infrastructure and credentials.
 
