@@ -1,4 +1,4 @@
-"""Verify Worker -> Container -> Godot without joining a production queue."""
+"""Verify Worker -> Tunnel -> OCI -> Godot without joining a production queue."""
 
 import asyncio
 import json

@@ -3,8 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"test:worker": "node --test tests/worker.test.js tests/container.test.js",
-		"check:worker": "npm run typecheck:worker && wrangler deploy --dry-run --containers-rollout=none --outdir build/worker",
+		"test:worker": "node --test tests/worker.test.js",
+		"check:worker": "npm run typecheck:worker && wrangler deploy --dry-run --outdir build/worker",
 		"deploy": "wrangler deploy",
 		"types:worker": "wrangler types cloudflare/worker-configuration.d.ts",
 		"typecheck:worker": "npm run types:worker && tsc -p cloudflare/tsconfig.json"

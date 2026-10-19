@@ -17,12 +17,6 @@
 		"run_worker_first": ["/ws", "/health", "/index.wasm"],
 	},
 	"vars": { "GAME_ORIGIN": "https://robocon2027-origin.kotek7.com" },
-	// Keep the dormant namespace during cutover; no requests route to it.
-	"durable_objects": {
-		"bindings": [{ "name": "ARENA", "class_name": "ArenaServer" }],
-	},
-	"exports": {
-		"ArenaServer": { "type": "durable-object", "storage": "sqlite" },
-	},
+	"exports": { "ArenaServer": { "type": "durable-object", "storage": "sqlite" } },
 	"observability": { "enabled": true },
 }

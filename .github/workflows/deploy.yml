@@ -9,14 +9,14 @@ concurrency:
   group: production
   cancel-in-progress: false
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: "24"
           cache: npm
       - uses: actions/cache@v4
         id: godot
@@ -79,13 +79,40 @@ jobs:
           curl --fail --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:9080/health
           python3 tests/matchmaking.py
           python3 tests/private_rooms.py
-      - name: Validate Worker and Container together
-        run: |
-          ./node_modules/.bin/wrangler dev --local --port 8787 > /tmp/wrangler.log 2>&1 &
-          wrangler_pid=$!
-          trap 'kill "$wrangler_pid" 2>/dev/null || true; cat /tmp/wrangler.log' EXIT
-          curl --fail --retry 60 --retry-all-errors --retry-delay 2 http://127.0.0.1:8787/health
-          python3 tests/container_runtime.py ws://127.0.0.1:8787/ws
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: |
+            build/cdn
+            build/web/index.wasm
+          retention-days: 1
+  backend:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.repository == 'kotek-7/robocon-2027-game'
+    runs-on: [self-hosted, Linux, ARM64, robocon-oci]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Deploy validated source on OCI
+        run: bash infra/oci/deploy.sh "$GITHUB_SHA"
+  publish:
+    needs: backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build
+      - run: python3 -m pip install websockets==15.0.1
       - name: Deploy through CD
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
