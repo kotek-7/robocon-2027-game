@@ -9,6 +9,7 @@ var landscape_required=false
 var fullscreen_supported=true
 var move_id=-1
 var look_id=-1
+var look_position=Vector2.ZERO
 var anchor=Vector2.ZERO
 var knob=Vector2.ZERO
 var buttons={}
@@ -23,7 +24,7 @@ func _ready():
 	resized.connect(reset)
 
 func reset():
-	movement=Vector2.ZERO;move_id=-1;look_id=-1;held.clear();overview=false;update_view()
+	movement=Vector2.ZERO;move_id=-1;look_id=-1;held.clear();look_position=Vector2.ZERO;overview=false;update_view()
 
 func layout():
 	buttons.clear()
@@ -55,6 +56,7 @@ func _input(event):
 			if event.index==look_id:look_id=-1
 			held.erase(event.index)
 		else:
+			if event.index==move_id or event.index==look_id or held.has(event.index):return
 			for key in buttons:
 				if buttons[key].has_point(event.position):
 					if key=='fullscreen' and not fullscreen_supported:get_viewport().set_input_as_handled();return
@@ -64,14 +66,20 @@ func _input(event):
 					get_viewport().set_input_as_handled();update_view();return
 			if event.position.x<size.x*move_area_width and event.position.y>size.y*move_area_top and move_id<0:
 				move_id=event.index;anchor=event.position;knob=anchor
-			elif look_id<0:look_id=event.index
+			elif look_id<0 and event.position.x>=size.x*move_area_width:
+				look_id=event.index;look_position=event.position
 		get_viewport().set_input_as_handled();update_view()
 	elif event is InputEventScreenDrag:
 		if event.index==move_id:
 			var delta=(event.position-anchor).limit_length(joystick_radius)
 			knob=anchor+delta;movement=delta/joystick_radius
 			if movement.length()<deadzone:movement=Vector2.ZERO
-		elif event.index==look_id:look.emit(event.relative)
+		elif event.index==look_id:
+			# Web drag.relative can use a different finger's previous position.
+			# Track the assigned look finger in viewport coordinates instead.
+			var delta=event.position-look_position
+			look_position=event.position
+			look.emit(delta)
 		get_viewport().set_input_as_handled();update_view()
 
 func qa_buttons() -> Array:

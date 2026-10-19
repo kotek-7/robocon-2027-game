@@ -56,6 +56,7 @@ jobs:
           godot --headless --path . --script tests/editor_config.gd
           godot --headless --path . --script tests/online_menu.gd
           godot --headless --path . --script tests/member_menu.gd
+          godot --headless --path . --script tests/touch_multitouch.gd
           godot --headless --path . --script tests/server_mode.gd -- --server
           godot --headless --path . -- --server > /tmp/server.log 2>&1 &
           server_pid=$!
