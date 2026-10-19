@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://bkbys7sue062r"
-path="res://.godot/imported/ZenMaruGothic-Bold.ttf-7cc77deae06c0ca3a92325e6be04f6bd.fontdata"
+uid="uid://cdv68e5bk6nof"
+path="res://.godot/imported/ZenMaruGothic-Black.ttf-0ab99ed1b5b4c32d58713696b45234e7.fontdata"
 
 [deps]
 
-source_file="res://assets/ZenMaruGothic-Bold.ttf"
-dest_files=["res://.godot/imported/ZenMaruGothic-Bold.ttf-7cc77deae06c0ca3a92325e6be04f6bd.fontdata"]
+source_file="res://assets/ZenMaruGothic-Black.ttf"
+dest_files=["res://.godot/imported/ZenMaruGothic-Black.ttf-0ab99ed1b5b4c32d58713696b45234e7.fontdata"]
 
 [params]
 
