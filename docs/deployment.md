@@ -22,8 +22,9 @@ API and scheduling policy are separate choices. Evaluated as a new service:
 | --- | --- |
 | Direct Durable Object Container API | Explicit readiness and lifecycle using the platform API |
 | `default` scheduling policy | All game servers use the same image and size; Cloudflare manages image rollouts |
-| Single named DO (`casual-v2`), `max_instances: 1` | Public matchmaking and private rooms share one authoritative process |
-| `basic` instance | Current configured capacity; load-tested sizing is still outstanding |
+| Three named DOs, `max_instances: 3` | `auto-1v1`, `auto-2v2`, `casual-v2` (private/legacy) keep opponents and reconnects together |
+| Custom 1 vCPU / 3072 MiB / 4000 MB | Four times the former basic CPU ceiling, with less provisioned memory/disk than standard-2 |
+| APAC placement | Bounds placement to Asia Pacific; not a guarantee of a specific city or RTT |
 | SQLite class export | Supported DO namespace backend; not a persistence layer for Godot matches |
 
 The official [policy selection guide](https://developers.cloudflare.com/containers/configuration/scheduling-policy/)
@@ -46,9 +47,9 @@ choices. `default` is selected for the workload, not to avoid migration.
   replayed. Startup is shared independently of one caller's cancellation.
 - `start({ enableInternet: false })` uses the image/size in Wrangler. There is no
   outbound Internet requirement for the game server.
-- `setInactivityTimeout(600000)` is set during startup and restored in the constructor
+- `setInactivityTimeout(60000)` is set during startup and restored in the constructor
   if a Container survives DO reconstruction. The timer applies after the DO becomes
-  inactive; an open WebSocket can keep it active. It is not a ten-minute match limit.
+  inactive; an open WebSocket can keep it active. It is not a one-minute match limit.
   No recurring polling alarm or lifetime `monitor()` promise is installed.
 - The previous helper's persisted sleep alarm is deleted in the constructor. No
   application data is deleted. This implementation does not schedule DO alarms.
@@ -60,7 +61,7 @@ choices. `default` is selected for the workload, not to avoid migration.
 
 The platform sends SIGTERM during shutdown/rollout; see
 [Container lifecycle](https://developers.cloudflare.com/containers/concepts/architecture/).
-This is bounded cleanup, **not match draining**. There are at most 128 peers and
+This is bounded cleanup, **not match draining**. Each container has at most 128 peers and
 32 rooms; matches, queues, room codes and reconnect tokens reside in Godot memory.
 Container replacement loses them. No DO storage, filesystem snapshot or R2 write
 currently persists them. Profile preferences remain local to the browser.
@@ -126,3 +127,58 @@ The replacement direct API's actual Container integration and platform inactivit
 behavior are **not yet verified**: Docker Desktop's socket is absent and the system
 Docker socket is inaccessible to this user. The new Wrangler integration step is
 configured in CI but has not been run here. No production deployment was performed.
+
+
+## Three-pool routing and cost envelope
+
+The client chooses `/ws?pool=1v1`, `2v2`, or `room` before opening the socket.
+The Worker accepts only these three values, maps them to fixed DO names and uses
+an APAC DO location hint. Hints apply on initial DO creation; they do not relocate
+the existing `casual-v2` DO. Container placement constraints apply independently.
+The client retains the exact URL during reconnection.
+Private hosts and guests share `casual-v2`, preserving six-character room codes.
+The query-less legacy endpoint also goes there. Already-open old clients must
+reload to participate in the new automatic pools; legacy automatic clients only
+see each other. There is no random per-socket routing, queue fragmentation within
+a current-client format, additional coordinator DO, or periodic warm-up.
+
+This is **mode partitioning**, not even distribution or load-based autoscaling.
+A surge of only 1v1 players still uses one container. Moving individual matches
+across three servers would require a shared matchmaker and explicit handoff; simply
+using `getRandom` would strand players and break reconnections. See the official
+[scaling guide](https://developers.cloudflare.com/containers/configuration/scaling-and-routing/).
+
+The server caps idle processing at 60 FPS and disables presentation children
+(stadium animation, UI and effects); authoritative physics remains 60 Hz and
+snapshots remain 20 Hz. `--headless` alone did not disable those scripts.
+
+Using the [2026-10-19 published rates](https://developers.cloudflare.com/containers/platform/pricing/),
+per running container-hour: memory $0.027 + disk $0.001008 + CPU $0–$0.072
+(actual CPU consumption). At 10% CPU this is $0.035208/h; at 100% $0.100008/h.
+Three containers each running two hours daily for 30 days are about **$6.34–$18.00**
+at those utilization levels. Three running continuously for 30 days are about
+**$76.05–$216.02**. These are Container compute estimates before included usage,
+not total bills: add the Workers plan ($5/month), applicable Worker/DO/logs/network
+charges and taxes. Idle timeout/startup time counts as running time. Open sockets
+can keep a container alive; the instance count is a concurrency cap, not a spending
+cap. A larger standard-2 would double provisioned memory to 6 GiB without adding CPU.
+
+Before this change, a short production private match with two humans and two CPU
+partners delivered 160 snapshots at median 48.85 ms, p95 57.04 ms, maximum 60.66 ms,
+with simulated time/wall time 1.0001. This did not reproduce the reported lag and
+does not prove CPU starvation or client rendering performance. Scaling therefore
+adds headroom; it is not a verified cure for every source of perceived latency.
+
+A separate 20-request application-level probe (invalid queue protocol, no queue
+seat allocated) measured median 314.41 ms / maximum 633.83 ms round trip to Godot.
+WebSocket control ping alone measured 5.53 ms median and does not measure the full
+application path. This points to backend placement/routing as another candidate
+cause; it is not proof that additional CPU alone fixes the reported experience.
+
+Local validation of the three-pool change: 23 Worker/Container unit tests; strict
+Worker types and Wrangler dry-run; 69 competition checks; scene mapping; actual
+client upgrade request paths for all three pools; server-only processing; and real
+Godot matchmaking, private rooms, 1v1, 2v2 and CPU-partner/reconnect/forfeit suites
+passed. The scene suite still emits resource-leak warnings at shutdown. Docker
+remains unavailable locally, so actual three-Container integration and post-release
+latency comparison remain pending CI/deployment.
