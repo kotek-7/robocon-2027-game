@@ -76,7 +76,12 @@ var fullscreen_button: Button
 func _ready():
 	field=ArenaField.new();game=MatchState.new(field);game.reset('cpu')
 	net=$Network
-	if '--server' in OS.get_cmdline_user_args(): net.host(field);set_process(false);set_physics_process(false);return
+	if '--server' in OS.get_cmdline_user_args():
+		# A headless renderer does not disable animation scripts. Keep only networking.
+		Engine.max_fps=60
+		for child in get_children():
+			if child!=net:child.process_mode=Node.PROCESS_MODE_DISABLED
+		net.host(field);set_process(false);set_physics_process(false);return
 	touch_mode=DisplayServer.is_touchscreen_available()
 	if OS.has_feature('web'):touch_mode=bool(JavaScriptBridge.eval('navigator.maxTouchPoints > 0'))
 	if touch_mode:resize_mobile()

@@ -54,6 +54,7 @@ jobs:
           godot --headless --path . --script tests/feedback.gd
           godot --headless --path . --script tests/scenes.gd
           godot --headless --path . --script tests/editor_config.gd
+          godot --headless --path . --script tests/server_mode.gd -- --server
           godot --headless --path . -- --server > /tmp/server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
