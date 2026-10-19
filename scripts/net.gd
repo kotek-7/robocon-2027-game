@@ -120,7 +120,13 @@ func _physics_process(dt):
 				emit_to(id,{'type':'error','text':'Match expired'})
 				if peers.has(id):peers[id].ws.close()
 			rooms.erase(code);continue
-		if not room.started: continue
+		if not room.started:
+			var changed=false
+			for seat in range(room.ids.size()):
+				if room.ids[seat]==0 and room.deadline[seat]>0 and now>=room.deadline[seat]:
+					room.deadline[seat]=0.0;changed=true
+			if changed and room.get('private',false):broadcast_lobby(code)
+			continue
 		var m: MatchState=room.match
 		for seat in range(room.ids.size()):
 			var t=seat%2
@@ -292,6 +298,16 @@ func room_robot_names(room: Dictionary) -> Array:
 		names[active]=name;names[team*2+(1-active%2)]='CPU'
 	return names
 
+func room_members(room: Dictionary) -> Array:
+	var members=[]
+	var now=Time.get_ticks_msec()/1000.0
+	for seat in range(room.ids.size()):
+		var rid=(seat%2)*2+int(seat/2)
+		var status='connected' if room.ids[seat]!=0 else ('reconnecting' if room.deadline[seat]>now else 'open')
+		if room.cpu_seats[seat]:status='cpu'
+		members.append({'seat':seat,'team':seat%2,'role':'TR / BR' if room.format=='1v1' else ('TR' if seat<2 else 'BR'),'nickname':room.names[rid] if status in ['connected','reconnecting'] else 'CPU','status':status,'host':room.get('private',false) and seat==room.host_seat})
+	return members
+
 func send_ready(room: Dictionary):
 	for seat in range(room.ids.size()):
 		emit_to(room.ids[seat],{'type':'ready','ready':room.ready,'started':room.started,'robot_id':control_robot(room,seat),'robot_names':room_robot_names(room)})
@@ -299,7 +315,7 @@ func send_ready(room: Dictionary):
 func join(id: int, code: String, seat: int):
 	var room=rooms[code];var t=seat%2
 	peers[id].room=code;peers[id].team=t;peers[id].seat=seat
-	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':control_robot(room,seat),'token':room.tokens[seat],'robot_names':room_robot_names(room),'private':room.get('private',false)})
+	emit_to(id,{'type':'joined','room':code,'team':t,'seat':seat,'format':room.format,'robot_id':control_robot(room,seat),'token':room.tokens[seat],'members':room_members(room),'robot_names':room_robot_names(room),'private':room.get('private',false)})
 
 func broadcast_lobby(code: String):
 	var room=rooms[code]
@@ -308,7 +324,7 @@ func broadcast_lobby(code: String):
 			if room.ids[seat]!=0:
 				room.host_seat=seat;break
 	for id in room.ids:
-		emit_to(id,{'host':id==room.ids[room.host_seat],'type':'lobby','room':code,'count':room.ids.filter(func(pid):return pid!=0).size(),'capacity':room.ids.size(),'robot_names':room.names})
+		emit_to(id,{'host':id==room.ids[room.host_seat],'type':'lobby','room':code,'count':room.ids.filter(func(pid):return pid!=0).size(),'capacity':room.ids.size(),'members':room_members(room),'robot_names':room.names})
 
 func create_room(format: String, private_room: bool = false) -> String:
 	var count=2 if format=='1v1' else 4

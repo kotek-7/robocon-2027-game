@@ -61,6 +61,7 @@ jobs:
           trap 'kill "$server_pid"' EXIT
           sleep 3
           python3 tests/matchmaking.py
+          python3 tests/room_members.py
           python3 tests/network.py
           python3 tests/teams_network.py
           python3 tests/partners_network.py
@@ -78,6 +79,7 @@ jobs:
           trap 'docker logs arena-ci; docker rm -f arena-ci' EXIT
           curl --fail --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:9080/health
           python3 tests/matchmaking.py
+          python3 tests/room_members.py
           python3 tests/private_rooms.py
       - uses: actions/upload-artifact@v4
         with:
