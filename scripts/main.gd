@@ -22,6 +22,7 @@ var previous_human=-1
 var online_format='1v1'
 var online_method='auto'
 var requested_room=''
+var member_seat=-1
 var art=ArenaVisuals.new()
 var net: ArenaNetwork
 var camera
@@ -278,23 +279,27 @@ func network_message(d: Dictionary):
 			if is_instance_valid(info):info.text='FINDING PLAYERS' if online_format=='2v2' else 'FINDING PLAYER'
 		'joined':
 			audio.play('reconnected' if mode=='online' else 'found');awaiting_audio_baseline=true
-			team=int(d.team)
+			team=int(d.team);member_seat=int(d.seat)
 			if mode!='online':
 				if d.get('private',false):
 					panel(room_lobby_menu);info=menu.get_node('Info')
-					menu.get_node('Code').text=str(d.room)
-					bind_button('Copy',func():DisplayServer.clipboard_set(net.room_code))
-					bind_button('Start',func():net.send({'type':'start_room'}))
-					bind_button('Cancel',show_room_options,'back').grab_focus()
+					menu.get_node('Header/Code').text=str(d.room)
+					bind_button('Header/Copy',func():DisplayServer.clipboard_set(net.room_code))
+					bind_button('Actions/Start',func():net.send({'type':'start_room'}))
+					bind_button('Actions/Cancel',show_room_options,'back').grab_focus()
+					menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
+					net.send({'type':'ready'})
 				else:
-					panel(found_menu);info=menu.get_node('Info');info.text=profile.nickname
-				net.send({'type':'ready'})
+					panel(found_menu);info=menu.get_node('Info')
+					menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
+					prepare_auto_match(menu)
 			hud.disconnected=false
 		'lobby':
-			if mode!='online' and is_instance_valid(info):
+			if mode!='online' and is_instance_valid(info) and menu.has_node('Actions/Start'):
+				menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
 				info.text='%dP + %d CPU'%[int(d.count),int(d.capacity)-int(d.count)]
-				menu.get_node('Start').visible=bool(d.host)
-				menu.get_node('Waiting').visible=not bool(d.host)
+				menu.get_node('Actions/Start').visible=bool(d.host)
+				menu.get_node('Actions/Waiting').visible=not bool(d.host)
 		'ready':
 			if d.started: start('online')
 		'state':
@@ -308,6 +313,17 @@ func network_message(d: Dictionary):
 			audio.play('deny')
 			net.leave();panel(error_menu);menu.get_node('Info').text=str(d.text)
 			bind_button('Retry',show_room_options if online_method=='room' else show_online);bind_button('Back',show_title,'back')
+
+func prepare_auto_match(matched_menu: Control):
+	# Keep the roster readable before signalling readiness; the server clock has
+	# not started yet. A replaced menu invalidates this asynchronous countdown.
+	for seconds in [3,2,1]:
+		if not is_instance_valid(matched_menu) or menu!=matched_menu or mode=='online':return
+		matched_menu.get_node('Info').text='STARTING IN %d'%seconds
+		await get_tree().create_timer(1.0).timeout
+	if not is_instance_valid(matched_menu) or menu!=matched_menu or mode=='online':return
+	matched_menu.get_node('Info').text='WAITING FOR PLAYERS'
+	net.send({'type':'ready'})
 
 func start(which: String):
 	finish_remaining=0.0;hud.hide_finish()

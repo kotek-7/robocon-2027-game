@@ -12,3 +12,11 @@ func configure(compact: bool):
 		if child is ArenaTitle:
 			child.theme=theme
 			child.set_compact(compact)
+
+	if has_node('Roster'):
+		$Roster.configure(compact)
+	if has_node('Header/Code'):
+		$Heading.visible=not compact
+		$Header/Code.add_theme_font_size_override('font_size',26 if compact else 36)
+		for button in [$Actions/Start,$Actions/Cancel]:
+			button.custom_minimum_size.y=mobile_button_height if compact else desktop_button_height

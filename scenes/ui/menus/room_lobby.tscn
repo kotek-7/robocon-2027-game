@@ -6,6 +6,8 @@
 
 [ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
 
+[ext_resource type="PackedScene" path="res://scenes/ui/roster.tscn" id="roster"]
+
 [node name="RoomLobbyMenu" type="VBoxContainer"]
 custom_minimum_size = Vector2(320, 0)
 theme = ExtResource("desktop")
@@ -19,15 +21,20 @@ text = "ROOM"
 theme_type_variation = "Heading"
 horizontal_alignment = 1
 
-[node name="Code" type="Label" parent="."]
+[node name="Header" type="HBoxContainer" parent="."]
 layout_mode = 2
+
+[node name="Code" type="Label" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "------"
 horizontal_alignment = 1
 theme_type_variation = "Heading"
 
-[node name="Copy" type="Button" parent="."]
+[node name="Copy" type="Button" parent="Header"]
 layout_mode = 2
-custom_minimum_size = Vector2(300, 58)
+custom_minimum_size = Vector2(140, 44)
+theme_override_font_sizes/font_size = 18
 text = "COPY CODE"
 
 [node name="Info" type="Label" parent="."]
@@ -36,21 +43,30 @@ text = "WAITING"
 theme_type_variation = "BodyText"
 horizontal_alignment = 1
 
-[node name="Start" type="Button" parent="."]
+[node name="Roster" parent="." instance=ExtResource("roster")]
 layout_mode = 2
-custom_minimum_size = Vector2(300, 58)
+
+[node name="Actions" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Start" type="Button" parent="Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(140, 58)
 text = "START"
 theme_type_variation = &"Accent"
 visible = false
 
-[node name="Waiting" type="Label" parent="."]
+[node name="Waiting" type="Label" parent="Actions"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "WAITING FOR HOST"
 theme_type_variation = "BodyText"
 horizontal_alignment = 1
 visible = false
 
-[node name="Cancel" type="Button" parent="."]
+[node name="Cancel" type="Button" parent="Actions"]
 layout_mode = 2
-custom_minimum_size = Vector2(300, 58)
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(140, 58)
 text = "LEAVE"
