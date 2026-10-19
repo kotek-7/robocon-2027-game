@@ -3,24 +3,33 @@
 	"name": "robocon-2027-game",
 	"main": "cloudflare/worker.js",
 	"compatibility_date": "2026-10-15",
+	"upload_source_maps": true,
 	"account_id": "769b391d51df077598b7d91579605fe2",
+	// Production is served only on the custom domain.
+	"workers_dev": false,
+	"preview_urls": false,
 	"routes": [{ "pattern": "robocon2027.kotek7.com", "custom_domain": true }],
 	"assets": {
 		"directory": "build/cdn",
 		"binding": "ASSETS",
+		// Only these endpoints need Worker code; serve other assets directly.
 		"run_worker_first": ["/ws", "/health", "/index.wasm"]
 	},
 	"containers": [
 		{
 			"class_name": "ArenaServer",
 			"image": "./Dockerfile",
+			// The Container helper requires the default scheduling policy.
+			"scheduling_policy": "default",
 			"instance_type": "basic",
+			// All players share the casual-v2 matchmaking pool.
 			"max_instances": 1
 		}
 	],
 	"durable_objects": {
 		"bindings": [{ "name": "ARENA", "class_name": "ArenaServer" }]
 	},
+	// Preserve the deployed namespace migration history.
 	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArenaServer"] }],
 	"observability": { "enabled": true }
 }

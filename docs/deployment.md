@@ -12,6 +12,10 @@ Durable Object `ArenaServer` routes to one `basic` Cloudflare Container. The con
 
 The initial service has a single shared matchmaking pool, up to 32 concurrent matches and 128 connected peers. There is no skill ranking or geographic pool splitting. Container replacement interrupts current matches; match persistence and draining across deployments are not implemented.
 
+`wrangler.jsonc` explicitly disables `workers.dev` and version URLs so releases use the custom domain. Version URLs are currently unsupported for Workers that implement Durable Objects/Containers; `preview_urls: false` also records the intended policy. Source-map uploads are enabled for readable Worker exception stacks. The `default` Container scheduling policy is explicit. The validated compatibility date remains `2026-10-15`; updating Wrangler does not require moving that runtime behavior boundary.
+
+References: [workers.dev routing](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [source maps](https://developers.cloudflare.com/workers/observability/source-maps/).
+
 ## Authentication
 
 GitHub Actions uses the repository secret `CLOUDFLARE_API_TOKEN`. The token needs deployment permissions for Workers Scripts, Workers Routes/custom domains, Containers/Cloudchamber and the target account, plus zone read for `kotek7.com`. Keep token values out of Git, workflow output and build artifacts. Account and zone identifiers are not secrets. HTTPS keys are managed by Cloudflare.
