@@ -22,7 +22,7 @@ func run():
    assert(not rect.intersects(layout.get_node('Blue').get_rect()))
    assert(not rect.intersects(layout.get_node('RedObjective').get_rect()))
    assert(not rect.intersects(layout.get_node('BlueObjective').get_rect()))
-   assert(plate.get_theme_stylebox('panel').bg_color==Color(0,0,0,.55))
+   assert(plate.get_theme_stylebox('panel').bg_color==Color(0,0,0,.38))
    for j in range(i):assert(not rect.intersects(hud.get_node('ScoreNames/Name%d'%j).get_rect()))
  hud.menu_open=true;hud.update_view();assert(not hud.get_node('ScoreNames').visible)
  print('PASS: four score nameplates, long names, responsive bounds, black alpha and existing world labels')

@@ -105,19 +105,19 @@ func update_score_names(layout: Control):
 	var clock=layout.get_node('Clock').get_rect()
 	for t in range(2):
 		var score=layout.get_node('Red' if t==0 else 'Blue').get_rect()
-		var gap=8.0
+		var gap=5.0
 		var available=clock.position.x-score.end.x-gap*2 if t==0 else score.position.x-clock.end.x-gap*2
-		var width=minf(220,available)
-		var height=(score.size.y-4)/2
+		var width=minf(112 if touch_mode else 144,available)
+		var height=18.0 if touch_mode else 23.0
 		for slot in range(2):
 			var rid=t*2+slot
 			var plate=$ScoreNames.get_node('Name%d'%rid)
 			var label=plate.get_node('Label')
 			label.text=str(participant_names[rid])
-			label.add_theme_font_size_override('font_size',14 if touch_mode else 18)
+			label.add_theme_font_size_override('font_size',11 if touch_mode else 13)
 			plate.tooltip_text=label.text
 			plate.size=Vector2(width,height)
-			plate.position=Vector2(score.end.x+gap if t==0 else score.position.x-gap-width,score.position.y+slot*(height+4))
+			plate.position=Vector2(score.end.x+gap if t==0 else score.position.x-gap-width,score.position.y+(score.size.y-height*2-2)/2+slot*(height+2))
 
 var finish_tween: Tween
 
