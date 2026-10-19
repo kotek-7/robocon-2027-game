@@ -1,31 +1,21 @@
 [gd_scene format=3]
-
-[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
-
+[ext_resource type="Script" path="res://scripts/match_menu.gd" id="layout"]
 [ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
-
 [ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
-
+[ext_resource type="StyleBoxFlat" path="res://resources/ui/match_panel.tres" id="surface"]
 [ext_resource type="PackedScene" path="res://scenes/ui/roster.tscn" id="roster"]
-
-[node name="FoundMenu" type="VBoxContainer"]
-custom_minimum_size = Vector2(320, 0)
+[node name="MatchMenu" type="PanelContainer"]
 theme = ExtResource("desktop")
+theme_override_styles/panel = ExtResource("surface")
 script = ExtResource("layout")
 desktop_theme = ExtResource("desktop")
 mobile_theme = ExtResource("mobile")
-
-[node name="Heading" type="Label" parent="."]
+[node name="Content" type="VBoxContainer" parent="."]
 layout_mode = 2
-text = "MATCH FOUND"
-theme_type_variation = "Heading"
+theme_override_constants/separation = 24
+[node name="Roster" parent="Content" instance=ExtResource("roster")]
+layout_mode = 2
+[node name="Info" type="Label" parent="Content"]
+layout_mode = 2
 horizontal_alignment = 1
-
-[node name="Info" type="Label" parent="."]
-layout_mode = 2
-text = "Player"
-theme_type_variation = "BodyText"
-horizontal_alignment = 1
-
-[node name="Roster" parent="." instance=ExtResource("roster")]
-layout_mode = 2
+theme_override_font_sizes/font_size = 32

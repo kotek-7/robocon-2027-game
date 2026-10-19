@@ -1,72 +1,52 @@
 [gd_scene format=3]
-
-[ext_resource type="Script" path="res://scripts/menu_layout.gd" id="layout"]
-
+[ext_resource type="Script" path="res://scripts/match_menu.gd" id="layout"]
 [ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
-
 [ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
-
+[ext_resource type="StyleBoxFlat" path="res://resources/ui/match_panel.tres" id="surface"]
 [ext_resource type="PackedScene" path="res://scenes/ui/roster.tscn" id="roster"]
-
-[node name="RoomLobbyMenu" type="VBoxContainer"]
-custom_minimum_size = Vector2(320, 0)
+[ext_resource type="Texture2D" path="res://assets/ui/copy.svg" id="copy"]
+[ext_resource type="Texture2D" path="res://assets/ui/leave.svg" id="leave"]
+[node name="MatchMenu" type="PanelContainer"]
 theme = ExtResource("desktop")
+theme_override_styles/panel = ExtResource("surface")
 script = ExtResource("layout")
 desktop_theme = ExtResource("desktop")
 mobile_theme = ExtResource("mobile")
-
-[node name="Heading" type="Label" parent="."]
+[node name="Content" type="VBoxContainer" parent="."]
 layout_mode = 2
-text = "ROOM"
-theme_type_variation = "Heading"
-horizontal_alignment = 1
-
-[node name="Header" type="HBoxContainer" parent="."]
+theme_override_constants/separation = 24
+[node name="Header" type="HBoxContainer" parent="Content"]
 layout_mode = 2
-
-[node name="Code" type="Label" parent="Header"]
+theme_override_constants/separation = 12
+[node name="Code" type="Label" parent="Content/Header"]
 layout_mode = 2
-size_flags_horizontal = 3
 text = "------"
-horizontal_alignment = 1
-theme_type_variation = "Heading"
-
-[node name="Copy" type="Button" parent="Header"]
+theme_override_font_sizes/font_size = 22
+[node name="Copy" type="Button" parent="Content/Header"]
 layout_mode = 2
-custom_minimum_size = Vector2(140, 44)
-theme_override_font_sizes/font_size = 18
-text = "COPY CODE"
-
-[node name="Info" type="Label" parent="."]
-layout_mode = 2
-text = "WAITING"
-theme_type_variation = "BodyText"
-horizontal_alignment = 1
-
-[node name="Roster" parent="." instance=ExtResource("roster")]
-layout_mode = 2
-
-[node name="Actions" type="HBoxContainer" parent="."]
-layout_mode = 2
-
-[node name="Start" type="Button" parent="Actions"]
+custom_minimum_size = Vector2(44, 44)
+icon = ExtResource("copy")
+tooltip_text = "Copy code"
+[node name="Spacer" type="Control" parent="Content/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-custom_minimum_size = Vector2(140, 58)
+[node name="Cancel" type="Button" parent="Content/Header"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 44)
+icon = ExtResource("leave")
+tooltip_text = "Leave"
+[node name="Roster" parent="Content" instance=ExtResource("roster")]
+layout_mode = 2
+[node name="Info" type="Label" parent="Content"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 32
+visible = false
+[node name="Actions" type="CenterContainer" parent="Content"]
+layout_mode = 2
+[node name="Start" type="Button" parent="Content/Actions"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 52)
 text = "START"
 theme_type_variation = &"Accent"
-visible = false
-
-[node name="Waiting" type="Label" parent="Actions"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "WAITING FOR HOST"
-theme_type_variation = "BodyText"
-horizontal_alignment = 1
-visible = false
-
-[node name="Cancel" type="Button" parent="Actions"]
-layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(140, 58)
-text = "LEAVE"
+disabled = true

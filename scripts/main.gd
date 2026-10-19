@@ -30,7 +30,7 @@ var robots: Array=[]
 var items: Array=[]
 var hud: ArenaHUD
 var ui: Control
-var menu: VBoxContainer
+var menu: Control
 var overlay: Control
 var info: Label
 var team=0
@@ -282,24 +282,22 @@ func network_message(d: Dictionary):
 			team=int(d.team);member_seat=int(d.seat)
 			if mode!='online':
 				if d.get('private',false):
-					panel(room_lobby_menu);info=menu.get_node('Info')
-					menu.get_node('Header/Code').text=str(d.room)
-					bind_button('Header/Copy',func():DisplayServer.clipboard_set(net.room_code))
-					bind_button('Actions/Start',func():net.send({'type':'start_room'}))
-					bind_button('Actions/Cancel',show_room_options,'back').grab_focus()
-					menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
+					panel(room_lobby_menu);info=menu.get_node('Content/Info')
+					menu.get_node('Content/Header/Code').text=str(d.room)
+					bind_button('Content/Header/Copy',func():DisplayServer.clipboard_set(net.room_code))
+					bind_button('Content/Actions/Start',func():net.send({'type':'start_room'}))
+					bind_button('Content/Header/Cancel',show_room_options,'back').grab_focus()
+					menu.get_node('Content/Roster').show_members(d.get('members',[]),member_seat)
 					net.send({'type':'ready'})
 				else:
-					panel(found_menu);info=menu.get_node('Info')
-					menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
+					panel(found_menu);info=menu.get_node('Content/Info')
+					menu.get_node('Content/Roster').show_members(d.get('members',[]),member_seat)
 					prepare_auto_match(menu)
 			hud.disconnected=false
 		'lobby':
-			if mode!='online' and is_instance_valid(info) and menu.has_node('Actions/Start'):
-				menu.get_node('Roster').show_members(d.get('members',[]),member_seat)
-				info.text='%dP + %d CPU'%[int(d.count),int(d.capacity)-int(d.count)]
-				menu.get_node('Actions/Start').visible=bool(d.host)
-				menu.get_node('Actions/Waiting').visible=not bool(d.host)
+			if mode!='online' and is_instance_valid(info) and menu.has_node('Content/Actions/Start'):
+				menu.get_node('Content/Roster').show_members(d.get('members',[]),member_seat)
+				menu.get_node('Content/Actions/Start').disabled=not bool(d.host)
 		'ready':
 			if d.started: start('online')
 		'state':
@@ -319,10 +317,10 @@ func prepare_auto_match(matched_menu: Control):
 	# not started yet. A replaced menu invalidates this asynchronous countdown.
 	for seconds in [3,2,1]:
 		if not is_instance_valid(matched_menu) or menu!=matched_menu or mode=='online':return
-		matched_menu.get_node('Info').text='STARTING IN %d'%seconds
+		matched_menu.get_node('Content/Info').text=str(seconds)
 		await get_tree().create_timer(1.0).timeout
 	if not is_instance_valid(matched_menu) or menu!=matched_menu or mode=='online':return
-	matched_menu.get_node('Info').text='WAITING FOR PLAYERS'
+	matched_menu.get_node('Content/Info').text='…'
 	net.send({'type':'ready'})
 
 func start(which: String):
