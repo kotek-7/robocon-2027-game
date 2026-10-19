@@ -39,6 +39,7 @@ func host(f: ArenaField):
 func connect_pool(pool: String):
 	# Keep endpoint as the base URL; reconnect uses the exact selected pool.
 	var base=endpoint.get_slice('?',0)
+	if base.find('/',base.find('://')+3)==-1:base+='/'
 	connect_to(base+'?pool='+pool)
 
 func connect_to(url: String):
