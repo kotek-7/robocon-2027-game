@@ -17,9 +17,9 @@ extends Control
 var match_state: MatchState
 var team=0
 var can_switch=true
-var partner_cpu=false
 var action={}
 var name_tags=[]
+var participant_names=["CPU","CPU","CPU","CPU"]
 var action_screen=Vector2.ZERO
 var title=false
 var menu_open=true
@@ -30,6 +30,7 @@ var disconnected=false
 func update_view():
 	$Desktop.visible=not title and not touch_mode and match_state!=null
 	$Mobile.visible=not title and touch_mode and match_state!=null
+	$ScoreNames.visible=not title and not menu_open and match_state!=null and not match_state.finished
 	$Names.visible=not title and not menu_open and match_state!=null and not match_state.finished
 	if title or not match_state:return
 	var layout=$Mobile if touch_mode else $Desktop
@@ -42,7 +43,6 @@ func update_view():
 	layout.get_node('Cargo/Robot').texture=tr_icon if rid%2==0 else br_icon
 	layout.get_node('Cargo/SwitchKey').visible=can_switch and not touch_mode
 	layout.get_node('Cargo/SwitchKey').text='Y' if using_pad else 'Q'
-	layout.get_node('Cargo/Partner').visible=partner_cpu
 	var selected_slot=posmod(robot.selected,maxi(1,robot.carry.size()))
 	if action.get('type') in ['place','mustika']:selected_slot=robot.carry.find(action.object)
 	for i in range(3):
@@ -82,6 +82,7 @@ func update_view():
 		var duration=robot.job.seconds if robot.job.type=='climb' else .65 if robot.job.type in ['pick','drop','give','return'] else 1.1
 		progress.value=1-robot.left/duration
 	update_names()
+	update_score_names(layout)
 
 func update_names():
 	var used=[]
@@ -99,6 +100,24 @@ func update_names():
 			if rect.intersects(other):rect.position.y=other.position.y-rect.size.y-2
 		if rect.position.x<0 or rect.end.x>size.x or rect.position.y<65:continue
 		used.append(rect);node.position=rect.position;node.visible=true
+
+func update_score_names(layout: Control):
+	var clock=layout.get_node('Clock').get_rect()
+	for t in range(2):
+		var score=layout.get_node('Red' if t==0 else 'Blue').get_rect()
+		var gap=8.0
+		var available=clock.position.x-score.end.x-gap*2 if t==0 else score.position.x-clock.end.x-gap*2
+		var width=minf(220,available)
+		var height=(score.size.y-4)/2
+		for slot in range(2):
+			var rid=t*2+slot
+			var plate=$ScoreNames.get_node('Name%d'%rid)
+			var label=plate.get_node('Label')
+			label.text=str(participant_names[rid])
+			label.add_theme_font_size_override('font_size',14 if touch_mode else 18)
+			plate.tooltip_text=label.text
+			plate.size=Vector2(width,height)
+			plate.position=Vector2(score.end.x+gap if t==0 else score.position.x-gap-width,score.position.y+slot*(height+4))
 
 var finish_tween: Tween
 
