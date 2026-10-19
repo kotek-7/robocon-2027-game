@@ -1,180 +1,124 @@
 # Deployment
 
-Host: `robocon2027.kotek7.com`. GitHub repository: `kotek-7/robocon-2027-game` (private).
-Release through `.github/workflows/deploy.yml` on `main` or manual dispatch. Godot
-and npm dependencies are pinned; Godot archives are SHA-256 verified. Local checks
-and dry-runs do not deploy production.
+Production: https://robocon2027.kotek7.com. Private repository:
+`kotek-7/robocon-2027-game`. Push `main` or dispatch `.github/workflows/deploy.yml`.
 
-## Architecture and API choice
+## Architecture
 
-Browser → Worker `/ws` → `ArenaServer` Durable Object → Container port 8080 →
-Python gateway → authoritative Godot server. Static files use Workers Static Assets.
-CPU/free play runs entirely in the browser.
+Browser → Worker `/ws` → named Cloudflare Tunnel → OCI Osaka A1 Flex → Python
+HTTP/WebSocket gateway → Godot 4.7.2 authoritative server.
+Workers Static Assets still serves the browser game. CPU/free play is local.
 
-`ArenaServer` extends `DurableObject` from `cloudflare:workers` and uses
-`ctx.container` directly. There is no `@cloudflare/containers` dependency or custom
-WebSocket message relay in the Worker. This follows the recommendation for new
-applications in the [Durable Object Container API reference](https://developers.cloudflare.com/containers/api/durable-object-container/).
+The `doshisharobot` tenancy has a dedicated game VM: 1 OCPU, 4 GB RAM, 50 GB boot.
+All automatic queues and private rooms use one process (128 peers / 32 rooms).
+The simulation runs at 60 Hz and sends snapshots at 20 Hz. The game Docker
+container has a 3 GB memory limit; unused scene/UI processing is disabled headlessly.
 
-API and scheduling policy are separate choices. Evaluated as a new service:
+`robocon2027-origin.kotek7.com` routes through tunnel `robocon-2027-game` to
+VM loopback port 8080. No public game port or public SSH tunnel is configured.
+The Worker injects `X-Arena-Key` from its `GAME_ORIGIN_KEY` secret; the gateway
+requires the same lowercase hex secret from `/etc/robocon/game.env`. Requests
+without that key fail with 403. Never put it in browser exports or source control.
+Worker Origin/method/pool validation remains in front of the server. Native clients
+can omit Origin; this check is not user authentication.
 
-| Choice | Reason |
-| --- | --- |
-| Direct Durable Object Container API | Explicit readiness and lifecycle using the platform API |
-| `default` scheduling policy | All game servers use the same image and size; Cloudflare manages image rollouts |
-| One named DO, `max_instances: 1` | `casual-v2` handles automatic 1v1, automatic 2v2, private rooms and reconnects |
-| Custom 1 vCPU / 3072 MiB / 4000 MB | Four times the former basic CPU ceiling, with less provisioned memory/disk than standard-2 |
-| APAC placement | Bounds placement to Asia Pacific; not a guarantee of a specific city or RTT |
-| SQLite class export | Supported DO namespace backend; not a persistence layer for Godot matches |
+`/health` checks the actual OCI process through the authenticated tunnel, with a
+5-second timeout, no caching, and 503 on failure. `/index.wasm` preserves the gzip
+representation and conditional requests, but strips Range requests. All other
+assets are served directly. Keep the gzip Wasm below the 25 MiB static asset limit.
 
-The official [policy selection guide](https://developers.cloudflare.com/containers/configuration/scheduling-policy/)
-assigns `default` to same-image/same-size services. The beta `durable_object` policy
-is for per-instance image/size selection, such as sandboxes. It removes managed
-application rollouts and `max_instances`; this game does not need those per-instance
-choices. `default` is selected for the workload, not to avoid migration.
+The old Cloudflare Container application was deleted after cutover; CLI readback
+returned `No containers found`. There is no ARENA binding or container start path.
+An inert `ArenaServer` export remains for the existing declarative DO namespace:
+Cloudflare rejected removing the class and rejected reverting it to legacy
+migrations. It returns 410 and clears any old alarm, and production does not route
+to it. Match data never lived in that namespace; it is not a running game server.
 
-## Startup, sockets and shutdown
+## Release
 
-- Concurrent requests share one startup/readiness promise. Allocation and HTTP
-  readiness failures retry within a 30-second loop, with 1-second probe timeouts.
-  The gateway must return a successful `/health` response; an open port alone is
-  insufficient. Probe bodies are cancelled. A failed attempt releases the promise
-  so a later request can recover.
-- Requests are forwarded with an internal HTTP host and preserved path/query and
-  Origin. The port's response is returned directly, retaining the WebSocket upgrade,
-  following the [official forwarding example](https://developers.cloudflare.com/containers/examples/websocket/).
-  Forwarding failures return non-cacheable 503 responses and are not automatically
-  replayed. Startup is shared independently of one caller's cancellation.
-- `start({ enableInternet: false })` uses the image/size in Wrangler. There is no
-  outbound Internet requirement for the game server.
-- `setInactivityTimeout(60000)` is set during startup and restored in the constructor
-  if a Container survives DO reconstruction. The timer applies after the DO becomes
-  inactive; an open WebSocket can keep it active. It is not a one-minute match limit.
-  No recurring polling alarm or lifetime `monitor()` promise is installed.
-- The previous helper's persisted sleep alarm is deleted in the constructor. No
-  application data is deleted. This implementation does not schedule DO alarms.
-- The Python gateway listens only after Godot is accepting connections. It parses
-  bounded HTTP headers, serves `/health`, accepts `/ws` (`/` for local test clients),
-  and closes both relay directions when either side ends. It handles SIGTERM even
-  during startup, reaps the child on failure, and kills it if termination exceeds
-  five seconds. Unexpected child exit fails the supervisor.
+1. GitHub-hosted Ubuntu validates Worker/gateway behavior, Godot rules and scenes,
+   matchmaking/reconnects, the Docker image, Web export and Worker types/dry-run.
+2. Web artifacts are retained for one day. The private repository's dedicated
+   `robocon-oci` ARM64 runner checks out the same commit after validation succeeds.
+   Only the trusted main branch has a deployment job; do not run pull-request or
+   untrusted workflows on this runner. It has Docker access on the game VM.
+3. `infra/oci/deploy.sh` builds native ARM64 with 768 MB / half-core build limits.
+   It starts a candidate on loopback 18080, checks readiness, then replaces the
+   process on 8080. On failed readiness it restores the previous container.
+4. A GitHub-hosted publish job deploys the Worker/assets with repository secret
+   `CLOUDFLARE_API_TOKEN`, compares public decompressed Wasm with the build, and
+   checks the public WSS protocol without occupying a matchmaking seat.
 
-The platform sends SIGTERM during shutdown/rollout; see
-[Container lifecycle](https://developers.cloudflare.com/containers/concepts/architecture/).
-This is bounded cleanup, **not match draining**. Each container has at most 128 peers and
-32 rooms; matches, queues, room codes and reconnect tokens reside in Godot memory.
-Container replacement loses them. No DO storage, filesystem snapshot or R2 write
-currently persists them. Profile preferences remain local to the browser.
+The runner uses outbound GitHub connections; no CI SSH keys or OCI API credentials
+are stored in GitHub. Runner auto-updates are enabled. Service:
+`actions.runner.kotek-7-robocon-2027-game.robocon-oci.service`.
 
-## Assets and HTTP boundaries
+Replacement **resets in-memory matches and reconnect tokens**. Candidate readiness
+and rollback do not make active matches persistent, and frontend/backend releases
+are not atomic. Keep adjacent protocol versions compatible when changing them.
+Perform disruptive deployments when players can tolerate a reconnect/new match.
 
-Only `/ws`, `/health` and `/index.wasm` run Worker code before asset lookup. The
-packager clears its output and validates the 25 MiB individual asset limit.
-Wasm is stored gzip-compressed; the Worker sets the representation headers and
-`encodeBody: "manual"`. Conditional requests retain their status/ETag, while byte
-ranges are removed so partial gzip files are never presented as complete Wasm.
-Workers negotiates response encoding with the client.
+## Operations and rollback
 
-Worker `/health` is non-cacheable liveness, not backend readiness. HEAD returns
-no body. Unsupported methods are rejected before touching bindings. Browser
-WebSocket requests with a foreign Origin are rejected. Origin checking does not
-provide authentication; native clients can omit it. Static HTML/JS/PCK revalidate.
+See [OCI setup](../infra/oci/README.md) for resource provisioning and SSH access.
+The gateway and tunnel use Docker `unless-stopped` restart policies and bounded
+logs. An unexpected Godot exit terminates the supervisor so Docker can restart it.
 
-References: [asset routing](https://developers.cloudflare.com/workers/static-assets/routing/worker-script/),
-[headers](https://developers.cloudflare.com/workers/static-assets/headers/),
-[asset limits](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/),
-[Response API](https://developers.cloudflare.com/workers/runtime-apis/response/).
+Check `docker ps`, `docker stats --no-stream`, disk space and the public `/health`.
+Run manual releases as `arena-runner` too (not root), so the deployment lock is
+shared with CI and retains the same owner. Previous image/container state is
+retained by the deployment script. To restore
+it, stop/remove the current game container, rename `robocon-2027-game-previous`
+to `robocon-2027-game`, then start it; verify public health and WSS. Restore a
+compatible Web release through CD if its protocol changed. Do not recreate the
+old Cloudflare Container as an automatic fallback.
 
-## Configuration and release
+Periodically remove obsolete **game** image tags/build cache after checking the
+current and previous image IDs. Do not delete the current or rollback image.
+Credentials remain outside the repository. Reprovision the named tunnel and runner
+if restoring a lost VM; the provisioner creates compute/networking only.
 
-`wrangler.jsonc` is the deployment source of truth. The compatibility date is
-`2026-10-19`; source maps and observability are enabled. Only the custom domain is
-published (`workers_dev` and `preview_urls` disabled). Generated runtime/binding
-types are ignored and regenerated for strict JS typechecking. Secrets belong in
-GitHub's `CLOUDFLARE_API_TOKEN` secret or ignored local `.dev.vars`, never source.
-The deployment token needs account/container/Worker and custom-domain permissions.
+## Cutover verification — 2026-10-19
 
-The `ArenaServer` class, namespace and binding stay stable. Changing its base class
-does not require a DO migration; see the [API replacement guide](https://developers.cloudflare.com/containers/guides/migrate-to-durable-object-container-api/).
-SQLite is declared through `exports`; do not mix it with legacy `migrations`.
-See [class exports](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/).
+Chrome also loaded the production Web export, created a private room and started
+a match on the OCI backend without console errors. Public WSS private-room checks passed for 1v1 (2 humans) and 2v2 (4 humans), with
+movement, game snapshots and token-based reconnect. Thirty application-level
+rejection responses measured median **16.65 ms**, p95 **17.83 ms**, maximum
+**17.83 ms** from the operator's connection. Median snapshot intervals were
+49.96 / 49.88 ms. This is a small live sample, not a capacity or geographic SLA.
+The earlier Cloudflare public sample had median 314 ms; it was collected at a
+different time, not as a controlled simultaneous benchmark. WebSocket ping alone
+measures the edge, so it is not the latency metric used here.
 
-CI validates Worker and gateway behavior, game rules and networking, exports the
-Web game, checks Worker types/bundling, builds/runs the Docker image, and runs
-`wrangler dev` with `tests/container_runtime.py`. The latter exercises concurrent
-cold upgrades and a private game through the actual Worker → DO → Container path.
-Only then does CD deploy. Post-deploy checks compare decompressed public Wasm bytes
-and exercise the Godot protocol over the public WebSocket without joining a queue.
+Reproduce safely without entering public queues:
 
-[Deployment](https://developers.cloudflare.com/containers/guides/deploy/) activates
-Worker code before processing the image and is not transactional. Successful deploy
-means a rollout started, not that every instance replaced. The [rollout grace period](https://developers.cloudflare.com/containers/configuration/rollouts/)
-is based on Container/DO connection age, not game age; it cannot guarantee ongoing
-matches finish. The current smoke test proves backend reachability, not the image
-revision. Keep Worker/container protocol changes compatible across that interval.
+```sh
+python3 tests/deployment_smoke.py wss://robocon2027.kotek7.com/ws
+python3 tests/production_rooms.py wss://robocon2027.kotek7.com/ws
+```
 
-## Validation status — 2026-10-19
+The complete [CI run 39266482274](https://github.com/kotek-7/robocon-2027-game/actions/runs/39266482274)
+passed validation, native OCI deployment and public asset/protocol verification.
+The running image revision was read back as `ef26246865aa1deb112d9defff9c3e778db10088`,
+with zero restarts and no OOM. Its first deployment attempt exposed a root-owned
+lock from manual validation; ownership was corrected to `arena-runner`, then the
+failed deployment/publish jobs were successfully retried using the validated build.
 
-Passed locally: 19 Worker/direct-API tests using mocked platform bindings, generated
-types and strict JS checking, and Wrangler dry-run (4.64 KiB Worker bundle).
-The preceding gateway changes passed five real TCP/process tests and real Godot
-matchmaking/private-room/reconnection/2v2/CPU-partner suites. Wasm gzip/identity,
-HEAD, Range and conditional responses were checked with local workerd. The new
-integration script also passed against the local Python gateway and real Godot;
-that run validates the script/game interaction, not the direct API runtime.
+## Cost
 
-The replacement direct API's actual Container integration and platform inactivity
-behavior are **not yet verified**: Docker Desktop's socket is absent and the system
-Docker socket is inaccessible to this user. The new Wrangler integration step is
-configured in CI but has not been run here. No production deployment was performed.
+New VM plus existing Outline allocation: 2 OCPUs / 10 GB RAM / 100 GB boot storage.
+For 31 days: 1,488 OCPU-hours and 7,440 GB-hours. This fits even the smaller
+published 1,500 / 9,000 A1 monthly allowance, assuming no other current-month usage.
+Boot/block volumes share a 200 GB home-region allowance. No extra data disk,
+load balancer, paid tunnel plan or VM was added for deployment.
 
+OCI's covered compute/storage is therefore expected to be $0 incremental within
+those allowances. Billing has not been audited: previous resources, backups,
+network usage and taxes can change the bill. Existing Workers Paid base charges
+and any other Cloudflare usage remain; deleting the Container does not cancel the
+account-wide Workers plan. Always Free idle reclaim/capacity constraints remain.
 
-## Single-container routing and cost envelope
-
-All clients use the same `casual-v2` DO and one on-demand Container. The mode
-query values `1v1`, `2v2`, and `room` remain accepted for client compatibility;
-the query-less endpoint reaches the same process. Unknown values are rejected.
-Automatic formats remain separate queues inside Godot, and public matchmaking
-never fills private rooms. Reconnects and private room codes stay in that process.
-There is no per-mode Container allocation or periodic warm-up.
-
-The Worker supplies an APAC DO location hint. Hints apply on initial creation and
-do not relocate the existing `casual-v2` DO; APAC Container placement constraints
-apply independently. One Container supports at most 128 connections and 32 rooms
-across all modes. The CPU upgrade and short inactivity timeout are retained.
-
-The server caps idle processing at 60 FPS and disables presentation children
-(stadium animation, UI and effects); authoritative physics remains 60 Hz and
-snapshots remain 20 Hz. `--headless` alone did not disable those scripts.
-
-Using the [2026-10-19 published rates](https://developers.cloudflare.com/containers/platform/pricing/),
-per running container-hour: memory $0.027 + disk $0.001008 + CPU $0–$0.072
-(actual CPU consumption). At 10% CPU this is $0.035208/h; at 100% $0.100008/h.
-One container running two hours daily for 30 days costs about **$1.41–$5.28**
-at 10–100% CPU utilization after the full monthly included allowances (25 GiB-hours
-memory, 375 vCPU-minutes, 200 GB-hours disk). Continuous operation for 30 days is
-about **$24.62–$71.28** after those allowances. These are Container compute estimates,
-not total bills: add the Workers plan ($5/month), applicable Worker/DO/logs/network
-charges and taxes. Allowances are shared and assume no other Container consumes them.
-Idle timeout/startup time counts as running time. Open sockets can keep the Container
-alive; the instance count is a concurrency cap, not a spending cap.
-
-Before this change, a short production private match with two humans and two CPU
-partners delivered 160 snapshots at median 48.85 ms, p95 57.04 ms, maximum 60.66 ms,
-with simulated time/wall time 1.0001. This did not reproduce the reported lag and
-does not prove CPU starvation or client rendering performance. Scaling therefore
-adds headroom; it is not a verified cure for every source of perceived latency.
-
-A separate 20-request application-level probe (invalid queue protocol, no queue
-seat allocated) measured median 314.41 ms / maximum 633.83 ms round trip to Godot.
-WebSocket control ping alone measured 5.53 ms median and does not measure the full
-application path. This points to backend placement/routing as another candidate
-cause; it is not proof that additional CPU alone fixes the reported experience.
-
-Previous local validation before consolidating to one Container: 23 Worker/Container unit tests; strict
-Worker types and Wrangler dry-run; 69 competition checks; scene mapping; actual
-client upgrade request paths for all three pools; server-only processing; and real
-Godot matchmaking, private rooms, 1v1, 2v2 and CPU-partner/reconnect/forfeit suites
-passed. The scene suite still emits resource-leak warnings at shutdown. Docker
-remains unavailable locally, so actual Container integration and post-release
-latency comparison remain pending CI/deployment.
+References: [OCI Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm),
+[OCI pricing](https://www.oracle.com/cloud/price-list/),
+[boot volume minimum](https://docs.oracle.com/en-us/iaas/Content/Block/Concepts/bootvolumes.htm),
+[Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/get-started/).

@@ -7,8 +7,8 @@ home region (`ap-osaka-1`). It does not share the Outline VM or its VCN.
 - One Godot process, with automatic 1v1/2v2 queues and private rooms.
 - Dedicated VCN `10.43.0.0/16`, subnet `10.43.1.0/24`.
 - SSH is allowed only from the administration address supplied at provisioning.
-- The game gateway binds to VM loopback; no public game port is opened yet.
-- Cloudflare remains the production backend until a separately verified cutover.
+- The game gateway binds to VM loopback; a named Cloudflare Tunnel publishes it.
+- OCI is the production backend; Cloudflare retains Worker routing/static assets.
 
 ## Provision
 
@@ -35,8 +35,8 @@ Wait for the VM to reach RUNNING, obtain its VNIC public IP, then connect as
 
 Copy only Dockerfile, .dockerignore, project.godot, main.tscn, icon.svg,
 default_bus_layout.tres, scripts/, assets/, scenes/, resources/, and
-cloudflare/server.py into `/opt/robocon-2027-game`. No API keys, repository tokens
-or local environment files belong on the VM.
+cloudflare/server.py into `/opt/robocon-2027-game`. Do not include local API keys, repository tokens or environment files in that
+source copy or Docker image. Provision runtime secrets separately as described below.
 
 Build on the ARM64 VM:
 
@@ -44,30 +44,43 @@ Build on the ARM64 VM:
 cd /opt/robocon-2027-game
 sudo docker build --build-arg TARGETARCH=arm64 -t robocon-2027-game:oci .
 sudo docker run -d --name robocon-2027-game --restart unless-stopped \
+  --env-file /etc/robocon/game.env \
   --memory 3g --pids-limit 256 --cap-drop ALL --security-opt no-new-privileges \
   --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
   -p 127.0.0.1:8080:8080 robocon-2027-game:oci
-curl --fail http://127.0.0.1:8080/health
+sudo docker exec robocon-2027-game python3 -c 'import os,urllib.request; r=urllib.request.Request("http://127.0.0.1:8080/health",headers={"X-Arena-Key":os.environ["GAME_ORIGIN_KEY"]}); print(urllib.request.urlopen(r).status)'
 ```
 
 The image verifies architecture-specific Godot SHA-256 checksums. CPU is available
 to the single server; the memory cap leaves approximately 1 GB for Ubuntu/Docker.
 The restart policy handles reboot/process failures. It does not preserve matches.
 
-For the existing local network tests, forward a free local port:
+## Production tunnel and deployment
 
-```sh
-ssh -N -L 127.0.0.1:9080:127.0.0.1:8080 -i ~/.ssh/robocon_2027_oci ubuntu@VM_IP
-python3 tests/matchmaking.py
-python3 tests/private_rooms.py
-python3 tests/network.py
-python3 tests/teams_network.py
-python3 tests/partners_network.py
-```
+Named tunnel `robocon-2027-game` (`23ce6c6a-1180-48ac-b554-72a93beccf8f`)
+serves `robocon2027-origin.kotek7.com` → `http://localhost:8080`, with a final
+`http_status:404` catch-all. The proxied CNAME targets that UUID's
+`.cfargotunnel.com` host. The `robocon-cloudflared` Docker container runs pinned
+`cloudflare/cloudflared:2026.8.2` with host networking, 192 MB memory and bounded
+logs. Its connector token is in root-only `/etc/robocon/tunnel.env`.
 
-These tests use the real ARM64 game server via SSH, not a production WSS route.
-Check CPU, memory, restart count and game latency before publishing a TLS endpoint.
-Cloudflare's public routing and GitHub CD still target Cloudflare Containers.
+Generate a 32-byte lowercase hex `GAME_ORIGIN_KEY` outside Git; store it as the
+Worker secret and in `/etc/robocon/game.env` (root:arena-runner, 0640). Directory
+`/etc/robocon` is 0750; the tunnel token remains 0600. The origin refuses unkeyed
+requests. Do not expose secrets in test command lines, logs or browser exports.
+
+The `arena-runner` Unix account runs the private repository's GitHub runner in
+`/opt/arena-runner`, with Docker group access. Register a Linux ARM64 runner using
+a short-lived GitHub registration token and label `robocon-oci`, install its
+systemd service, and leave automatic updates enabled. Restrict workflow execution
+to trusted main-branch deployment; never run untrusted PR jobs on this host.
+It builds/deploys only after hosted validation; Worker credentials stay in the
+hosted publish job. `infra/oci/deploy.sh COMMIT_SHA` is the release/rollback script.
+
+Use `tests/production_rooms.py wss://robocon2027.kotek7.com/ws` for isolated live
+checks. The older suites on port 9080 require a separate local test server without
+the production origin key; do not point their public-matchmaking tests at production.
+See [release operations](../../docs/deployment.md) for lifecycle and rollback.
 
 ## Cost and lifecycle
 
@@ -108,5 +121,6 @@ automatic matchmaking, private rooms (1–4 humans), authoritative 1v1, fixed-se
 2v2, and CPU partners. These include cancellation, robot switching, reconnects
 and the 30-second disconnect forfeit.
 
-Public TLS routing, browser play through that routing, and CI deployment to OCI
-remain separate cutover work. The SSH tunnel used for validation is temporary.
+The subsequent public cutover and measured WSS checks are recorded in
+[deployment verification](../../docs/deployment.md). The original SSH test tunnel
+was temporary and has been closed.

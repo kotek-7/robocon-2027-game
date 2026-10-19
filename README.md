@@ -48,13 +48,11 @@ The title’s name button edits the saved nickname and BGM/SE volume. A random n
 
 Production target: `https://robocon2027.kotek7.com`.
 
-Push to `main` to run `.github/workflows/deploy.yml`: competition and matchmaking checks, pinned Godot Web export, asset packaging, Cloudflare deployment and public artifact verification. The repository secret `CLOUDFLARE_API_TOKEN` authenticates deployment. Application deployment is performed by CD.
+Push to `main` to run `.github/workflows/deploy.yml`: validate the game and Web export, deploy the ARM64 server on OCI, then publish Cloudflare assets and verify public WSS/Wasm. The repository secret `CLOUDFLARE_API_TOKEN` authenticates Worker deployment.
 
-Cloudflare Workers serves the game and forwards `/ws` through the direct Durable Object Container API to one on-demand Godot container. Startup waits for HTTP readiness; WebSocket responses pass through directly. The `default` scheduling policy manages the shared service image and its rollouts. The same host supplies HTTPS and WSS; players do not enter an endpoint. Automatic 1v1, automatic 2v2 and private rooms share the same container; reconnects retain that route. The container has bounded queues and 32 simultaneous matches in total. It uses 1 vCPU, 3 GiB memory and 4 GB disk in APAC, and sleeps after 60 seconds of inactivity. In-memory matches are lost when the server process is replaced. Browser WebAssembly is served with gzip encoding to stay below the individual static asset limit.
+Cloudflare Workers serves the browser game and forwards `/ws` through an authenticated named Tunnel to one Godot server on OCI Osaka (`doshisharobot`, A1 Flex, 1 OCPU / 4 GB RAM / 50 GB boot). Automatic 1v1, 2v2 and private rooms share that process. The same host supplies HTTPS and WSS; players do not enter an endpoint. There are at most 128 connections and 32 rooms. In-memory matches are lost when the server process is replaced. The former Cloudflare Container application has been deleted. Browser WebAssembly remains gzip-encoded to fit the static asset limit.
 
-See [deployment configuration](docs/deployment.md) for infrastructure and credentials.
-
-An isolated ARM64 game server has also been provisioned on OCI A1 Flex for migration validation. Production routing and CD still use Cloudflare Containers. See [OCI setup and validation](infra/oci/README.md).
+See [deployment and rollback](docs/deployment.md) and [OCI setup](infra/oci/README.md).
 
 ## Checks
 
