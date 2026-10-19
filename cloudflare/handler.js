@@ -1,4 +1,5 @@
 export default {
+	/** @param {Request} request @param {Env} env */
 	async fetch(request, env) {
 		const url = new URL(request.url);
 		if (url.pathname === "/health")

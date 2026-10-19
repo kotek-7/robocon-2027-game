@@ -12,7 +12,7 @@ Durable Object `ArenaServer` routes to one `basic` Cloudflare Container. The con
 
 The initial service has a single shared matchmaking pool, up to 32 concurrent matches and 128 connected peers. There is no skill ranking or geographic pool splitting. Container replacement interrupts current matches; match persistence and draining across deployments are not implemented.
 
-`wrangler.jsonc` explicitly disables `workers.dev` and version URLs so releases use the custom domain. Version URLs are currently unsupported for Workers that implement Durable Objects/Containers; `preview_urls: false` also records the intended policy. Source-map uploads are enabled for readable Worker exception stacks. The `default` Container scheduling policy is explicit. The validated compatibility date remains `2026-10-15`; updating Wrangler does not require moving that runtime behavior boundary.
+`wrangler.jsonc` explicitly disables `workers.dev` and version URLs so releases use the custom domain. Version URLs are currently unsupported for Workers that implement Durable Objects/Containers; `preview_urls: false` also records the intended policy. Source-map uploads are enabled for readable Worker exception stacks. The `default` Container scheduling policy is explicit. The compatibility date is `2026-10-19` with `nodejs_compat`, following the current [Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/).
 
 References: [workers.dev routing](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [version URLs](https://developers.cloudflare.com/workers/versions-and-deployments/version-urls/), [source maps](https://developers.cloudflare.com/workers/observability/source-maps/).
 
@@ -22,6 +22,8 @@ GitHub Actions uses the repository secret `CLOUDFLARE_API_TOKEN`. The token need
 
 ## Verification
 
+`npm run check:worker` generates binding/runtime types with `wrangler types`, type-checks the JavaScript handlers against them, then bundles a dry-run deployment. The generated declaration is ignored by Git and regenerated in CI; after changing bindings, run `npm run typecheck:worker`. Local `.dev.vars*` and `.env*` secrets are ignored.
+
 CD runs rule boundary tests and real WebSocket matching/reconnection checks before export. After deployment it checks `/health` and compares the publicly served, decompressed WebAssembly with the built file. `/health` reports Worker availability; two-client matching separately verifies the container backend.
 
 Infrastructure references: [Cloudflare Containers](https://developers.cloudflare.com/containers/get-started/), [WebSocket forwarding](https://developers.cloudflare.com/containers/examples/websocket/), [static asset limits](https://developers.cloudflare.com/workers/platform/limits/).
@@ -30,7 +32,8 @@ Infrastructure references: [Cloudflare Containers](https://developers.cloudflare
 
 Reviewed the Worker, Containers binding/lifecycle, Docker build inputs, static asset packaging and CD against current official documentation.
 
-- Keep `ArenaServer`, the `v1` SQLite migration and the `casual-v2` object name stable. Existing `migrations` configurations remain supported; do not combine them with the newer `exports` declaration. The current `Container` helper uses the default scheduling policy. Switching to `durable_object` requires a separate lifecycle implementation and migration, not just a configuration flag. See [Wrangler configuration](https://developers.cloudflare.com/containers/configuration/wrangler/) and [Container class](https://developers.cloudflare.com/containers/api/container-class/).
+- `ArenaServer` is declared in `exports` with SQLite storage, replacing the historical `v1` / `new_sqlite_classes` declaration. Class name, storage backend, binding and `casual-v2` object name stay the same, so the documented migration adopts the existing namespace. Do not add `migrations` alongside `exports`. After the first deployment with `exports`, future deploys cannot use the old migration-array configuration; a source rollback must retain `exports`. See [class export migration](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/#migrate-from-the-legacy-migrations-flow).
+- Keep the `default` Container scheduling policy: the official [selection guide](https://developers.cloudflare.com/containers/configuration/scheduling-policy/) assigns it to services sharing one image and instance size. The beta `durable_object` policy is intended for per-instance configuration, and adopting it requires a replacement application/namespace. It is not a routine upgrade for this matchmaking service.
 - `sleepAfter` is inactivity time, not a maximum match duration. The pinned helper tracks active WebSockets and renews activity. Keep the shared instance limit of one to preserve the single matchmaking pool.
 - Docker must copy `scenes/`, `resources/` and `default_bus_layout.tres` as well as scripts/assets: even headless startup loads the main scene and its resources before entering server mode.
 - CDN packaging rebuilds its output directory and checks the 25 MiB per-file limit explicitly. HTML revalidates at both `/` and `/index.html`. CI clears the Web export before packaging. See [asset limits](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/) and [asset headers](https://developers.cloudflare.com/workers/static-assets/headers/).

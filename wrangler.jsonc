@@ -2,7 +2,8 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "robocon-2027-game",
 	"main": "cloudflare/worker.js",
-	"compatibility_date": "2026-10-15",
+	"compatibility_date": "2026-10-19",
+	"compatibility_flags": ["nodejs_compat"],
 	"upload_source_maps": true,
 	"account_id": "769b391d51df077598b7d91579605fe2",
 	// Production is served only on the custom domain.
@@ -29,7 +30,9 @@
 	"durable_objects": {
 		"bindings": [{ "name": "ARENA", "class_name": "ArenaServer" }]
 	},
-	// Preserve the deployed namespace migration history.
-	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["ArenaServer"] }],
+	// Adopt the existing SQLite namespace without renaming or recreating it.
+	"exports": {
+		"ArenaServer": { "type": "durable-object", "storage": "sqlite" }
+	},
 	"observability": { "enabled": true }
 }

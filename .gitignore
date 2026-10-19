@@ -9,3 +9,7 @@ node_modules/
 *.pem
 *.key
 rulebook/
+
+# Local Wrangler secrets and generated runtime/binding declarations
+.dev.vars*
+/cloudflare/worker-configuration.d.ts

@@ -4,13 +4,17 @@
 	"type": "module",
 	"scripts": {
 		"test:worker": "node --test tests/worker.test.js",
-		"check:worker": "wrangler deploy --dry-run --containers-rollout=none --outdir build/worker",
-		"deploy": "wrangler deploy"
+		"check:worker": "npm run typecheck:worker && wrangler deploy --dry-run --containers-rollout=none --outdir build/worker",
+		"deploy": "wrangler deploy",
+		"types:worker": "wrangler types cloudflare/worker-configuration.d.ts",
+		"typecheck:worker": "npm run types:worker && tsc -p cloudflare/tsconfig.json"
 	},
 	"dependencies": {
 		"@cloudflare/containers": "0.3.7"
 	},
 	"devDependencies": {
+		"@types/node": "24.19.2",
+		"typescript": "7.0.2",
 		"wrangler": "4.151.1"
 	}
 }
