@@ -145,7 +145,13 @@ func _physics_process(dt):
 				if peers.has(id): emit_to(id,packet)
 
 func emit_to(id: int, data: Dictionary):
-	if peers.has(id) and peers[id].ws.get_ready_state()==WebSocketPeer.STATE_OPEN: peers[id].ws.send_text(JSON.stringify(data))
+	if not peers.has(id):return
+	var ws: WebSocketPeer=peers[id].ws
+	if ws.get_ready_state()!=WebSocketPeer.STATE_OPEN:return
+	# Snapshots are replaceable; do not fill a slow peer's buffer with stale state.
+	# Queue/lobby/control messages still retain their ordered delivery.
+	if data.get('type')=='state' and ws.get_current_outbound_buffered_amount()>0:return
+	ws.send_text(JSON.stringify(data))
 
 func handle(id: int, d: Dictionary):
 	var p=peers[id]
