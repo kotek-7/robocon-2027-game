@@ -146,11 +146,11 @@ test("health is not cacheable and HEAD has no body", async () => {
 });
 
 for (const [pool, name] of [
-	["1v1", "auto-1v1"],
-	["2v2", "auto-2v2"],
+	["1v1", "casual-v2"],
+	["2v2", "casual-v2"],
 	["room", "casual-v2"],
 ]) {
-	test(`${pool} opponents and reconnects use a stable APAC identity`, async () => {
+	test(`${pool} opponents and reconnects use the single shared APAC identity`, async () => {
 		const identities = [];
 		const env = {
 			ARENA: {

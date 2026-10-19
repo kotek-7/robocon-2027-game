@@ -22,7 +22,7 @@ API and scheduling policy are separate choices. Evaluated as a new service:
 | --- | --- |
 | Direct Durable Object Container API | Explicit readiness and lifecycle using the platform API |
 | `default` scheduling policy | All game servers use the same image and size; Cloudflare manages image rollouts |
-| Three named DOs, `max_instances: 3` | `auto-1v1`, `auto-2v2`, `casual-v2` (private/legacy) keep opponents and reconnects together |
+| One named DO, `max_instances: 1` | `casual-v2` handles automatic 1v1, automatic 2v2, private rooms and reconnects |
 | Custom 1 vCPU / 3072 MiB / 4000 MB | Four times the former basic CPU ceiling, with less provisioned memory/disk than standard-2 |
 | APAC placement | Bounds placement to Asia Pacific; not a guarantee of a specific city or RTT |
 | SQLite class export | Supported DO namespace backend; not a persistence layer for Godot matches |
@@ -129,24 +129,19 @@ Docker socket is inaccessible to this user. The new Wrangler integration step is
 configured in CI but has not been run here. No production deployment was performed.
 
 
-## Three-pool routing and cost envelope
+## Single-container routing and cost envelope
 
-The client chooses `/ws?pool=1v1`, `2v2`, or `room` before opening the socket.
-The Worker accepts only these three values, maps them to fixed DO names and uses
-an APAC DO location hint. Hints apply on initial DO creation; they do not relocate
-the existing `casual-v2` DO. Container placement constraints apply independently.
-The client retains the exact URL during reconnection.
-Private hosts and guests share `casual-v2`, preserving six-character room codes.
-The query-less legacy endpoint also goes there. Already-open old clients must
-reload to participate in the new automatic pools; legacy automatic clients only
-see each other. There is no random per-socket routing, queue fragmentation within
-a current-client format, additional coordinator DO, or periodic warm-up.
+All clients use the same `casual-v2` DO and one on-demand Container. The mode
+query values `1v1`, `2v2`, and `room` remain accepted for client compatibility;
+the query-less endpoint reaches the same process. Unknown values are rejected.
+Automatic formats remain separate queues inside Godot, and public matchmaking
+never fills private rooms. Reconnects and private room codes stay in that process.
+There is no per-mode Container allocation or periodic warm-up.
 
-This is **mode partitioning**, not even distribution or load-based autoscaling.
-A surge of only 1v1 players still uses one container. Moving individual matches
-across three servers would require a shared matchmaker and explicit handoff; simply
-using `getRandom` would strand players and break reconnections. See the official
-[scaling guide](https://developers.cloudflare.com/containers/configuration/scaling-and-routing/).
+The Worker supplies an APAC DO location hint. Hints apply on initial creation and
+do not relocate the existing `casual-v2` DO; APAC Container placement constraints
+apply independently. One Container supports at most 128 connections and 32 rooms
+across all modes. The CPU upgrade and short inactivity timeout are retained.
 
 The server caps idle processing at 60 FPS and disables presentation children
 (stadium animation, UI and effects); authoritative physics remains 60 Hz and
@@ -155,13 +150,14 @@ snapshots remain 20 Hz. `--headless` alone did not disable those scripts.
 Using the [2026-10-19 published rates](https://developers.cloudflare.com/containers/platform/pricing/),
 per running container-hour: memory $0.027 + disk $0.001008 + CPU $0–$0.072
 (actual CPU consumption). At 10% CPU this is $0.035208/h; at 100% $0.100008/h.
-Three containers each running two hours daily for 30 days are about **$6.34–$18.00**
-at those utilization levels. Three running continuously for 30 days are about
-**$76.05–$216.02**. These are Container compute estimates before included usage,
+One container running two hours daily for 30 days costs about **$1.41–$5.28**
+at 10–100% CPU utilization after the full monthly included allowances (25 GiB-hours
+memory, 375 vCPU-minutes, 200 GB-hours disk). Continuous operation for 30 days is
+about **$24.62–$71.28** after those allowances. These are Container compute estimates,
 not total bills: add the Workers plan ($5/month), applicable Worker/DO/logs/network
-charges and taxes. Idle timeout/startup time counts as running time. Open sockets
-can keep a container alive; the instance count is a concurrency cap, not a spending
-cap. A larger standard-2 would double provisioned memory to 6 GiB without adding CPU.
+charges and taxes. Allowances are shared and assume no other Container consumes them.
+Idle timeout/startup time counts as running time. Open sockets can keep the Container
+alive; the instance count is a concurrency cap, not a spending cap.
 
 Before this change, a short production private match with two humans and two CPU
 partners delivered 160 snapshots at median 48.85 ms, p95 57.04 ms, maximum 60.66 ms,
@@ -175,10 +171,10 @@ WebSocket control ping alone measured 5.53 ms median and does not measure the fu
 application path. This points to backend placement/routing as another candidate
 cause; it is not proof that additional CPU alone fixes the reported experience.
 
-Local validation of the three-pool change: 23 Worker/Container unit tests; strict
+Previous local validation before consolidating to one Container: 23 Worker/Container unit tests; strict
 Worker types and Wrangler dry-run; 69 competition checks; scene mapping; actual
 client upgrade request paths for all three pools; server-only processing; and real
 Godot matchmaking, private rooms, 1v1, 2v2 and CPU-partner/reconnect/forfeit suites
 passed. The scene suite still emits resource-leak warnings at shutdown. Docker
-remains unavailable locally, so actual three-Container integration and post-release
+remains unavailable locally, so actual Container integration and post-release
 latency comparison remain pending CI/deployment.
