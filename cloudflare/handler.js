@@ -2,11 +2,30 @@ export default {
 	/** @param {Request} request @param {Env} env */
 	async fetch(request, env) {
 		const url = new URL(request.url);
-		if (url.pathname === "/health")
-			return Response.json({ status: "ok", protocol: "robocon2027-v4" });
+		if (["/health", "/index.wasm", "/ws"].includes(url.pathname)) {
+			const allow = url.pathname === "/ws" ? "GET" : "GET, HEAD";
+			if (
+				request.method !== "GET" &&
+				!(request.method === "HEAD" && url.pathname !== "/ws")
+			)
+				return new Response("Method not allowed", {
+					status: 405,
+					headers: { Allow: allow, "Cache-Control": "no-store" },
+				});
+		}
+		if (url.pathname === "/health") {
+			const health = Response.json(
+				{ status: "ok", protocol: "robocon2027-v4" },
+				{ headers: { "Cache-Control": "no-store" } },
+			);
+			return request.method === "HEAD" ? new Response(null, health) : health;
+		}
 		if (url.pathname === "/ws") {
 			if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
-				return new Response("WebSocket required", { status: 426 });
+				return new Response("WebSocket required", {
+					status: 426,
+					headers: { Upgrade: "websocket" },
+				});
 			const origin = request.headers.get("Origin");
 			if (origin && origin !== url.origin)
 				return new Response("Origin rejected", { status: 403 });

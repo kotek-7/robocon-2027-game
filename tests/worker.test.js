@@ -120,3 +120,27 @@ test("health does not start a container and ordinary assets pass through", async
 		sentinel,
 	);
 });
+
+for (const path of ["/ws", "/health", "/index.wasm"]) {
+	test(`${path} rejects POST without touching bindings`, async () => {
+		const response = await worker.fetch(
+			new Request(`${origin}${path}`, { method: "POST" }),
+			{},
+		);
+		assert.equal(response.status, 405);
+		assert.equal(
+			response.headers.get("Allow"),
+			path === "/ws" ? "GET" : "GET, HEAD",
+		);
+	});
+}
+
+test("health is not cacheable and HEAD has no body", async () => {
+	const response = await worker.fetch(
+		new Request(`${origin}/health`, { method: "HEAD" }),
+		{},
+	);
+	assert.equal(response.status, 200);
+	assert.equal(response.body, null);
+	assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
