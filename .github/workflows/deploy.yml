@@ -42,6 +42,8 @@ jobs:
           npm ci
           touch node_modules/.gdignore
           python3 -m pip install websockets==15.0.1
+      - name: Validate Worker HTTP behavior
+        run: npm run test:worker
       - name: Validate competition and matchmaking
         run: |
           godot --headless --path . --import
@@ -60,6 +62,7 @@ jobs:
           python3 tests/partners_network.py
       - name: Export Web game
         run: |
+          rm -rf build/web
           mkdir -p build/web
           godot --headless --path . --export-release Web build/web/index.html
           python3 tools/prepare_cdn.py
@@ -71,6 +74,7 @@ jobs:
           trap 'docker logs arena-ci; docker rm -f arena-ci' EXIT
           curl --fail --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:9080/health
           python3 tests/matchmaking.py
+          python3 tests/private_rooms.py
       - name: Deploy through CD
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
@@ -85,3 +89,4 @@ jobs:
           curl --fail --retry 12 --retry-all-errors --retry-delay 10 https://robocon2027.kotek7.com/health
           curl --fail --compressed https://robocon2027.kotek7.com/index.wasm -o /tmp/public.wasm
           cmp build/web/index.wasm /tmp/public.wasm
+          python3 tests/deployment_smoke.py wss://robocon2027.kotek7.com/ws

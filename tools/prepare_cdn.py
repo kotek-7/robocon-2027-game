@@ -8,7 +8,10 @@ for font in ["Fredoka-Semibold.ttf", "DelaGothicOne-Regular.ttf"]:
     shutil.copyfile("assets/" + font, "build/web/" + font)
 source = Path("build/web")
 target = Path("build/cdn")
-target.mkdir(parents=True, exist_ok=True)
+# Never deploy leftover files from an earlier export/package.
+if target.exists():
+    shutil.rmtree(target)
+target.mkdir(parents=True)
 for p in source.iterdir():
     if not p.is_file() or p.suffix == ".import":
         continue
@@ -19,8 +22,9 @@ for p in source.iterdir():
     else:
         shutil.copyfile(p, target / p.name)
 for p in target.iterdir():
-    assert p.stat().st_size < 25 * 1024 * 1024, p.name
+    if p.stat().st_size > 25 * 1024 * 1024:
+        raise ValueError(f"Asset exceeds Cloudflare 25 MiB limit: {p.name}")
 (target / "_headers").write_text(
-    "/index.html\n  Cache-Control: no-cache\n/index.js\n  Cache-Control: no-cache\n/index.pck\n  Cache-Control: no-cache\n"
+    "/\n  Cache-Control: no-cache\n/index.html\n  Cache-Control: no-cache\n/index.js\n  Cache-Control: no-cache\n/index.pck\n  Cache-Control: no-cache\n"
 )
 print("CDN assets prepared")
