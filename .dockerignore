@@ -9,3 +9,9 @@
 !Dockerfile
 !cloudflare/
 !cloudflare/server.py
+
+!default_bus_layout.tres
+!scenes/
+!scenes/**
+!resources/
+!resources/**

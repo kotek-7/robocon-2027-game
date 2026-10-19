@@ -6,9 +6,11 @@ RUN curl -fL https://github.com/godotengine/godot/releases/download/4.7.2-stable
  && mv /tmp/godot/Godot_v4.7.2-stable_linux.x86_64 /usr/local/bin/godot \
  && chmod +x /usr/local/bin/godot && rm -rf /tmp/godot /tmp/godot.zip
 WORKDIR /app
-COPY project.godot main.tscn icon.svg ./
+COPY project.godot main.tscn icon.svg default_bus_layout.tres ./
 COPY scripts ./scripts
 COPY assets ./assets
+COPY scenes ./scenes
+COPY resources ./resources
 COPY cloudflare/server.py ./server.py
 RUN godot --headless --path /app --import
 ENV PORT=9080
