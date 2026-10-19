@@ -1,0 +1,9 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - curl
+runcmd:
+  - [systemctl, enable, --now, docker]
+  - [install, -d, -m, '0755', -o, ubuntu, -g, ubuntu, /opt/robocon-2027-game]
+  - [touch, /var/lib/robocon-bootstrap-complete]

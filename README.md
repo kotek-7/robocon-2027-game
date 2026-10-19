@@ -54,6 +54,8 @@ Cloudflare Workers serves the game and forwards `/ws` through the direct Durable
 
 See [deployment configuration](docs/deployment.md) for infrastructure and credentials.
 
+An isolated ARM64 game server has also been provisioned on OCI A1 Flex for migration validation. Production routing and CD still use Cloudflare Containers. See [OCI setup and validation](infra/oci/README.md).
+
 ## Checks
 
 ```sh
