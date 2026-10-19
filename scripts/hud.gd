@@ -85,20 +85,39 @@ func update_view():
 	update_score_names(layout)
 
 func update_names():
-	var used=[]
+	var used: Array[Rect2]=[]
 	for node in $Names.get_children():node.visible=false
 	for i in range(mini(name_tags.size(),$Names.get_child_count())):
 		var tag=name_tags[i]
 		var node=$Names.get_child(i)
 		var label: Label=node.get_node('Label')
+		var font_size=14 if touch_mode else 18
 		label.text=str(tag.name)
-		label.add_theme_font_size_override('font_size',14 if touch_mode else 18)
+		label.add_theme_font_size_override('font_size',font_size)
 		label.modulate=local_name_color if tag.self else Color.WHITE
-		node.reset_size()
+		label.clip_text=true
+		label.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		var padding=node.get_theme_stylebox('panel').get_minimum_size()
+		var text_size=label.get_theme_font('font').get_string_size(label.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size)
+		node.size=Vector2(minf(text_size.x+padding.x, minf(240,size.x-16)),label.get_theme_font('font').get_height(font_size)+padding.y)
 		var rect=Rect2(tag.p-Vector2(node.size.x/2,24),node.size)
+		rect.position=rect.position.clamp(Vector2(8,104),size-rect.size-Vector2(8,8))
+		# Try the nearest free vertical slot; never discard an overlapping name.
+		var candidates: Array[float]=[rect.position.y,104.0,size.y-rect.size.y-8]
 		for other in used:
-			if rect.intersects(other):rect.position.y=other.position.y-rect.size.y-2
-		if rect.position.x<0 or rect.end.x>size.x or rect.position.y<65:continue
+			candidates.append(other.position.y-rect.size.y-3)
+			candidates.append(other.end.y+3)
+		var best=rect.position
+		var distance=INF
+		for y in candidates:
+			var candidate=Rect2(Vector2(rect.position.x,y),rect.size)
+			if y<104 or candidate.end.y>size.y-8:continue
+			var overlaps=false
+			for other in used:
+				if candidate.intersects(other):overlaps=true;break
+			if not overlaps and absf(y-rect.position.y)<distance:
+				best=candidate.position;distance=absf(y-rect.position.y)
+		rect.position=best
 		used.append(rect);node.position=rect.position;node.visible=true
 
 func update_score_names(layout: Control):

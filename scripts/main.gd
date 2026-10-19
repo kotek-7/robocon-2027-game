@@ -509,8 +509,7 @@ func _process(dt):
 				if online_format=='1v1' and rid!=game.active[int(rid/2)]:name='CPU'
 			hud.participant_names[rid]=name
 			var point=robots[rid].position+Vector3(0,1.3,0)
-			if camera.is_position_behind(point):continue
-			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.unproject_position(point)})
+			hud.name_tags.append({'name':name,'role':'TR' if rid%2==0 else 'BR','team':int(rid/2),'self':rid==game.active[team],'p':camera.nameplate_position(point)})
 	hud.update_view()
 	hud.get_node('Feedback').observe(game,camera,hud,mode=='title' or ui_open or landscape_required or hud.disconnected,dt)
 	if qa_enabled:

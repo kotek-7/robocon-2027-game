@@ -33,3 +33,13 @@ func update_view(dt: float, robot_position: Vector3, field: ArenaField, title: b
 			var point=target.lerp(desired,n/8.0)
 			if abs(point.x)<5.4 and abs(point.z)<5.4:desired.y=max(desired.y,field.height(point)+floor_clearance)
 	position=position.lerp(desired,1-exp(-camera_smoothing*dt));look_at(target)
+
+# Keep a finite screen direction even across the camera plane.
+func nameplate_position(point: Vector3) -> Vector2:
+	var local=global_transform.affine_inverse()*point
+	if local.z < -0.05:
+		return unproject_position(point)
+	var direction=Vector2(local.x,-local.y)
+	if direction.length_squared()<0.0001:direction=Vector2.DOWN
+	var viewport_size=get_viewport().get_visible_rect().size
+	return viewport_size/2+direction.normalized()*viewport_size.length()
