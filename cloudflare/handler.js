@@ -14,11 +14,32 @@ export default {
 				});
 		}
 		if (url.pathname === "/health") {
-			const health = Response.json(
-				{ status: "ok", protocol: "robocon2027-v4" },
-				{ headers: { "Cache-Control": "no-store" } },
-			);
-			return request.method === "HEAD" ? new Response(null, health) : health;
+			try {
+				const upstream = await fetch(`${env.GAME_ORIGIN}/health`, {
+					headers: { "X-Arena-Key": env.GAME_ORIGIN_KEY },
+					signal: AbortSignal.timeout(5000),
+				});
+				const health = Response.json(
+					{
+						status: upstream.ok ? "ok" : "unavailable",
+						protocol: "robocon2027-v4",
+						backend: "oci",
+					},
+					{
+						status: upstream.ok ? 200 : 503,
+						headers: { "Cache-Control": "no-store" },
+					},
+				);
+				return request.method === "HEAD" ? new Response(null, health) : health;
+			} catch {
+				return new Response(
+					request.method === "HEAD" ? null : "Backend unavailable",
+					{
+						status: 503,
+						headers: { "Cache-Control": "no-store" },
+					},
+				);
+			}
 		}
 		if (url.pathname === "/ws") {
 			if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
@@ -33,7 +54,12 @@ export default {
 			const pool = url.searchParams.get("pool") ?? "room";
 			if (!["1v1", "2v2", "room"].includes(pool))
 				return new Response("Unknown matchmaking pool", { status: 400 });
-			return env.ARENA.getByName("casual-v2", { locationHint: "apac" }).fetch(request);
+			const target = new URL(request.url);
+			target.protocol = new URL(env.GAME_ORIGIN).protocol;
+			target.host = new URL(env.GAME_ORIGIN).host;
+			const forwarded = new Request(target, request);
+			forwarded.headers.set("X-Arena-Key", env.GAME_ORIGIN_KEY);
+			return fetch(forwarded);
 		}
 		if (url.pathname === "/index.wasm") {
 			url.pathname = "/index.wasm.gz";

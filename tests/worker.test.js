@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { mock } from "node:test";
 import worker from "../cloudflare/handler.js";
 
 const origin = "https://arena.example";
@@ -86,32 +86,37 @@ test("WebSocket rejects non-upgrades and foreign origins before accessing contai
 	);
 });
 
-test("WebSocket preserves the container response and single matchmaking identity", async () => {
+const env = {
+	GAME_ORIGIN: "https://backend.example",
+	GAME_ORIGIN_KEY: "test-secret",
+};
+
+test("WebSocket forwards to OCI preserving the upgrade and overriding credentials", async () => {
 	const sentinel = {};
-	const request = new Request(`${origin}/ws`, {
-		headers: { Upgrade: "websocket", Origin: origin },
+	const spy = mock.method(globalThis, "fetch", async (request) => {
+		assert.equal(request.url, "https://backend.example/ws?pool=1v1");
+		assert.equal(request.headers.get("Upgrade"), "websocket");
+		assert.equal(request.headers.get("X-Arena-Key"), "test-secret");
+		return sentinel;
 	});
-	const result = await worker.fetch(request, {
-		ARENA: {
-			getByName: (name) => {
-				assert.equal(name, "casual-v2");
-				return {
-					fetch: (forwarded) => {
-						assert.equal(forwarded, request);
-						return sentinel;
-					},
-				};
-			},
-		},
-	});
-	assert.equal(result, sentinel);
+	try {
+		const result = await worker.fetch(
+			new Request(`${origin}/ws?pool=1v1`, {
+				headers: {
+					Upgrade: "websocket",
+					Origin: origin,
+					"X-Arena-Key": "spoof",
+				},
+			}),
+			env,
+		);
+		assert.equal(result, sentinel);
+	} finally {
+		spy.mock.restore();
+	}
 });
 
-test("health does not start a container and ordinary assets pass through", async () => {
-	assert.equal(
-		(await worker.fetch(new Request(`${origin}/health`), {})).status,
-		200,
-	);
+test("ordinary assets pass through", async () => {
 	const sentinel = new Response("asset");
 	assert.equal(
 		await worker.fetch(new Request(`${origin}/index.js`), {
@@ -135,43 +140,39 @@ for (const path of ["/ws", "/health", "/index.wasm"]) {
 	});
 }
 
-test("health is not cacheable and HEAD has no body", async () => {
-	const response = await worker.fetch(
-		new Request(`${origin}/health`, { method: "HEAD" }),
-		{},
-	);
-	assert.equal(response.status, 200);
-	assert.equal(response.body, null);
-	assert.equal(response.headers.get("Cache-Control"), "no-store");
-});
-
-for (const [pool, name] of [
-	["1v1", "casual-v2"],
-	["2v2", "casual-v2"],
-	["room", "casual-v2"],
-]) {
-	test(`${pool} opponents and reconnects use the single shared APAC identity`, async () => {
-		const identities = [];
-		const env = {
-			ARENA: {
-				getByName(id, options) {
-					identities.push(id);
-					assert.equal(options.locationHint, "apac");
-					return { fetch: () => new Response("ok") };
-				},
-			},
-		};
-		for (let i = 0; i < 4; i++) {
-			await worker.fetch(
-				new Request(`${origin}/ws?pool=${pool}`, {
-					headers: { Upgrade: "websocket", Origin: origin },
-				}),
-				env,
-			);
+test("health reflects backend failure, never caches, and HEAD has no body", async () => {
+	for (const status of [200, 503, 403]) {
+		const spy = mock.method(globalThis, "fetch", async (url, options) => {
+			assert.equal(url, "https://backend.example/health");
+			assert.equal(options.headers["X-Arena-Key"], "test-secret");
+			return new Response("health", { status });
+		});
+		try {
+			for (const method of ["GET", "HEAD"]) {
+				const response = await worker.fetch(
+					new Request(`${origin}/health`, { method }),
+					env,
+				);
+				assert.equal(response.status, status === 200 ? 200 : 503);
+				assert.equal(response.headers.get("Cache-Control"), "no-store");
+				if (method === "HEAD") assert.equal(response.body, null);
+			}
+		} finally {
+			spy.mock.restore();
 		}
-		assert.deepEqual(identities, Array(4).fill(name));
+	}
+	const spy = mock.method(globalThis, "fetch", async () => {
+		throw new Error("offline");
 	});
-}
+	try {
+		assert.equal(
+			(await worker.fetch(new Request(`${origin}/health`), env)).status,
+			503,
+		);
+	} finally {
+		spy.mock.restore();
+	}
+});
 
 test("arbitrary pool names cannot allocate additional containers", async () => {
 	for (const pool of ["random", "__proto__", "constructor", ""]) {

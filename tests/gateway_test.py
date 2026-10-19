@@ -6,6 +6,7 @@ import signal
 import socket
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -55,6 +56,14 @@ class GatewayTests(unittest.IsolatedAsyncioTestCase):
         writer.close()
         await writer.wait_closed()
         return result
+
+    async def test_origin_key_required_when_configured(self):
+        with patch.dict(os.environ, {"GAME_ORIGIN_KEY": "abc123"}):
+            for key in (b"", b"X-Arena-Key: wrong\r\n"):
+                result = await self.exchange(b"GET /health HTTP/1.1\r\n" + key + b"\r\n")
+                self.assertIn(b"403 Forbidden", result)
+            result = await self.exchange(b"GET /health HTTP/1.1\r\nX-Arena-Key: abc123\r\n\r\n")
+            self.assertIn(b"200 OK", result)
 
     async def test_health_and_head(self):
         for method in (b"GET", b"HEAD"):

@@ -2,6 +2,7 @@
 
 import asyncio
 import contextlib
+import hmac
 import os
 import signal
 
@@ -65,6 +66,12 @@ async def request(reader, writer, game, port):
             return
         if "transfer-encoding" in headers or headers.get("content-length", "0") != "0":
             await respond(writer, b"400 Bad Request", head=method == "HEAD")
+            return
+        expected_key = os.environ.get("GAME_ORIGIN_KEY")
+        if expected_key and not hmac.compare_digest(
+            headers.get("x-arena-key", ""), expected_key
+        ):
+            await respond(writer, b"403 Forbidden", head=method == "HEAD")
             return
         path = target.partition("?")[0]
         if path == "/health":

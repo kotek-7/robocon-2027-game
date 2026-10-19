@@ -14,26 +14,15 @@
 		"directory": "build/cdn",
 		"binding": "ASSETS",
 		// Only these endpoints need Worker code; serve other assets directly.
-		"run_worker_first": ["/ws", "/health", "/index.wasm"]
+		"run_worker_first": ["/ws", "/health", "/index.wasm"],
 	},
-	"containers": [
-		{
-			"class_name": "ArenaServer",
-			"image": "./Dockerfile",
-			// One service image/size with platform-managed rollouts (direct DO API).
-			"scheduling_policy": "default",
-			"instance_type": { "vcpu": 1, "memory_mib": 3072, "disk_mb": 4000 },
-			"constraints": { "regions": ["APAC"] },
-			// All automatic queues and private rooms share one process.
-			"max_instances": 1
-		}
-	],
+	"vars": { "GAME_ORIGIN": "https://robocon2027-origin.kotek7.com" },
+	// Keep the dormant namespace during cutover; no requests route to it.
 	"durable_objects": {
-		"bindings": [{ "name": "ARENA", "class_name": "ArenaServer" }]
+		"bindings": [{ "name": "ARENA", "class_name": "ArenaServer" }],
 	},
-	// Adopt the existing SQLite namespace without renaming or recreating it.
 	"exports": {
-		"ArenaServer": { "type": "durable-object", "storage": "sqlite" }
+		"ArenaServer": { "type": "durable-object", "storage": "sqlite" },
 	},
-	"observability": { "enabled": true }
+	"observability": { "enabled": true },
 }
