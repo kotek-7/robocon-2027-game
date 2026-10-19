@@ -3,6 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"test:worker": "node --test tests/worker.test.js",
 		"check:worker": "wrangler deploy --dry-run --containers-rollout=none --outdir build/worker",
 		"deploy": "wrangler deploy"
 	},
