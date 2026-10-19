@@ -4,7 +4,7 @@ from pathlib import Path
 import gzip, shutil
 
 shutil.copyfile("web/field-backdrop.jpg", "build/web/field-backdrop.jpg")
-for font in ["Fredoka-Semibold.ttf", "DelaGothicOne-Regular.ttf"]:
+for font in ["Fredoka-Semibold.ttf", "ZenMaruGothic-Bold.ttf"]:
     shutil.copyfile("assets/" + font, "build/web/" + font)
 source = Path("build/web")
 target = Path("build/cdn")

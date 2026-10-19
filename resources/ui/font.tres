@@ -1,6 +1,6 @@
 [gd_resource type="FontVariation" format=3]
 [ext_resource type="FontFile" path="res://assets/Fredoka-Semibold.ttf" id="base"]
-[ext_resource type="FontFile" path="res://assets/DelaGothicOne-Regular.ttf" id="fallback"]
+[ext_resource type="FontFile" path="res://assets/ZenMaruGothic-Bold.ttf" id="fallback"]
 [resource]
 base_font = ExtResource("base")
 fallbacks = Array[Font]([ExtResource("fallback")])
