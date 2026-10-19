@@ -7,6 +7,7 @@ var rooms={}
 var client: WebSocketPeer
 var inputs={}
 var endpoint='ws://127.0.0.1:9080'
+var connection_endpoint=''
 var room_code=''
 var token=''
 var team=0
@@ -35,9 +36,14 @@ func host(f: ArenaField):
 	if err!=OK: push_error('Cannot listen: '+str(err));get_tree().quit(1)
 	else: print('ROOM SERVER ',port)
 
+func connect_pool(pool: String):
+	# Keep endpoint as the base URL; reconnect uses the exact selected pool.
+	var base=endpoint.get_slice('?',0)
+	connect_to(base+'?pool='+pool)
+
 func connect_to(url: String):
-	endpoint=url;client=WebSocketPeer.new();connected=false;connect_clock=0
-	var err=client.connect_to_url(endpoint)
+	connection_endpoint=url;client=WebSocketPeer.new();connected=false;connect_clock=0
+	var err=client.connect_to_url(connection_endpoint)
 	if err!=OK: message.emit({'type':'error','text':'Connection failed'})
 
 func send(data: Dictionary):
@@ -98,7 +104,7 @@ func _process(dt):
 			if reconnect_until>0 and Time.get_ticks_msec()/1000.0>=reconnect_until:
 				client=null;message.emit({'type':'error','text':'Connection lost'});return
 			if not token.is_empty() and reconnect_clock>2 and Time.get_ticks_msec()/1000.0<reconnect_until:
-				reconnect_clock=0;connect_to(endpoint)
+				reconnect_clock=0;connect_to(connection_endpoint)
 
 func _physics_process(dt):
 	if not server_mode: return

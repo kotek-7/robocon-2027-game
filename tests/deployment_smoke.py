@@ -21,7 +21,9 @@ async def check(endpoint):
 async def main():
     for attempt in range(6):
         try:
-            await check(sys.argv[1])
+            for pool in ["1v1", "2v2", "room"]:
+                separator = "&" if "?" in sys.argv[1] else "?"
+                await check(f"{sys.argv[1]}{separator}pool={pool}")
             print("Public WebSocket and Godot protocol check passed")
             return
         except (OSError, TimeoutError, websockets.exceptions.WebSocketException):

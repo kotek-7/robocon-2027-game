@@ -23,8 +23,8 @@
 			// One service image/size with platform-managed rollouts (direct DO API).
 			"scheduling_policy": "default",
 			"instance_type": "basic",
-			// All players share the casual-v2 matchmaking pool.
-			"max_instances": 1
+			// Stable pools: automatic 1v1, automatic 2v2, and private rooms.
+			"max_instances": 3
 		}
 	],
 	"durable_objects": {

@@ -43,7 +43,8 @@ async def main(endpoint):
 if __name__ == "__main__":
 
     async def run():
-        async with asyncio.timeout(90):
-            await main(sys.argv[1])
+        async with asyncio.timeout(240):
+            for pool in ["1v1", "2v2", "room"]:
+                await main(f"{sys.argv[1]}?pool={pool}")
 
     asyncio.run(run())

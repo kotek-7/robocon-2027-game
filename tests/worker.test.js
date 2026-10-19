@@ -144,3 +144,43 @@ test("health is not cacheable and HEAD has no body", async () => {
 	assert.equal(response.body, null);
 	assert.equal(response.headers.get("Cache-Control"), "no-store");
 });
+
+for (const [pool, name] of [
+	["1v1", "auto-1v1"],
+	["2v2", "auto-2v2"],
+	["room", "casual-v2"],
+]) {
+	test(`${pool} opponents and reconnects use a stable APAC identity`, async () => {
+		const identities = [];
+		const env = {
+			ARENA: {
+				getByName(id, options) {
+					identities.push(id);
+					assert.equal(options.locationHint, "apac");
+					return { fetch: () => new Response("ok") };
+				},
+			},
+		};
+		for (let i = 0; i < 4; i++) {
+			await worker.fetch(
+				new Request(`${origin}/ws?pool=${pool}`, {
+					headers: { Upgrade: "websocket", Origin: origin },
+				}),
+				env,
+			);
+		}
+		assert.deepEqual(identities, Array(4).fill(name));
+	});
+}
+
+test("arbitrary pool names cannot allocate additional containers", async () => {
+	for (const pool of ["random", "__proto__", "constructor", ""]) {
+		const response = await worker.fetch(
+			new Request(`${origin}/ws?pool=${pool}`, {
+				headers: { Upgrade: "websocket", Origin: origin },
+			}),
+			{},
+		);
+		assert.equal(response.status, 400);
+	}
+});

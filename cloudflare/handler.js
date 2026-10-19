@@ -29,7 +29,19 @@ export default {
 			const origin = request.headers.get("Origin");
 			if (origin && origin !== url.origin)
 				return new Response("Origin rejected", { status: 403 });
-			return env.ARENA.getByName("casual-v2").fetch(request);
+			// A random per-connection choice would split opponents and reconnects.
+			// Keep the legacy identity for private rooms and existing clients.
+			const pool = url.searchParams.get("pool") ?? "room";
+			const names = /** @type {Record<string, string>} */ ({
+				"1v1": "auto-1v1",
+				"2v2": "auto-2v2",
+				room: "casual-v2",
+			});
+			if (!Object.hasOwn(names, pool))
+				return new Response("Unknown matchmaking pool", { status: 400 });
+			return env.ARENA.getByName(names[pool], { locationHint: "apac" }).fetch(
+				request,
+			);
 		}
 		if (url.pathname === "/index.wasm") {
 			url.pathname = "/index.wasm.gz";

@@ -261,13 +261,13 @@ func connect_room(code: String):
 	panel(search_menu);info=menu.get_node('Info')
 	menu.get_node('Heading').text='CONNECTING'
 	bind_button('Cancel',show_room_options,'back').grab_focus()
-	net.connect_to(net.endpoint)
+	net.connect_pool('room')
 
 func search_online(format: String):
 	online_format=format;panel(search_menu)
 	menu.get_node('Heading').text='1 vs 1' if format=='1v1' else '2 vs 2'
 	info=menu.get_node('Info')
-	bind_button('Cancel',func():show_online_format(),'back').grab_focus();net.connect_to(net.endpoint)
+	bind_button('Cancel',func():show_online_format(),'back').grab_focus();net.connect_pool(format)
 
 func network_message(d: Dictionary):
 	match d.type:
