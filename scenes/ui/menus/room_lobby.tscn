@@ -2,7 +2,7 @@
 [ext_resource type="Script" path="res://scripts/match_menu.gd" id="layout"]
 [ext_resource type="Theme" path="res://resources/ui/desktop.tres" id="desktop"]
 [ext_resource type="Theme" path="res://resources/ui/mobile.tres" id="mobile"]
-[ext_resource type="StyleBoxFlat" path="res://resources/ui/match_panel.tres" id="surface"]
+[ext_resource type="StyleBoxEmpty" path="res://resources/ui/match_panel.tres" id="surface"]
 [ext_resource type="PackedScene" path="res://scenes/ui/roster.tscn" id="roster"]
 [ext_resource type="Texture2D" path="res://assets/ui/copy.svg" id="copy"]
 [ext_resource type="Texture2D" path="res://assets/ui/leave.svg" id="leave"]
@@ -18,14 +18,12 @@ theme_override_constants/separation = 24
 [node name="Header" type="HBoxContainer" parent="Content"]
 layout_mode = 2
 theme_override_constants/separation = 12
-[node name="Code" type="Label" parent="Content/Header"]
-layout_mode = 2
-text = "------"
-theme_override_font_sizes/font_size = 22
 [node name="Copy" type="Button" parent="Content/Header"]
 layout_mode = 2
 custom_minimum_size = Vector2(44, 44)
 icon = ExtResource("copy")
+text = "------"
+theme_override_font_sizes/font_size = 22
 tooltip_text = "Copy code"
 [node name="Spacer" type="Control" parent="Content/Header"]
 layout_mode = 2
@@ -41,6 +39,9 @@ layout_mode = 2
 layout_mode = 2
 horizontal_alignment = 1
 theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 0.98, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0.125, 0.141, 0.243, 1)
+theme_override_constants/outline_size = 6
 visible = false
 [node name="Actions" type="CenterContainer" parent="Content"]
 layout_mode = 2
@@ -50,3 +51,11 @@ custom_minimum_size = Vector2(200, 52)
 text = "START"
 theme_type_variation = &"Accent"
 disabled = true
+[node name="Waiting" type="Label" parent="Content/Actions"]
+layout_mode = 2
+text = "WAITING FOR HOST"
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(1, 0.98, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0.125, 0.141, 0.243, 1)
+theme_override_constants/outline_size = 6
+visible = false

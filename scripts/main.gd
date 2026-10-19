@@ -283,7 +283,7 @@ func network_message(d: Dictionary):
 			if mode!='online':
 				if d.get('private',false):
 					panel(room_lobby_menu);info=menu.get_node('Content/Info')
-					menu.get_node('Content/Header/Code').text=str(d.room)
+					menu.get_node('Content/Header/Copy').text=str(d.room)
 					bind_button('Content/Header/Copy',func():DisplayServer.clipboard_set(net.room_code))
 					bind_button('Content/Actions/Start',func():net.send({'type':'start_room'}))
 					bind_button('Content/Header/Cancel',show_room_options,'back').grab_focus()
@@ -298,6 +298,8 @@ func network_message(d: Dictionary):
 			if mode!='online' and is_instance_valid(info) and menu.has_node('Content/Actions/Start'):
 				menu.get_node('Content/Roster').show_members(d.get('members',[]),member_seat)
 				menu.get_node('Content/Actions/Start').disabled=not bool(d.host)
+				menu.get_node('Content/Actions/Start').visible=bool(d.host)
+				menu.get_node('Content/Actions/Waiting').visible=not bool(d.host)
 		'ready':
 			if d.started: start('online')
 		'state':

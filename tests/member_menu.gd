@@ -29,7 +29,11 @@ func run():
 		assert(roster.get_node('Red/Rows/First/Identity/Host').visible)
 		assert(roster.get_node('Blue/Rows/First/Identity/Self').visible)
 		assert(roster.get_node('Blue/Rows/Second').modulate.a<0.5)
-		assert(scene.menu.get_node('Content/Actions/Start').disabled)
+		assert(not scene.menu.get_node('Content/Actions/Start').visible)
+		assert(scene.menu.get_node('Content/Actions/Waiting').visible)
+		scene.network_message({'type':'lobby','count':3,'capacity':4,'host':true,'members':members()})
+		assert(scene.menu.get_node('Content/Actions/Start').visible and not scene.menu.get_node('Content/Actions/Start').disabled)
+		assert(not scene.menu.get_node('Content/Actions/Waiting').visible)
 		assert(scene.menu.size.y<=root.content_scale_size.y)
 		assert(scene.menu.size.x<=root.content_scale_size.x)
 		var changed=members();changed[2].nickname='CPU';changed[2].status='open'
