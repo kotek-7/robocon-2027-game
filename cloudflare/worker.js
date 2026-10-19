@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 
-const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 60 * 1000;
 const STARTUP_TIMEOUT_MS = 30_000;
 
 /** @extends {DurableObject<Env>} */

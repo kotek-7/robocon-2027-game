@@ -22,7 +22,8 @@
 			"image": "./Dockerfile",
 			// One service image/size with platform-managed rollouts (direct DO API).
 			"scheduling_policy": "default",
-			"instance_type": "basic",
+			"instance_type": { "vcpu": 1, "memory_mib": 3072, "disk_mb": 4000 },
+			"constraints": { "regions": ["APAC"] },
 			// Stable pools: automatic 1v1, automatic 2v2, and private rooms.
 			"max_instances": 3
 		}

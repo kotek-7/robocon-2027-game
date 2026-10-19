@@ -74,7 +74,7 @@ test("concurrent upgrades share startup and readiness, preserve the response", a
 	ready.resolve(new Response("ready"));
 	assert.deepEqual(await Promise.all([first, second]), [sentinel, sentinel]);
 	assert.deepEqual(state.starts, [{ enableInternet: false }]);
-	assert.deepEqual(state.timeouts, [600_000]);
+	assert.deepEqual(state.timeouts, [60_000]);
 	for (const forwarded of state.forwarded) {
 		assert.equal(forwarded.url, "http://container/ws?room=abc");
 		assert.equal(forwarded.headers.get("Host"), null);
@@ -87,7 +87,7 @@ test("a reconstructed DO restores inactivity without restarting its container", 
 	const { arena, state } = await fixture({ running: true });
 	await Promise.all(state.blocks);
 	assert.equal(state.deletedAlarms, 1);
-	assert.deepEqual(state.timeouts, [600_000]);
+	assert.deepEqual(state.timeouts, [60_000]);
 	assert.equal((await arena.fetch(request())).status, 200);
 	assert.equal(state.starts.length, 0);
 });
