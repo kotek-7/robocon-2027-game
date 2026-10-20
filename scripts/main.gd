@@ -362,7 +362,7 @@ func results():
 	audio.play('draw' if game.winner<0 else 'win' if game.winner==team else 'lose')
 	result_shown=true;panel(results_menu)
 	menu.get_node('Heading').text='DRAW' if game.winner<0 else ('YOU WIN' if game.winner==team else 'CPU WINS' if mode=='cpu' else 'YOU LOSE')
-	menu.get_node('Score').text='%d : %d'%[game.scores[0],game.scores[1]]
+	menu.get_node('Score').text='%d : %d'%[game.scores[team],game.scores[1-team]]
 	bind_button('Again',func():
 		if mode=='online':net.send({'type':'rematch'})
 		else:start(mode)).grab_focus()

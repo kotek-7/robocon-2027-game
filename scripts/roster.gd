@@ -10,6 +10,10 @@ func configure(compact: bool):
 			get_node(side+'/Rows/'+slot+'/Identity/Name').add_theme_font_size_override('font_size',20 if compact else 28)
 
 func show_members(members: Array, own_seat: int):
+	for member in members:
+		if int(member.seat)==own_seat:
+			move_child(get_node('Red' if int(member.team)==0 else 'Blue'),0)
+			break
 	for side in ['Red','Blue']:
 		for slot in ['First','Second']:get_node(side+'/Rows/'+slot).visible=false
 	for member in members:

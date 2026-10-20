@@ -16,6 +16,7 @@ extends Control
 
 var match_state: MatchState
 var team=0
+var displayed_team=0
 var can_switch=true
 var action={}
 var name_tags=[]
@@ -33,6 +34,7 @@ func update_view():
 	$ScoreNames.visible=not title and not menu_open and match_state!=null and not match_state.finished
 	$Names.visible=not title and not menu_open and match_state!=null and not match_state.finished
 	if title or not match_state:return
+	update_team_order()
 	var layout=$Mobile if touch_mode else $Desktop
 	var m=match_state
 	layout.get_node('Red/Value').text=str(m.scores[0])
@@ -84,6 +86,24 @@ func update_view():
 	update_names()
 	update_score_names(layout)
 
+# Move the actual team nodes so score bursts and objective effects follow them.
+func update_team_order():
+	if displayed_team==team:return
+	for layout in [$Desktop,$Mobile]:
+		for path in ['Red','Blue','RedObjective','BlueObjective']:
+			var node=layout.get_node(path)
+			var left=node.anchor_left
+			var right=node.anchor_right
+			var offset_l=node.offset_left
+			var offset_r=node.offset_right
+			node.anchor_left=1-right
+			node.anchor_right=1-left
+			node.offset_left=-offset_r
+			node.offset_right=-offset_l
+			if node is HBoxContainer:
+				for child in node.get_children():node.move_child(child,0)
+	displayed_team=team
+
 func update_names():
 	var used: Array[Rect2]=[]
 	for node in $Names.get_children():node.visible=false
@@ -125,7 +145,7 @@ func update_score_names(layout: Control):
 	for t in range(2):
 		var score=layout.get_node('Red' if t==0 else 'Blue').get_rect()
 		var gap=5.0
-		var available=clock.position.x-score.end.x-gap*2 if t==0 else score.position.x-clock.end.x-gap*2
+		var available=clock.position.x-score.end.x-gap*2 if t==team else score.position.x-clock.end.x-gap*2
 		var width=minf(112 if touch_mode else 144,available)
 		var height=18.0 if touch_mode else 23.0
 		for slot in range(2):
@@ -136,7 +156,7 @@ func update_score_names(layout: Control):
 			label.add_theme_font_size_override('font_size',11 if touch_mode else 13)
 			plate.tooltip_text=label.text
 			plate.size=Vector2(width,height)
-			plate.position=Vector2(score.end.x+gap if t==0 else score.position.x-gap-width,score.position.y+(score.size.y-height*2-2)/2+slot*(height+2))
+			plate.position=Vector2(score.end.x+gap if t==team else score.position.x-gap-width,score.position.y+(score.size.y-height*2-2)/2+slot*(height+2))
 
 var finish_tween: Tween
 

@@ -28,6 +28,7 @@ func run():
 		assert(not roster.get_node('Red/Rows/First/Identity/Self').visible)
 		assert(roster.get_node('Red/Rows/First/Identity/Host').visible)
 		assert(roster.get_node('Blue/Rows/First/Identity/Self').visible)
+		assert(roster.get_child(0).name=='Blue')
 		assert(roster.get_node('Blue/Rows/Second').modulate.a<0.5)
 		assert(not scene.menu.get_node('Content/Actions/Start').visible)
 		assert(scene.menu.get_node('Content/Actions/Waiting').visible)
@@ -44,6 +45,7 @@ func run():
 		scene.network_message({'type':'joined','team':1,'seat':1,'room':'auto','private':false,'members':members().slice(0,2)})
 		roster=scene.menu.get_node('Content/Roster')
 		assert(not roster.get_node('Red/Rows/Second').visible)
+		assert(roster.get_child(0).name=='Blue')
 		assert(scene.info.text=='3' and network.sent.is_empty())
 		if compact:
 			await create_timer(3.2).timeout
@@ -55,5 +57,9 @@ func run():
 			await create_timer(3.2).timeout
 			assert(not network.sent.any(func(packet):return packet.type=='ready'))
 			scene.show_title()
+	scene.team=1;scene.game.scores=[12,34];scene.results()
+	assert(scene.menu.get_node('Score').text=='34 : 12')
+	scene.team=0;scene.results()
+	assert(scene.menu.get_node('Score').text=='12 : 34')
 	print('PASS: team rosters, identity, departures, compact bounds, delayed ready and stale timer cancellation')
 	scene.queue_free();await process_frame;quit()
